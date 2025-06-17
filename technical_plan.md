@@ -2,6 +2,9 @@
 
 ## Projekt: Mobile Live-TV Streaming App
 
+![SEEYOO-App](pics/SEEYOO-App.png)
+
+
 ---
 
 ## 1. Detaillierte Architektur & Komponenten
