@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800), // Dauer des Fade-In Effekts
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -29,21 +29,37 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
 
     // Starte den Fade-In Effekt
-    _controller.forward();
+    _controller.forward().then((_) {
+      // Nach dem Fade-In 3 Sekunden warten, dann Fade-Out und Navigation
+      Timer(const Duration(milliseconds: 3000), _navigateToHome);
+    });
+  }
 
-    // Nach dem Fade-In 3 Sekunden warten, dann Fade-Out und Navigation
-    Timer(const Duration(milliseconds: 3800), () {
-      _controller.reverse().then((_) {
+
+  void _navigateToHome() {
+    if (!mounted) return;
+    
+    _controller.reverse().then((_) {
+      if (!mounted) return;
+      
+      try {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation1, animation2) => const HomeScreen(),
             transitionDuration: Duration.zero,
           ),
         );
-      });
+      } catch (e) {
+        print('Navigation error: $e');
+        // Fallback Navigation falls die erste Methode fehlschlägt
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
+      }
     });
   }
-
 
   @override
   void dispose() {
@@ -54,10 +70,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Hintergrundfarbe anpassen
+      backgroundColor: Colors.transparent,
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
+        color: Colors.transparent,
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: Image.asset(
