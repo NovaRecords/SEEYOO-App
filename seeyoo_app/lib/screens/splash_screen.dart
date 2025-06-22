@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:seeyoo_app/screens/home_screen.dart';
+import 'package:seeyoo_app/screens/auth_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       try {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation1, animation2) => const HomeScreen(),
+            pageBuilder: (context, animation1, animation2) => const AuthScreen(),
             transitionDuration: Duration.zero,
           ),
         );
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         // Fallback Navigation falls die erste Methode fehlschlägt
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => const AuthScreen()),
           );
         }
       }
