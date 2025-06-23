@@ -107,13 +107,13 @@ class _MainScreenState extends State<MainScreen> {
           _buildDrawerItem(
             context: context,
             icon: Icons.live_tv,
-            title: 'TV',
+            title: 'Live-TV',
             index: 0,
             isSelected: _selectedIndex == 0,
           ),
           _buildDrawerItem(
             context: context,
-            icon: Icons.favorite,
+            icon: Icons.star,  // Geändert von Icons.favorite zu Icons.star
             title: 'TV-Favorite',
             index: 1,
             isSelected: _selectedIndex == 1,
@@ -166,15 +166,25 @@ class _MainScreenState extends State<MainScreen> {
     required int index,
     required bool isSelected,
   }) {
+    final selectedColor = const Color(0xFFE53A56);
     return ListTile(
-      leading: Icon(icon, color: isSelected ? Colors.red : Colors.white),
+      leading: Icon(
+        icon, 
+        color: isSelected ? selectedColor : Colors.white,
+        size: 28.0, // Standardgröße ist ~24.0, also ~17% größer
+      ),
       title: Text(
         title,
         style: TextStyle(
-          color: isSelected ? Colors.red : Colors.white,
+          color: isSelected ? selectedColor : Colors.white,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 18.0, // Größere Schrift für bessere Lesbarkeit
+          height: 1.2, // Etwas mehr Zeilenabstand
         ),
       ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0), // Mehr Platz um die Einträge
+      minLeadingWidth: 36, // Mehr Platz für die größeren Icons
+      minVerticalPadding: 6.0, // Mehr vertikaler Abstand
       tileColor: isSelected ? Colors.grey[900] : null,
       onTap: () {
         // Schließe das Drawer-Menü
@@ -203,30 +213,41 @@ class _MainScreenState extends State<MainScreen> {
         }
         return true; // Erlaube die Standard-Navigation (App schließen)
       },
-      child: Scaffold(
-        key: _scaffoldKey,
-        drawer: _buildDrawer(),
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () {
-                if (_scaffoldKey.currentState!.isDrawerOpen) {
-                  Navigator.pop(context);
-                } else {
-                  _scaffoldKey.currentState!.openDrawer();
-                }
-              },
-            ),
+      child: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/HG2.png'),
+            fit: BoxFit.cover,
           ),
-          title: Text(
-            _getAppBarTitle(_selectedIndex),
-            style: const TextStyle(color: Colors.white),
-          ),
-          centerTitle: true,
         ),
-        body: _screens[_selectedIndex], // Direkte Anzeige des ausgewählten Screens
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Colors.transparent,
+          drawerScrimColor: Colors.black54, // Leichter Schleier über dem Hintergrund, wenn das Menü geöffnet ist
+          drawer: _buildDrawer(),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white, size: 30.0),  //größer als Standard (24.0)
+                onPressed: () {
+                  if (_scaffoldKey.currentState!.isDrawerOpen) {
+                    Navigator.pop(context);
+                  } else {
+                    _scaffoldKey.currentState!.openDrawer();
+                  }
+                },
+              ),
+            ),
+            title: Text(
+              _getAppBarTitle(_selectedIndex),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            centerTitle: true,
+          ),
+          body: _screens[_selectedIndex],
+        ),
       ),
     );
   }
@@ -234,7 +255,7 @@ class _MainScreenState extends State<MainScreen> {
   String _getAppBarTitle(int index) {
     switch (index) {
       case 0:
-        return 'TV';
+        return 'Live-TV';
       case 1:
         return 'TV-Favorite';
       case 2:

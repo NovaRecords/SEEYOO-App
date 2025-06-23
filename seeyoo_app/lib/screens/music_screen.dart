@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:seeyoo_app/widgets/background_image.dart';
 
 class MusicScreen extends StatelessWidget {
   const MusicScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const BackgroundImage(
-      imagePath: 'assets/images/HG2.png',
-      child: Center(
-        child: Text(
-          'Musikplayer wird hier angezeigt',
-          style: TextStyle(color: Colors.white, fontSize: 20),
-        ),
+    return const Center(
+      child: Text(
+        'Musik wird hier angezeigt',
+        style: TextStyle(color: Colors.white, fontSize: 20),
       ),
     );
   }
