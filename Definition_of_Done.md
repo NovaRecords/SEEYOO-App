@@ -15,7 +15,6 @@ Die Definition of Done (DoD) ist eine klare Liste von Kriterien, die ein Backlog
 - [ ] Unit Tests wurden geschrieben und sind erfolgreich durchgelaufen
 - [ ] Integrationstests wurden durchgeführt
 - [ ] UI-Tests wurden bei relevanten Komponenten durchgeführt
-- [ ] Testabdeckung entspricht den Teamvorgaben (mindestens X%)
 - [ ] Edge Cases wurden berücksichtigt und getestet
 
 ### 3. Code-Review
@@ -25,7 +24,6 @@ Die Definition of Done (DoD) ist eine klare Liste von Kriterien, die ein Backlog
 
 ### 4. Dokumentation
 - [ ] API-Änderungen wurden dokumentiert
-- [ ] README-Dateien wurden bei Bedarf aktualisiert
 - [ ] Neue Abhängigkeiten wurden dokumentiert
 - [ ] Setup-Anleitung wurde bei Bedarf aktualisiert
 
