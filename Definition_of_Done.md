@@ -54,8 +54,21 @@ Die Definition of Done (DoD) ist eine klare Liste von Kriterien, die ein Backlog
 | 2024-06-23 | 1.0 | Erste Version der DoD | Vitali Mack |
 
 ## Bilder
-![DoD Prozess](pics/Definition%20of%20Done/DoD_Prozess.png)
-*Abbildung 1: DoD Prozessablauf*
 
-![DoD Checkliste](pics/Definition%20of%20Done/DoD_Checkliste.png)
-*Abbildung 2: DoD Checkliste*
+![DoD start_screen](pics/Definition%20of%20Done/DoD_Start.png)
+*Abbildung 1: DoD Start*
+
+![DoD menu_screen](pics/Definition%20of%20Done/DoD_Menu.png)
+*Abbildung 2: DoD Menu*
+
+![DoD login_screen](pics/Definition%20of%20Done/DoD_Login.png)
+*Abbildung 3: DoD Login*
+
+![DoD register_screen](pics/Definition%20of%20Done/DoD_Register.png)
+*Abbildung 4: DoD Register*
+
+![DoD tv_screen](pics/Definition%20of%20Done/DoD_Tv.png)
+*Abbildung 5: DoD TV*
+
+![DoD App-Icon](pics/Definition%20of%20Done/DoD_App-Icon.png)
+*Abbildung 6: DoD App-Icon*
