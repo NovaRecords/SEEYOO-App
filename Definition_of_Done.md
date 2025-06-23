@@ -55,20 +55,20 @@ Die Definition of Done (DoD) ist eine klare Liste von Kriterien, die ein Backlog
 
 ## Bilder
 
-![DoD start_screen](pics/Definition%20of%20Done/DoD_Start.png)
+![DoD start_screen](pics/Definition%20of%20Done/start2.png)
 *Abbildung 1: DoD Start*
 
-![DoD menu_screen](pics/Definition%20of%20Done/DoD_Menu.png)
+![DoD menu_screen](pics/Definition%20of%20Done/menu2.png)
 *Abbildung 2: DoD Menu*
 
-![DoD login_screen](pics/Definition%20of%20Done/DoD_Login.png)
+![DoD login_screen](pics/Definition%20of%20Done/login2.png)
 *Abbildung 3: DoD Login*
 
-![DoD register_screen](pics/Definition%20of%20Done/DoD_Register.png)
+![DoD register_screen](pics/Definition%20of%20Done/register2.png)
 *Abbildung 4: DoD Register*
 
-![DoD tv_screen](pics/Definition%20of%20Done/DoD_Tv.png)
+![DoD tv_screen](pics/Definition%20of%20Done/tv2.png)
 *Abbildung 5: DoD TV*
 
-![DoD App-Icon](pics/Definition%20of%20Done/DoD_App-Icon.png)
+![DoD App-Icon](pics/Definition%20of%20Done/App-Icon.png)
 *Abbildung 6: DoD App-Icon*
