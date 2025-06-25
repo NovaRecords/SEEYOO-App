@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:seeyoo_app/screens/main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -32,7 +34,10 @@ class _AuthScreenState extends State<AuthScreen> {
         );
         return;
       }
-      // TODO: Implement authentication logic
+      // Navigate to MainScreen after successful login
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
     }
   }
 
@@ -211,9 +216,10 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             child: Text(
                               isLogin ? 'Login' : 'Registrieren',
-                              style: const TextStyle(
+                              style: GoogleFonts.montserrat(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -254,9 +260,10 @@ class _AuthScreenState extends State<AuthScreen> {
           const SizedBox(width: 8),
           Text(
             text,
-            style: const TextStyle(
+            style: GoogleFonts.montserrat(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
         ],
@@ -278,10 +285,16 @@ class _AuthScreenState extends State<AuthScreen> {
       obscureText: obscureText,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(color: Colors.white),
+      style: GoogleFonts.montserrat(
+        color: Colors.white,
+        fontSize: 16,
+      ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white54),
+        hintStyle: GoogleFonts.montserrat(
+          color: Colors.white54,
+          fontSize: 16,
+        ),
         prefixIcon: Icon(icon, color: Colors.white54),
         enabledBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.white54),

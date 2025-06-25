@@ -87,7 +87,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildDrawer() {
     return Drawer(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: const Color(0xFF1B1E22),
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -168,10 +168,18 @@ class _MainScreenState extends State<MainScreen> {
   }) {
     final selectedColor = const Color(0xFFE53A56);
     return ListTile(
-      leading: Icon(
-        icon, 
-        color: isSelected ? selectedColor : Colors.white,
-        size: 28.0, // Standardgröße ist ~24.0, also ~17% größer
+      leading: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Transform.translate(
+            offset: const Offset(0, -1), // 1px nach oben verschieben
+            child: Icon(
+              icon, 
+              color: isSelected ? selectedColor : Colors.white,
+              size: 28.0,
+            ),
+          ),
+        ],
       ),
       title: Text(
         title,
@@ -185,7 +193,7 @@ class _MainScreenState extends State<MainScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0), // Mehr Platz um die Einträge
       minLeadingWidth: 36, // Mehr Platz für die größeren Icons
       minVerticalPadding: 6.0, // Mehr vertikaler Abstand
-      tileColor: isSelected ? Colors.grey[900] : null,
+      tileColor: isSelected ? const Color(0xFF252A2F) : null,
       onTap: () {
         // Schließe das Drawer-Menü
         Navigator.pop(context);

@@ -33,6 +33,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   lottie: ^3.1.0  # Lottie Animationen
   flutter_svg: ^2.0.10+1  # For SVG support
+  google_fonts: ^6.1.0  # Für die Verwendung der Montserrat-Schriftart
 
 dev_dependencies:
   flutter_test:

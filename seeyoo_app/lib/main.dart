@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:seeyoo_app/screens/splash_screen.dart';
 
 void main() {
@@ -16,17 +17,28 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.black,
-        appBarTheme: const AppBarTheme(
+        textTheme: GoogleFonts.montserratTextTheme(
+          Theme.of(context).textTheme,
+        ),
+        appBarTheme: AppBarTheme(
           backgroundColor: Colors.black,
           elevation: 1,
           centerTitle: true,
-          iconTheme: IconThemeData(color: Colors.white),
-          titleTextStyle: TextStyle(
+          iconTheme: const IconThemeData(color: Colors.white),
+          titleTextStyle: GoogleFonts.montserrat(
             color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
           toolbarHeight: 50,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            textStyle: GoogleFonts.montserrat(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
       home: const SplashScreen(),
