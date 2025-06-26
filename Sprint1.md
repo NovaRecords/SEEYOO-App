@@ -107,18 +107,18 @@
 
 <!-- Erstes Bild allein -->
 <div style="max-width: 300px; margin: 0 auto 30px;">
-  <img src="pics/Definition of Done/start2.png" alt="Startbildschirm" style="width: 100%; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+  <img src="pics/Definition of Done/start2.png" alt="Startbildschirm" style="width: 100%;">
   <p style="text-align: center; margin-top: 8px; font-weight: 500;">Startbildschirm</p>
 </div>
 
 <!-- Zweite Zeile mit zwei Bildern -->
 <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
   <div style="width: 40%;">
-    <img src="pics/Definition of Done/login3.png" alt="Login-Bildschirm" style="width: 100%; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <img src="pics/Definition of Done/login3.png" alt="Login-Bildschirm" style="width: 100%;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Login-Bildschirm</p>
   </div>
   <div style="width: 40%;">
-    <img src="pics/Definition of Done/register3.png" alt="Registrierungsbildschirm" style="width: 100%; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <img src="pics/Definition of Done/register3.png" alt="Registrierungsbildschirm" style="width: 100%;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Registrierung</p>
   </div>
 </div>
@@ -126,11 +126,11 @@
 <!-- Dritte Zeile mit zwei Bildern -->
 <div style="display: flex; justify-content: space-between;">
   <div style="width: 40%;">
-    <img src="pics/Definition of Done/menu3.png" alt="Hauptmenü" style="width: 100%; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <img src="pics/Definition of Done/menu3.png" alt="Hauptmenü" style="width: 100%;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Hauptmenü</p>
   </div>
   <div style="width: 40%;">
-    <img src="pics/Definition of Done/tv2.png" alt="TV-Übersicht" style="width: 100%; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <img src="pics/Definition of Done/tv2.png" alt="TV-Übersicht" style="width: 100%;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">TV-Übersicht</p>
   </div>
 </div>
