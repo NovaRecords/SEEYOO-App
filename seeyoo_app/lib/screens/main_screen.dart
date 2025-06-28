@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:seeyoo_app/screens/account_screen.dart';
 import 'package:seeyoo_app/screens/home_screen.dart';
 import 'package:seeyoo_app/screens/movies_series_screen.dart';
@@ -15,12 +16,28 @@ class MainScreen extends StatefulWidget {
   _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  final double _menuWidth = 0.75; // Menü nimmt 75% der Breite ein, wenn geöffnet
 
   @override
   void initState() {
     super.initState();
+    // Animation Controller für das Slide-Menü
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Prüfe die anfängliche Route
       final route = ModalRoute.of(context)?.settings.name;
@@ -51,7 +68,11 @@ class _MainScreenState extends State<MainScreen> {
       }
     }
   }
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   final List<Widget> _screens = [
     const TvScreen(),
@@ -80,15 +101,34 @@ class _MainScreenState extends State<MainScreen> {
         _selectedIndex = index;
       });
     }
-    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
-      Navigator.pop(context);
+    // Menü definitiv schließen nach Auswahl
+    _closeMenu();
+  }
+
+  // Umschalten des Menüs
+  void _toggleMenu() {
+    if (_animationController.isDismissed) {
+      _animationController.forward();
+    } else {
+      _animationController.reverse();
     }
   }
 
-  Widget _buildDrawer() {
-    return Drawer(
-      backgroundColor: const Color(0xFF1B1E22),
-      child: ListView(
+  // Funktion zum Schließen des Menüs
+  void _closeMenu() {
+    // Schließe das Menü unabhängig vom aktuellen Status
+    if (_animationController.value > 0) {
+      _animationController.reverse();
+    }
+  }
+  
+  Widget _buildMenu() {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * _menuWidth,
+        color: const Color(0xFF1B1E22),
+        child: ListView(
         padding: EdgeInsets.zero,
         children: [
           Container(
@@ -156,6 +196,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -195,8 +236,8 @@ class _MainScreenState extends State<MainScreen> {
       minVerticalPadding: 6.0, // Mehr vertikaler Abstand
       tileColor: isSelected ? const Color(0xFF252A2F) : null,
       onTap: () {
-        // Schließe das Drawer-Menü
-        Navigator.pop(context);
+        // Menü definitiv schließen
+        _closeMenu();
         
         // Aktualisiere den ausgewählten Index
         if (_selectedIndex != index) {
@@ -212,6 +253,11 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
+        // Wenn das Menü geöffnet ist, schließe es zuerst
+        if (_animationController.status == AnimationStatus.completed) {
+          _animationController.reverse();
+          return false;
+        }
         // Verhindere das Navigieren zurück zum SplashScreen
         if (_selectedIndex != 0) {
           setState(() {
@@ -228,33 +274,78 @@ class _MainScreenState extends State<MainScreen> {
             fit: BoxFit.cover,
           ),
         ),
-        child: Scaffold(
-          key: _scaffoldKey,
-          backgroundColor: Colors.transparent,
-          drawerScrimColor: Colors.black54, // Leichter Schleier über dem Hintergrund, wenn das Menü geöffnet ist
-          drawer: _buildDrawer(),
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: Builder(
-              builder: (context) => IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white, size: 30.0),  //größer als Standard (24.0)
-                onPressed: () {
-                  if (_scaffoldKey.currentState!.isDrawerOpen) {
-                    Navigator.pop(context);
-                  } else {
-                    _scaffoldKey.currentState!.openDrawer();
-                  }
-                },
-              ),
+        child: Stack(
+          children: [
+            // 1. Menü im Hintergrund (immer da)
+            _buildMenu(),
+            
+            // 2. Hauptbildschirm, der zur Seite animiert wird
+            AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return GestureDetector(
+                  // Erkennung von Swipe-Gesten
+                  onHorizontalDragEnd: (details) {
+                    if (details.primaryVelocity! > 0) {
+                      // Swipe nach rechts - Menü öffnen
+                      _animationController.forward();
+                    } else if (details.primaryVelocity! < 0) {
+                      // Swipe nach links - Menü schließen
+                      _animationController.reverse();
+                    }
+                  },
+                  child: Transform.translate(
+                    offset: Offset(
+                      MediaQuery.of(context).size.width * _menuWidth * _animation.value,
+                      0,
+                    ),
+                    child: Material(
+                      elevation: 8.0,
+                      color: Colors.transparent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 8,
+                              offset: const Offset(-5, 0),
+                            ),
+                          ],
+                        ),
+                        child: Scaffold(
+                          backgroundColor: const Color(0xFF1B1E22), // Undurchsichtiger Hintergrund
+                          appBar: AppBar(
+                            backgroundColor: Colors.transparent,
+                            elevation: 0,
+                            leading: IconButton(
+                              icon: AnimatedIcon(
+                                icon: AnimatedIcons.menu_close,
+                                progress: _animation,
+                                color: Colors.white,
+                                size: 30.0,
+                              ),
+                              onPressed: _toggleMenu,
+                            ),
+                            title: Text(
+                              _getAppBarTitle(_selectedIndex),
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            centerTitle: true,
+                          ),
+                          body: GestureDetector(
+                            onTap: _closeMenu,  // Schließt Menü bei Tippen auf den Hauptinhalt
+                            child: _screens[_selectedIndex],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-            title: Text(
-              _getAppBarTitle(_selectedIndex),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-            centerTitle: true,
-          ),
-          body: _screens[_selectedIndex],
+          ],
         ),
       ),
     );
