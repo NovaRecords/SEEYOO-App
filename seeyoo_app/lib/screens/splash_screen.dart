@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:seeyoo_app/screens/auth_screen.dart';
 
@@ -12,19 +13,31 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _blurAnimation;
+  bool _showBlur = true; // Flag für Blur-Steuerung
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 2000),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    // Bei 0 ist der schwarze Layer sichtbar (Bild nicht sichtbar)
+    // Bei 1 ist der schwarze Layer transparent (Bild voll sichtbar)
+    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.easeIn,
+      ),
+    );
+    
+    // Blur-Animation: von stärker verschwommen (25.0) zu scharf (0.0)
+    _blurAnimation = Tween<double>(begin: 25.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOut, // Schnelleres Scharf-Werden
       ),
     );
 
@@ -39,6 +52,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   void _navigateToHome() {
     if (!mounted) return;
     
+    // Blur-Effekt deaktivieren, bevor wir mit dem Fade-Out beginnen
+    setState(() {
+      _showBlur = false;
+    });
+    
+    // Nur Fade-Out durchführen
     _controller.reverse().then((_) {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -57,18 +76,43 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        color: Colors.transparent,
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Image.asset(
-            'assets/images/start.png',
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
-        ),
+      backgroundColor: Colors.black,
+      body: AnimatedBuilder(
+        animation: Listenable.merge([_controller, _blurAnimation]),
+        builder: (context, child) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // Verschwommenes Hintergrundbild (immer sichtbar)
+              if (_showBlur)
+                ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: _blurAnimation.value,
+                    sigmaY: _blurAnimation.value,
+                  ),
+                  child: Image.asset(
+                    'assets/images/start.png',
+                    fit: BoxFit.cover,
+                  ),
+                )
+              // Wenn kein Blur mehr, dann normales Bild
+              else
+                Image.asset(
+                  'assets/images/start.png',
+                  fit: BoxFit.cover,
+                ),
+              
+              // Schwarze Überlagerung für Fade-Effekte
+              // Diese Überlagerung hat die richtige Schichtungsreihenfolge
+              Opacity(
+                opacity: _fadeAnimation.value,
+                child: Container(
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
