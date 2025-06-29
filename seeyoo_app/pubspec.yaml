@@ -36,6 +36,8 @@ dependencies:
   google_fonts: ^6.1.0  # Für die Verwendung der Montserrat-Schriftart
   http: ^1.2.1  # Für HTTP-Requests zur API
   shared_preferences: ^2.3.2  # Für lokale Speicherung der Token
+  device_info_plus: ^9.1.2  # Für das Auslesen von Geräteinformationen
+  uuid: ^4.3.3  # Für die Generierung eindeutiger IDs
 
 dev_dependencies:
   flutter_test:

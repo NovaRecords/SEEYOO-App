@@ -1,16 +1,19 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:seeyoo_app/models/auth_response.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
+import 'package:uuid/uuid.dart';
 
 class ApiService {
   static const String baseUrl = 'http://app.seeyoo.tv/stalker_portal';
   static const String authEndpoint = '/auth/token';
   
-  // Geräteinformationen für die Authentifizierung
-  static const String deviceMac = '04:46:65:d2:4d:8c'; // MAC-Adresse des Geräts
-  static const String deviceId = 'seeyoo-app-flutter'; // Eindeutige Geräte-ID
-  static const String serialNumber = '81ec2e29f94bdd9'; // Seriennummer des Geräts
+  // DeviceInfo Plugin und UUID für Geräteidentifikation
+  final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
+  final Uuid _uuid = Uuid();
 
   final StorageService _storageService = StorageService();
   
@@ -23,20 +26,69 @@ class ApiService {
   
   ApiService._internal();
   
+  // Geräteidentifikation abrufen
+  Future<Map<String, String>> _getDeviceInfo() async {
+    String deviceId = 'seeyoo-app-flutter';
+    String deviceMac = '00:00:00:00:00:00';
+    String serialNumber = '';
+    
+    try {
+      if (Platform.isAndroid) {
+        final androidInfo = await _deviceInfo.androidInfo;
+        deviceId = androidInfo.id;
+        serialNumber = androidInfo.serialNumber;
+        // MAC-Adresse auf Android erfordert möglicherweise zusätzliche Berechtigungen
+        deviceMac = androidInfo.id.substring(0, 12).replaceAllMapped(
+            RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+      } else if (Platform.isIOS) {
+        final iosInfo = await _deviceInfo.iosInfo;
+        deviceId = iosInfo.identifierForVendor ?? _uuid.v4();
+        serialNumber = iosInfo.utsname.machine;
+        // iOS bietet keinen direkten Zugriff auf die MAC-Adresse
+        deviceMac = deviceId.substring(0, 12).replaceAllMapped(
+            RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+      } else if (kIsWeb) {
+        final webInfo = await _deviceInfo.webBrowserInfo;
+        deviceId = webInfo.userAgent ?? 'web-browser';
+        serialNumber = webInfo.browserName?.toString() ?? 'unknown';
+        // Generiere eine pseudo-MAC für Web
+        deviceMac = _uuid.v4().substring(0, 12).replaceAllMapped(
+            RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+      }
+    } catch (e) {
+      print('Error getting device info: $e');
+      // Fallback auf UUID
+      final uuid = _uuid.v4();
+      deviceId = 'seeyoo-app-$uuid';
+      serialNumber = uuid;
+      deviceMac = uuid.substring(0, 12).replaceAllMapped(
+          RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+    }
+    
+    return {
+      'device_id': deviceId,
+      'mac': deviceMac,
+      'serial_number': serialNumber,
+    };
+  }
+
   // Authentifizierung mit Resource Owner Password Credentials
   Future<AuthResponse> authenticate(String username, String password) async {
     try {
       // Debug-Ausgabe
       print('Authenticating with username: $username');
       
+      // Geräteinformationen dynamisch abrufen
+      final deviceInfo = await _getDeviceInfo();
+      
       // Anfrage mit den erforderlichen Parametern gemäß Beispiel
       final Map<String, String> requestBody = {
         'grant_type': 'password',
         'username': username,
         'password': password,
-        'mac': deviceMac,
-        'device_id': deviceId,
-        'serial_number': serialNumber,
+        'mac': deviceInfo['mac'] ?? '00:00:00:00:00:00',
+        'device_id': deviceInfo['device_id'] ?? 'seeyoo-app-flutter',
+        'serial_number': deviceInfo['serial_number'] ?? '',
       };
       
       // Debug: Zeige die Request-Daten (ohne Passwort im Log)
@@ -121,9 +173,7 @@ class ApiService {
         body: {
           'grant_type': 'refresh_token',
           'refresh_token': refreshToken,
-          'mac': deviceMac,
-          'device_id': deviceId,
-          'serial_number': serialNumber,
+          ...(await _getDeviceInfo()),
         },
       );
       
