@@ -28,7 +28,8 @@ class ApiService {
   
   // Geräteidentifikation abrufen
   Future<Map<String, String>> _getDeviceInfo() async {
-    String deviceId = 'seeyoo-app-flutter';
+    // Initialwerte nur deklarieren, werden dynamisch basierend auf der Plattform gesetzt
+    late String deviceId;
     String deviceMac = '00:00:00:00:00:00';
     String serialNumber = '';
     
@@ -57,7 +58,7 @@ class ApiService {
       }
     } catch (e) {
       print('Error getting device info: $e');
-      // Fallback auf UUID
+      // Fallback auf UUID für die Geräteidentifikation
       final uuid = _uuid.v4();
       deviceId = 'seeyoo-app-$uuid';
       serialNumber = uuid;
@@ -87,7 +88,7 @@ class ApiService {
         'username': username,
         'password': password,
         'mac': deviceInfo['mac'] ?? '00:00:00:00:00:00',
-        'device_id': deviceInfo['device_id'] ?? 'seeyoo-app-flutter',
+        'device_id': deviceInfo['device_id'] ?? _uuid.v4(),
         'serial_number': deviceInfo['serial_number'] ?? '',
       };
       
