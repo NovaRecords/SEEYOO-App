@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:seeyoo_app/screens/auth_screen.dart';
+import 'package:seeyoo_app/screens/main_screen.dart';
+import 'package:seeyoo_app/services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -49,8 +51,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
 
-  void _navigateToHome() {
+  void _navigateToHome() async {
     if (!mounted) return;
+    
+    // Prüfen, ob bereits ein gültiger Token vorhanden ist
+    final StorageService storageService = StorageService();
+    final bool isLoggedIn = await storageService.isLoggedIn();
     
     // Blur-Effekt deaktivieren, bevor wir mit dem Fade-Out beginnen
     setState(() {
@@ -60,8 +66,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     // Nur Fade-Out durchführen
     _controller.reverse().then((_) {
       if (mounted) {
+        // Je nach Login-Status zur entsprechenden Seite navigieren
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const AuthScreen()),
+          MaterialPageRoute(
+            builder: (context) => isLoggedIn 
+              ? const MainScreen() 
+              : const AuthScreen(),
+          ),
         );
       }
     });

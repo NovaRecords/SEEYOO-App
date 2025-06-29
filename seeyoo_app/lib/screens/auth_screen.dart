@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:seeyoo_app/screens/main_screen.dart';
+import 'package:seeyoo_app/services/api_service.dart';
+import 'package:seeyoo_app/services/storage_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -12,10 +14,15 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool isLogin = true;
+  bool _isLoading = false;
+  String? _errorMessage;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  
+  final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
 
   @override
   void dispose() {
@@ -25,19 +32,58 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // Handle form submission
+      // Passwörter-Check bei Registrierung
       if (!isLogin && _passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Passwörter stimmen nicht überein')),
         );
         return;
       }
-      // Navigate to MainScreen after successful login
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+      
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+      
+      try {
+        if (isLogin) {
+          // Login mit Bearer-Authentifizierung
+          final authResponse = await _apiService.authenticate(
+            _emailController.text.trim(), 
+            _passwordController.text
+          );
+          
+          if (authResponse.isSuccess) {
+            // Navigation zum Hauptbildschirm nach erfolgreicher Anmeldung
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+            );
+          } else {
+            // Fehlerbehandlung bei fehlgeschlagener Authentifizierung
+            setState(() {
+              _errorMessage = authResponse.errorMessage ?? 'Anmeldung fehlgeschlagen';
+            });
+          }
+        } else {
+          // Hier würde die Registrierung implementiert werden
+          // Für jetzt zeigen wir nur eine Nachricht an
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registrierungsfunktion noch nicht implementiert')),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'Ein Fehler ist aufgetreten: $e';
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -201,12 +247,23 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ],
                       const SizedBox(height: 32),
+                      // Error Message (falls vorhanden)
+                      if (_errorMessage != null && _errorMessage!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.red),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        
                       // Login/Register Button
                       Center(
                         child: SizedBox(
                           width: MediaQuery.of(context).size.width * 0.4, // 40% of screen width
                           child: ElevatedButton(
-                            onPressed: _submit,
+                            onPressed: _isLoading ? null : _submit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFA1273B), // #A1273B
                               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -214,14 +271,23 @@ class _AuthScreenState extends State<AuthScreen> {
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            child: Text(
-                              isLogin ? 'Login' : 'Registrieren',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
+                            child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.0,
+                                  ),
+                                )
+                              : Text(
+                                  isLogin ? 'Login' : 'Registrieren',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                           ),
                         ),
                       ),
