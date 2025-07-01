@@ -2,11 +2,13 @@
 
 ## Tag 1 (01.07.2025)
 
-- Heutige Hauptaufgaben:
-- Fortschritt & Ergebnisse:
-- Herausforderungen & Blockaden:
-- Was ich heute gelernt habe:
-- Plan für morgen:
+- Heutige Hauptaufgaben: Ich habe mir heute vorgenommen den Live-TV bereich zu designen. Alle notwendigen Elemente einzubauen und passende Farben und Stile zu implementieren.
+- Fortschritt & Ergebnisse: Ich habe die grundlegende Struktur des Live-TV Bereichs erstellt und alle notwendigen Elemente implementiert.
+- Herausforderungen & Blockaden: Es ging noch eigentlich. Wenn das ganze mit API verbunden wird, dann kommen die richtigen Herausforderungen.
+- Was ich heute gelernt habe: Ich habe heute gelernt dass man vieeeeeeeeellll Geduld braucht um weiter zu kommen. Aber es klappt!
+- Plan für morgen: Morgen werde ich den Live-TV bereich mit der API verbinden. Ich werde die API Daten in die App einbinden und die Kanäle mit den richtigen Daten aus der API anzeigen. Die Logos von Kanälen muss ich noch kreieren. Mal sehen. Bin zuversichtlich.
+
+![Screenshot des Live-TV Bereichs](pics/tv_screen01.png)
 
 ## Tag 2 (02.07.2025)
 
