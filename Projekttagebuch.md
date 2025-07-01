@@ -2,46 +2,46 @@
 
 ## Tag 1 (01.07.2025)
 
-- Heutige Hauptaufgaben: Ich habe mir heute vorgenommen den Live-TV bereich zu designen. Alle notwendigen Elemente einzubauen und passende Farben und Stile zu implementieren.
-- Fortschritt & Ergebnisse: Ich habe die grundlegende Struktur des Live-TV Bereichs erstellt und alle notwendigen Elemente implementiert.
-- Herausforderungen & Blockaden: Es ging noch eigentlich. Wenn das ganze mit API verbunden wird, dann kommen die richtigen Herausforderungen.
-- Was ich heute gelernt habe: Ich habe heute gelernt dass man vieeeeeeeeellll Geduld braucht um weiter zu kommen. Aber es klappt!
-- Plan für morgen: Morgen werde ich den Live-TV bereich mit der API verbinden. Ich werde die API Daten in die App einbinden und die Kanäle mit den richtigen Daten aus der API anzeigen. Die Logos von Kanälen muss ich noch kreieren. Mal sehen. Bin zuversichtlich.
+- <span style="color: #4CAF50;">Heutige Hauptaufgaben:</span> Ich habe mir heute vorgenommen den Live-TV bereich zu designen. Alle notwendigen Elemente einzubauen und passende Farben und Stile zu implementieren.
+- <span style="color: #4CAF50;">Fortschritt & Ergebnisse:</span> Ich habe die grundlegende Struktur des Live-TV Bereichs erstellt und alle notwendigen Elemente implementiert.
+- <span style="color: #4CAF50;">Herausforderungen & Blockaden:</span> Es ging noch eigentlich. Wenn das ganze mit API verbunden wird, dann kommen die richtigen Herausforderungen.
+- <span style="color: #4CAF50;">Was ich heute gelernt habe:</span> Ich habe heute gelernt dass man vieeeeeeeeellll Geduld braucht um weiter zu kommen. Aber es klappt!
+- <span style="color: #4CAF50;">Plan für morgen:</span> Morgen werde ich den Live-TV bereich mit der API verbinden. Ich werde die API Daten in die App einbinden und die Kanäle mit den richtigen Daten aus der API anzeigen. Die Logos von Kanälen muss ich noch kreieren. Mal sehen. Bin zuversichtlich.
 
 ![Screenshot des Live-TV Bereichs](pics/tv-screen01.png)
 *Abbildung 1: Live-TV Bereich*
 
 ## Tag 2 (02.07.2025)
 
-- Heutige Hauptaufgaben:
-- Fortschritt & Ergebnisse:
-- Herausforderungen & Blockaden:
-- Was ich heute gelernt habe:
-- Plan für morgen:
+- <span style="color: #4CAF50;">Heutige Hauptaufgaben:</span>
+- <span style="color: #4CAF50;">Fortschritt & Ergebnisse:</span>
+- <span style="color: #4CAF50;">Herausforderungen & Blockaden:</span>
+- <span style="color: #4CAF50;">Was ich heute gelernt habe:</span>
+- <span style="color: #4CAF50;">Plan für morgen:</span>
 
 ## Tag 3 (03.07.2025)
 
-- Heutige Hauptaufgaben:
-- Fortschritt & Ergebnisse:
-- Herausforderungen & Blockaden:
-- Was ich heute gelernt habe:
-- Plan für morgen:
+- <span style="color: #4CAF50;">Heutige Hauptaufgaben:</span>
+- <span style="color: #4CAF50;">Fortschritt & Ergebnisse:</span>
+- <span style="color: #4CAF50;">Herausforderungen & Blockaden:</span>
+- <span style="color: #4CAF50;">Was ich heute gelernt habe:</span>
+- <span style="color: #4CAF50;">Plan für morgen:</span>
 
 ## Tag 4 (04.07.2025)
 
-- Heutige Hauptaufgaben:
-- Fortschritt & Ergebnisse:
-- Herausforderungen & Blockaden:
-- Was ich heute gelernt habe:
-- Plan für morgen:
+- <span style="color: #4CAF50;">Heutige Hauptaufgaben:</span>
+- <span style="color: #4CAF50;">Fortschritt & Ergebnisse:</span>
+- <span style="color: #4CAF50;">Herausforderungen & Blockaden:</span>
+- <span style="color: #4CAF50;">Was ich heute gelernt habe:</span>
+- <span style="color: #4CAF50;">Plan für morgen:</span>
 
 ## Tag 5 (05.07.2025)
 
-- Heutige Hauptaufgaben:
-- Fortschritt & Ergebnisse:
-- Herausforderungen & Blockaden:
-- Was ich heute gelernt habe:
-- Plan für morgen:
+- <span style="color: #4CAF50;">Heutige Hauptaufgaben:</span>
+- <span style="color: #4CAF50;">Fortschritt & Ergebnisse:</span>
+- <span style="color: #4CAF50;">Herausforderungen & Blockaden:</span>
+- <span style="color: #4CAF50;">Was ich heute gelernt habe:</span>
+- <span style="color: #4CAF50;">Plan für morgen:</span>
 
 ## Tag 6 (06.07.2025)
 
