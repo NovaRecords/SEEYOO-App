@@ -8,7 +8,7 @@
 - Was ich heute gelernt habe: Ich habe heute gelernt dass man vieeeeeeeeellll Geduld braucht um weiter zu kommen. Aber es klappt!
 - Plan für morgen: Morgen werde ich den Live-TV bereich mit der API verbinden. Ich werde die API Daten in die App einbinden und die Kanäle mit den richtigen Daten aus der API anzeigen. Die Logos von Kanälen muss ich noch kreieren. Mal sehen. Bin zuversichtlich.
 
-![Screenshot des Live-TV Bereichs](pics/tv_screen01.png)
+![Screenshot des Live-TV Bereichs](pics/tv-screen01.png)
 *Abbildung 1: Live-TV Bereich*
 
 ## Tag 2 (02.07.2025)
