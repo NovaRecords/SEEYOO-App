@@ -10,13 +10,25 @@ class TvScreen extends StatefulWidget {
 class _TvScreenState extends State<TvScreen> {
   int _selectedTabIndex = 0;
   int _selectedChannelIndex = 0; // Index des ausgewählten Kanals
+  List<bool> _favoriteChannels = []; // Liste zur Verfolgung der Favoriten
   final List<String> _tabTitles = ['Programm', 'Mediathek', 'Kategorien', 'Favoriten'];
   final List<IconData> _tabIcons = [
     Icons.list_alt, // Programm
     Icons.video_library, // Mediathek
     Icons.grid_view, // Kategorien
-    Icons.star_border // Favoriten
+    Icons.star_border // Favoriten - wird dynamisch aktualisiert
   ];
+  
+  // Gibt das passende Stern-Icon zurück (gefüllt oder leer)
+  IconData _getFavoriteIcon() {
+    // Wenn ein Kanal ausgewählt ist und dieser als Favorit markiert ist, zeige gefüllten Stern
+    if (_selectedChannelIndex >= 0 && 
+        _selectedChannelIndex < _favoriteChannels.length && 
+        _favoriteChannels[_selectedChannelIndex]) {
+      return Icons.star;
+    }
+    return Icons.star_border;
+  }
 
   // Beispieldaten für TV-Kanäle - werden später durch API-Daten ersetzt
   final List<Map<String, dynamic>> _channels = [
@@ -54,6 +66,22 @@ class _TvScreenState extends State<TvScreen> {
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialisiere die Favoriten-Liste mit false für jeden Kanal
+    _favoriteChannels = List.generate(_channels.length, (index) => false);
+  }
+
+  // Funktion zum Umschalten des Favoriten-Status des ausgewählten Kanals
+  void _toggleFavorite() {
+    if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length) {
+      setState(() {
+        _favoriteChannels[_selectedChannelIndex] = !_favoriteChannels[_selectedChannelIndex];
+      });
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     // Bildschirmdimensionen abrufen, um die UI responsiv zu gestalten
@@ -103,6 +131,14 @@ class _TvScreenState extends State<TvScreen> {
                 (index) => GestureDetector(
                   onTap: () {
                     setState(() {
+                      // Wenn Favoriten-Tab gewählt und vorher ein anderer Tab aktiv war
+                      if (index == 3 && _selectedTabIndex != 3) {
+                        _toggleFavorite();
+                      }
+                      // Wenn Favoriten-Tab bereits aktiv war, deaktiviere Favorit
+                      else if (index == 3 && _selectedTabIndex == 3) {
+                        _toggleFavorite();
+                      }
                       _selectedTabIndex = index;
                     });
                   },
@@ -127,7 +163,8 @@ class _TvScreenState extends State<TvScreen> {
                           ),
                           child: Center(
                             child: Icon(
-                              _tabIcons[index],
+                              // Für Favoriten-Tab das dynamische Icon verwenden
+                              index == 3 ? _getFavoriteIcon() : _tabIcons[index],
                               color: _selectedTabIndex == index ? Colors.white : Colors.grey, // Ausgewähltes Symbol weiß, andere grau
                               size: 26,
                             ),
@@ -164,14 +201,16 @@ class _TvScreenState extends State<TvScreen> {
                       _selectedChannelIndex = index;
                     });
                   },
-                  child: Container(
-                  height: 80,
-                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  decoration: BoxDecoration(
-                    color: index == _selectedChannelIndex ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
-                  ),
-                  child: Row(
+                  child: Stack(
+                    children: [
+                      Container(
+                      height: 80,
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      decoration: BoxDecoration(
+                        color: index == _selectedChannelIndex ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
+                      ),
+                      child: Row(
                     children: [
                       // Kanallogo
                       ClipRRect(
@@ -260,6 +299,19 @@ class _TvScreenState extends State<TvScreen> {
                       ),
                     ],
                   ),
+                      ),
+                      // Favoriten-Stern, wenn der Kanal als Favorit markiert ist
+                      if (_favoriteChannels[index])
+                        Positioned(
+                          right: 16,
+                          top: 28, // Vertikal mittig positioniert (80px Höhe/2 - Iconsize/2)
+                          child: Icon(
+                            Icons.star,
+                            color: const Color(0xFFE53A56),
+                            size: 24,
+                          ),
+                        ),
+                    ],
                   ),
                 );
               },
