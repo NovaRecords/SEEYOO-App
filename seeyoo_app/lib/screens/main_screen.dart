@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:seeyoo_app/screens/account_screen.dart';
 import 'package:seeyoo_app/screens/home_screen.dart';
 import 'package:seeyoo_app/screens/movies_series_screen.dart';
@@ -25,6 +26,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    // Systemstatusleiste anzeigen lassen (transparent)
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // Transparent status bar
+      statusBarIconBrightness: Brightness.light, // Status bar icons' color
+    ));
+    
+    // Sicherstellen, dass die Statusleiste sichtbar bleibt
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual, 
+      overlays: [SystemUiOverlay.top] // Nur obere Statusleiste anzeigen
+    );
+    
     // Animation Controller für das Slide-Menü
     _animationController = AnimationController(
       vsync: this,
@@ -37,6 +50,20 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+    
+    // Listener für den Status der Animation hinzufügen, um die Statusleiste zu steuern
+    _animationController.addStatusListener((status) {
+      if (status == AnimationStatus.forward || status == AnimationStatus.completed) {
+        // Menü wird geöffnet oder ist geöffnet -> Statusleiste ausblenden
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+      } else if (status == AnimationStatus.reverse || status == AnimationStatus.dismissed) {
+        // Menü wird geschlossen oder ist geschlossen -> Statusleiste anzeigen
+        SystemChrome.setEnabledSystemUIMode(
+          SystemUiMode.manual, 
+          overlays: [SystemUiOverlay.top]
+        );
+      }
+    });
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Prüfe die anfängliche Route

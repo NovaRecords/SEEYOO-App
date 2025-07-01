@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:seeyoo_app/screens/auth_screen.dart';
 import 'package:seeyoo_app/screens/main_screen.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
@@ -21,6 +22,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
+    
+    // Statusleiste während des Splash-Screens ausblenden
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -74,6 +79,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               : const AuthScreen(),
           ),
         );
+        
+        // In der MainScreen wird die Statusleiste angezeigt oder ausgeblendet
+        // basierend auf dem Menüstatus. Das wird in MainScreen.initState() gehandhabt.
       }
     });
   }

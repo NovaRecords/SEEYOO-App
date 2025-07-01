@@ -38,6 +38,8 @@ dependencies:
   shared_preferences: ^2.3.2  # Für lokale Speicherung der Token
   device_info_plus: ^9.1.2  # Für das Auslesen von Geräteinformationen
   uuid: ^4.3.3  # Für die Generierung eindeutiger IDs
+  intl: ^0.20.2
+  battery_plus: ^6.2.2
 
 dev_dependencies:
   flutter_test:
