@@ -153,7 +153,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           ),
           _buildDrawerItem(
             context: context,
-            icon: Icons.star,  // Geändert von Icons.favorite zu Icons.star
+            icon: Icons.star,
             title: 'TV-Favorite',
             index: 1,
             isSelected: _selectedIndex == 1,
@@ -308,9 +308,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.5),
-                              spreadRadius: 2,
+                              spreadRadius: 1,
                               blurRadius: 8,
-                              offset: const Offset(-5, 0),
+                              offset: const Offset(-2, 0),
                             ),
                           ],
                         ),
