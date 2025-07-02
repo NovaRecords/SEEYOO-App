@@ -230,7 +230,9 @@ class _TvScreenState extends State<TvScreen> {
                         color: Colors.grey[800],
                         child: channel.logo != null && channel.logo!.isNotEmpty
                           ? Image.network(
-                              channel.logo!,
+                              channel.logo!.startsWith('http') 
+                                ? channel.logo! 
+                                : 'http://app.seeyoo.tv${channel.logo!}',
                               width: 60,
                               height: 60,
                               fit: BoxFit.cover,
