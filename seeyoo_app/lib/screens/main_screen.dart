@@ -17,10 +17,15 @@ class MainScreen extends StatefulWidget {
   _MainScreenState createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
+class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  
+  // Controller speziell für den Bounce-Effekt
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
+  bool _useBounceClosure = false;
   final double _menuWidth = 0.75; // Menü nimmt 75% der Breite ein, wenn geöffnet
 
   @override
@@ -32,17 +37,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       statusBarIconBrightness: Brightness.light, // Status bar icons' color
     ));
     
-    // Sicherstellen, dass die Statusleiste sichtbar bleibt
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual, 
       overlays: [SystemUiOverlay.top] // Nur obere Statusleiste anzeigen
     );
     
-    // Animation Controller für das Slide-Menü
+    // Haupt-Animation Controller für das Slide-Menü
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
+    
+    // Standard-Animation für das Öffnen und normale Schließen des Menüs
     _animation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -50,6 +56,31 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+    
+    // Spezieller Controller für den Bounce-Effekt
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500), // Längere Dauer für einen deutlicheren Effekt
+    );
+    
+    // Bounce-Animation definieren
+    _bounceAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(_bounceController);
+    
+    // Listener für den Bounce-Controller, um das Menü vollständig zu schließen
+    _bounceController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        // Bounce-Animation ist abgeschlossen, setze Flags zurück
+        setState(() {
+          _useBounceClosure = false;
+          
+          // Stelle sicher, dass der Hauptbildschirm vollständig geschlossen ist
+          _animationController.value = 0.0;
+        });
+      }
+    });
     
     // Listener für den Status der Animation hinzufügen, um die Statusleiste zu steuern
     _animationController.addStatusListener((status) {
@@ -98,6 +129,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _animationController.dispose();
+    _bounceController.dispose();
     super.dispose();
   }
 
@@ -142,10 +174,47 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
 
   // Funktion zum Schließen des Menüs
-  void _closeMenu() {
-    // Schließe das Menü unabhängig vom aktuellen Status
+  void _closeMenu({bool fromMenuItem = false}) {
+    // Schließe das Menü nur, wenn es geöffnet ist
     if (_animationController.value > 0) {
-      _animationController.reverse();
+      if (fromMenuItem) {
+        // Menüpunkt wurde ausgewählt - Bounce-Animation verwenden
+        _useBounceClosure = true;
+        
+        // Aktuelle Position des Menüs speichern
+        double currentPos = _animationController.value;
+        
+        // Wir erstellen eine speziell angepasste Bounce-Animation mit einem TweenSequence
+        _bounceAnimation = TweenSequence<double>([
+          // Phase 1: Von aktueller Position 20% weiter nach rechts (Bounce-Effekt)
+          TweenSequenceItem<double>(
+            tween: Tween<double>(
+              begin: currentPos,
+              end: currentPos * 1.2, // 20% Überschwung von der aktuellen Position
+            ).chain(CurveTween(curve: Curves.easeOut)),
+            weight: 25.0,
+          ),
+          // Phase 2: Von der Bounce-Position komplett zurück nach links (geschlossen)
+          TweenSequenceItem<double>(
+            tween: Tween<double>(
+              begin: currentPos * 1.2, // Von der Bounce-Position mit 20% Überschwung
+              end: 0.0, // Ganz nach links (geschlossen)
+            ).chain(CurveTween(curve: Curves.easeInOut)),
+            weight: 75.0,
+          ),
+        ]).animate(_bounceController);
+        
+        // Standard-Slide-Animation stoppen
+        _animationController.stop();
+        
+        // Bounce-Controller zurücksetzen und starten
+        _bounceController.reset();
+        _bounceController.forward();
+      } else {
+        // Normales Schließen ohne Bounce
+        _useBounceClosure = false;
+        _animationController.reverse();
+      }
     }
   }
   
@@ -153,14 +222,15 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: MediaQuery.of(context).size.width * _menuWidth,
+        // Menübreite erhöht um den maximalen Überschwung (20%) zu berücksichtigen
+        width: MediaQuery.of(context).size.width * _menuWidth * 1.2,
         color: const Color(0xFF1B1E22),
         child: ListView(
         padding: EdgeInsets.zero,
         children: [
           Container(
             height: 115, // Feste Höhe für den Header
-            color: Colors.black,
+            color: const Color(0xFF1B1E22), // Gleiche Farbe wie der Menü-Hintergrund
             padding: const EdgeInsets.only(left: 16.0, top: 65.0), // Verschiebt das Logo nach unten und links
             alignment: Alignment.topLeft, // Positioniert das Logo links oben im Container
             child: Container(
@@ -235,44 +305,54 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     required bool isSelected,
   }) {
     final selectedColor = const Color(0xFFE53A56);
-    return ListTile(
-      leading: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Transform.translate(
-            offset: const Offset(0, -1), // 1px nach oben verschieben
-            child: Icon(
-              icon, 
-              color: isSelected ? selectedColor : Colors.white,
-              size: 28.0,
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.black : null, // Schwarzer Hintergrund für ausgewählten Menüpunkt
+        border: Border(
+          left: BorderSide(
+            color: isSelected ? selectedColor : Colors.transparent, // Rote Farbe oder transparent
+            width: 4.0, // Gleiche Breite bei allen Menüpunkten
           ),
-        ],
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isSelected ? selectedColor : Colors.white,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 18.0, // Größere Schrift für bessere Lesbarkeit
-          height: 1.2, // Etwas mehr Zeilenabstand
         ),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0), // Mehr Platz um die Einträge
-      minLeadingWidth: 36, // Mehr Platz für die größeren Icons
-      minVerticalPadding: 6.0, // Mehr vertikaler Abstand
-      tileColor: isSelected ? const Color(0xFF252A2F) : null,
-      onTap: () {
-        // Menü definitiv schließen
-        _closeMenu();
-        
-        // Aktualisiere den ausgewählten Index
-        if (_selectedIndex != index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        }
-      },
+      child: ListTile(
+        leading: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Transform.translate(
+              offset: const Offset(0, -1), // 1px nach oben verschieben
+              child: Icon(
+                icon, 
+                color: isSelected ? selectedColor : Colors.white,
+                size: 28.0,
+              ),
+            ),
+          ],
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isSelected ? selectedColor : Colors.white,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 18.0, // Größere Schrift für bessere Lesbarkeit
+            height: 1.2, // Etwas mehr Zeilenabstand
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0), // Angepasster Rand wegen Border
+        minLeadingWidth: 36, // Mehr Platz für die größeren Icons
+        minVerticalPadding: 6.0, // Mehr vertikaler Abstand
+        onTap: () {
+          // Menü mit Bounce-Effekt schließen
+          _closeMenu(fromMenuItem: true);
+          
+          // Aktualisiere den ausgewählten Index
+          if (_selectedIndex != index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          }
+        },
+      ),
     );
   }
 
@@ -308,8 +388,20 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             
             // 2. Hauptbildschirm, der zur Seite animiert wird
             AnimatedBuilder(
-              animation: _animation,
+              // Animation auf Basis des aktiven Controllers auswählen
+              animation: _useBounceClosure ? _bounceController : _animationController,
               builder: (context, child) {
+                // Berechne die aktuelle Offset-Position
+                double offsetX;
+                
+                if (_useBounceClosure) {
+                  // Wenn die Bounce-Animation aktiv ist
+                  offsetX = _bounceAnimation.value;
+                } else {
+                  // Standard-Animation für normale Bewegungen
+                  offsetX = _animation.value;
+                }
+                
                 return GestureDetector(
                   // Erkennung von Swipe-Gesten
                   onHorizontalDragEnd: (details) {
@@ -323,7 +415,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                   },
                   child: Transform.translate(
                     offset: Offset(
-                      MediaQuery.of(context).size.width * _menuWidth * _animation.value,
+                      MediaQuery.of(context).size.width * _menuWidth * offsetX,
                       0,
                     ),
                     child: Material(
