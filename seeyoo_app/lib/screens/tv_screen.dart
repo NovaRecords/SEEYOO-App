@@ -10,7 +10,7 @@ class TvScreen extends StatefulWidget {
 }
 
 class _TvScreenState extends State<TvScreen> {
-  int _selectedTabIndex = 0; // Startseite mit Programm-Tab
+  int _selectedTabIndex = -1; // -1 bedeutet kein Tab ist ausgewählt
   int _selectedChannelIndex = 0; // Index des ausgewählten Kanals
   final List<String> _tabTitles = ['Programm', 'Mediathek', 'Kategorien', 'Favoriten'];
   final List<IconData> _tabIcons = [
@@ -454,7 +454,7 @@ class _TvScreenState extends State<TvScreen> {
                   ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)))
                   : _selectedTabIndex == 3 // Favoriten-Tab
                     ? _buildChannelList(_favoriteChannels)
-                    : _buildChannelList(_channels),
+                    : _buildChannelList(_channels), // Zeige alle Kanäle, wenn kein oder ein anderer Tab ausgewählt ist
             ),
           ),
         ],

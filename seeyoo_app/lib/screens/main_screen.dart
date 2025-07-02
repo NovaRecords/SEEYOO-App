@@ -229,7 +229,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         padding: EdgeInsets.zero,
         children: [
           Container(
-            height: 115, // Feste Höhe für den Header
+            height: 110, // Feste Höhe für den Header
             color: const Color(0xFF1B1E22), // Gleiche Farbe wie der Menü-Hintergrund
             padding: const EdgeInsets.only(left: 16.0, top: 65.0), // Verschiebt das Logo nach unten und links
             alignment: Alignment.topLeft, // Positioniert das Logo links oben im Container
