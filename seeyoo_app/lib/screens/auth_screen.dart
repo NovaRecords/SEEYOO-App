@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:seeyoo_app/screens/main_screen.dart';
@@ -23,12 +24,24 @@ class _AuthScreenState extends State<AuthScreen> {
   
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
+  
+  @override
+  void initState() {
+    super.initState();
+    // Statusleiste während des Auth-Screens ausblenden
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    
+    // Bei Verlassen des Auth-Screens wird die Systemleiste für den MainScreen wieder aktiviert
+    // MainScreen wird die Systemleiste basierend auf Menü-Status selbst verwalten
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    
     super.dispose();
   }
 
