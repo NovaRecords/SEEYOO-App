@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:seeyoo_app/models/auth_response.dart';
+import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -257,6 +258,187 @@ class ApiService {
     } catch (e) {
       print('API error: $e');
       return null;
+    }
+  }
+  
+  // Holt die Liste der TV-Kanäle
+  // Basierend auf API-Doku: /users/<user_id>/tv-channels
+  Future<List<TvChannel>> getTvChannels({int limit = 100, int offset = 0}) async {
+    try {
+      final userId = await _storageService.getUserId();
+      if (userId == null) {
+        print('No user ID available');
+        return [];
+      }
+
+      final endpoint = '/api/v2/users/$userId/tv-channels?limit=$limit&offset=$offset';
+      final response = await get(endpoint);
+      
+      if (response == null) {
+        print('Failed to get TV channels - null response');
+        return [];
+      }
+      
+      if (response.statusCode != 200) {
+        print('Failed to get TV channels: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return [];
+      }
+
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'OK' && data['results'] != null) {
+        final List<dynamic> channelsData = data['results'];
+        return channelsData.map((json) => TvChannel.fromJson(json)).toList();
+      } else {
+        print('API error: ${data['error'] ?? 'Unknown error'}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching TV channels: $e');
+      return [];
+    }
+  }
+
+  // Holt die Favoriten TV-Kanäle
+  // Basierend auf API-Doku: /users/<user_id>/tv-channels?mark=favorite
+  Future<List<TvChannel>> getFavoriteTvChannels({int limit = 100, int offset = 0}) async {
+    try {
+      final userId = await _storageService.getUserId();
+      if (userId == null) {
+        print('No user ID available');
+        return [];
+      }
+
+      final endpoint = '/api/v2/users/$userId/tv-channels?mark=favorite&limit=$limit&offset=$offset';
+      final response = await get(endpoint);
+      
+      if (response == null || response.statusCode != 200) {
+        print('Failed to get favorite TV channels: ${response?.statusCode}');
+        return [];
+      }
+
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'OK' && data['results'] != null) {
+        final List<dynamic> channelsData = data['results'];
+        return channelsData.map((json) => TvChannel.fromJson(json)).toList();
+      } else {
+        print('API error: ${data['error'] ?? 'Unknown error'}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching favorite TV channels: $e');
+      return [];
+    }
+  }
+
+  // Holt den TV-Kanal-Stream-Link
+  // Basierend auf API-Doku: /users/<user_id>/tv-channels/<ch_id>/link
+  Future<String?> getTvChannelLink(int channelId) async {
+    try {
+      final userId = await _storageService.getUserId();
+      if (userId == null) {
+        print('No user ID available');
+        return null;
+      }
+
+      final endpoint = '/api/v2/users/$userId/tv-channels/$channelId/link';
+      final response = await get(endpoint);
+      
+      if (response == null) {
+        print('Failed to get TV channel link - null response');
+        return null;
+      }
+      
+      if (response.statusCode != 200) {
+        print('Failed to get TV channel link: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return null;
+      }
+
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'OK' && data['results'] != null) {
+        return data['results'];
+      } else {
+        print('API error: ${data['error'] ?? 'Unknown error'}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching TV channel link: $e');
+      return null;
+    }
+  }
+
+  // Fügt einen Kanal zur Favoritenliste hinzu
+  // Basierend auf API-Doku: POST /users/<user_id>/tv-favorites mit ch_id=<channel_id>
+  Future<bool> addChannelToFavorites(int channelId) async {
+    try {
+      final userId = await _storageService.getUserId();
+      final token = await _storageService.getAccessToken();
+      
+      if (userId == null || token == null) {
+        print('No user ID or token available');
+        return false;
+      }
+
+      final endpoint = '/api/v2/users/$userId/tv-favorites';
+      final response = await http.post(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        body: {
+          'ch_id': channelId.toString(),
+        },
+      );
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = json.decode(response.body);
+        return data['status'] == 'OK';
+      } else {
+        print('Failed to add channel to favorites: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Error adding channel to favorites: $e');
+      return false;
+    }
+  }
+
+  // Entfernt einen Kanal von der Favoritenliste
+  // Basierend auf API-Doku: DELETE /users/<user_id>/tv-favorites/<channel_id>
+  Future<bool> removeChannelFromFavorites(int channelId) async {
+    try {
+      final userId = await _storageService.getUserId();
+      final token = await _storageService.getAccessToken();
+      
+      if (userId == null || token == null) {
+        print('No user ID or token available');
+        return false;
+      }
+
+      final endpoint = '/api/v2/users/$userId/tv-favorites/$channelId';
+      final response = await http.delete(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      } else {
+        print('Failed to remove channel from favorites: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('Error removing channel from favorites: $e');
+      return false;
     }
   }
   

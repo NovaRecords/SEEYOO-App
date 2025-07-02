@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:seeyoo_app/models/tv_channel.dart';
+import 'package:seeyoo_app/services/api_service.dart';
 
 class TvScreen extends StatefulWidget {
   const TvScreen({super.key});
@@ -8,9 +10,8 @@ class TvScreen extends StatefulWidget {
 }
 
 class _TvScreenState extends State<TvScreen> {
-  int _selectedTabIndex = -1; // -1 bedeutet kein Tab ist ausgewählt
+  int _selectedTabIndex = 0; // Startseite mit Programm-Tab
   int _selectedChannelIndex = 0; // Index des ausgewählten Kanals
-  List<bool> _favoriteChannels = []; // Liste zur Verfolgung der Favoriten
   final List<String> _tabTitles = ['Programm', 'Mediathek', 'Kategorien', 'Favoriten'];
   final List<IconData> _tabIcons = [
     Icons.list_alt, // Programm
@@ -19,67 +20,308 @@ class _TvScreenState extends State<TvScreen> {
     Icons.star_border // Favoriten - wird dynamisch aktualisiert
   ];
   
+  final ApiService _apiService = ApiService();
+  List<TvChannel> _channels = [];
+  List<TvChannel> _favoriteChannels = [];
+  bool _isLoading = true;
+  String? _currentStreamUrl;
+  String? _errorMessage;
+  
   // Gibt das passende Stern-Icon zurück (gefüllt oder leer)
   IconData _getFavoriteIcon() {
-    // Wenn ein Kanal ausgewählt ist und dieser als Favorit markiert ist, zeige gefüllten Stern
-    if (_selectedChannelIndex >= 0 && 
-        _selectedChannelIndex < _favoriteChannels.length && 
-        _favoriteChannels[_selectedChannelIndex]) {
-      return Icons.star;
+    if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length) {
+      // Prüfe, ob der ausgewählte Kanal in der Favoritenliste ist
+      final selectedChannel = _channels[_selectedChannelIndex];
+      return selectedChannel.favorite ? Icons.star : Icons.star_border;
     }
     return Icons.star_border;
   }
 
-  // Beispieldaten für TV-Kanäle - werden später durch API-Daten ersetzt
-  final List<Map<String, dynamic>> _channels = [
-    {
-      'logo': 'https://via.placeholder.com/50',
-      'name': 'ProSieben',
-      'currentShow': '2 Broke Girls',
-      'time': '13:24',
-      'nextShow': 'Two and a Half Men',
-      'isLive': true,
-    },
-    {
-      'logo': 'https://via.placeholder.com/50',
-      'name': 'COMEDY',
-      'currentShow': 'Futurama',
-      'time': '13:20',
-      'nextShow': 'Family Guy',
-      'isLive': true,
-    },
-    {
-      'logo': 'https://via.placeholder.com/50',
-      'name': 'RTL',
-      'currentShow': 'Punkt 12',
-      'time': '14:00',
-      'nextShow': 'Der Blaulicht Report',
-      'isLive': true,
-    },
-    {
-      'logo': 'https://via.placeholder.com/50',
-      'name': 'RTL II',
-      'currentShow': 'Die Geissens',
-      'time': '13:01',
-      'nextShow': 'Family Stories',
-      'isLive': true,
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
-    // Initialisiere die Favoriten-Liste mit false für jeden Kanal
-    _favoriteChannels = List.generate(_channels.length, (index) => false);
+    _loadChannels();
+  }
+
+  // Lädt TV-Kanäle aus der API
+  Future<void> _loadChannels() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    try {
+      // Lade Kanäle vom API
+      final channels = await _apiService.getTvChannels();
+      final favoriteChannels = await _apiService.getFavoriteTvChannels();
+      
+      setState(() {
+        _channels = channels;
+        _favoriteChannels = favoriteChannels;
+        _isLoading = false;
+      });
+      
+      // Wähle den ersten Kanal aus, wenn vorhanden
+      if (_channels.isNotEmpty) {
+        _selectChannel(0);
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Fehler beim Laden der Kanäle: $e';
+      });
+    }
+  }
+
+  // Wähle einen Kanal aus und lade den Stream
+  void _selectChannel(int index) async {
+    if (index >= 0 && index < _channels.length) {
+      setState(() {
+        _selectedChannelIndex = index;
+        _currentStreamUrl = null; // Zurücksetzen, während wir laden
+      });
+      
+      // Lade den Stream-Link für diesen Kanal
+      final channel = _channels[index];
+      
+      // Wenn die URL bereits im Kanal-Objekt vorhanden ist, verwende diese
+      // Ansonsten hole sie über die API
+      if (channel.url != null && channel.url!.isNotEmpty) {
+        setState(() {
+          _currentStreamUrl = channel.url!;
+        });
+      } else {
+        try {
+          final streamUrl = await _apiService.getTvChannelLink(channel.id);
+          if (streamUrl != null) {
+            setState(() {
+              _currentStreamUrl = streamUrl;
+            });
+          } else {
+            setState(() {
+              _errorMessage = 'Kanal-Stream nicht verfügbar';
+            });
+          }
+        } catch (e) {
+          setState(() {
+            _errorMessage = 'Fehler beim Laden des Kanal-Streams: $e';
+          });
+        }
+      }
+    }
   }
 
   // Funktion zum Umschalten des Favoriten-Status des ausgewählten Kanals
-  void _toggleFavorite() {
+  void _toggleFavorite() async {
     if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length) {
+      final channel = _channels[_selectedChannelIndex];
+      bool success;
+      
+      if (channel.favorite) {
+        // Entferne von Favoriten
+        success = await _apiService.removeChannelFromFavorites(channel.id);
+      } else {
+        // Füge zu Favoriten hinzu
+        success = await _apiService.addChannelToFavorites(channel.id);
+      }
+      
+      if (success) {
+        // Aktualisiere lokalen Status
+        setState(() {
+          // Erstelle eine neue Liste mit allen Kanälen
+          List<TvChannel> updatedChannels = List.from(_channels);
+          // Aktualisiere den Favoriten-Status des ausgewählten Kanals
+          updatedChannels[_selectedChannelIndex] = TvChannel(
+            id: channel.id,
+            name: channel.name,
+            genreId: channel.genreId,
+            number: channel.number,
+            url: channel.url,
+            archive: channel.archive,
+            archiveRange: channel.archiveRange,
+            pvr: channel.pvr,
+            censored: channel.censored,
+            favorite: !channel.favorite,
+            logo: channel.logo,
+            monitoringStatus: channel.monitoringStatus,
+            currentShow: channel.currentShow,
+            currentShowTime: channel.currentShowTime,
+            nextShow: channel.nextShow,
+            isLive: channel.isLive,
+          );
+          
+          _channels = updatedChannels;
+          
+          // Aktualisiere Favoriten-Liste, wenn nötig
+          if (_selectedTabIndex == 3) { // Favoriten-Tab
+            _loadFavoriteChannels();
+          }
+        });
+      }
+    }
+  }
+  
+  // Lädt nur die Favoriten-Kanäle
+  Future<void> _loadFavoriteChannels() async {
+    try {
+      final favoriteChannels = await _apiService.getFavoriteTvChannels();
       setState(() {
-        _favoriteChannels[_selectedChannelIndex] = !_favoriteChannels[_selectedChannelIndex];
+        _favoriteChannels = favoriteChannels;
+      });
+    } catch (e) {
+      // Fehlerbehandlung
+      setState(() {
+        _errorMessage = 'Fehler beim Laden der Favoriten: $e';
       });
     }
+  }
+  
+  // Baut die Kanal-Liste abhängig von den übergebenen Kanälen
+  Widget _buildChannelList(List<TvChannel> channels) {
+    if (channels.isEmpty) {
+      return const Center(
+        child: Text(
+          'Keine Kanäle verfügbar',
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+    
+    // Erstelle die Liste der Kanäle
+    return ListView.builder(
+      itemCount: channels.length,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemBuilder: (context, index) {
+        final channel = channels[index];
+        final isSelected = _selectedTabIndex != 3 ?
+            channels[index].id == _channels[_selectedChannelIndex].id :
+            index == _selectedChannelIndex;
+        
+        return GestureDetector(
+          onTap: () {
+            // Index im aktuellen channels-Array finden
+            if (_selectedTabIndex == 3) { // Favoriten-Tab
+              _selectChannel(index);
+            } else {
+              // Finde den Index des Kanals in der Hauptliste
+              final mainIndex = _channels.indexWhere((c) => c.id == channel.id);
+              if (mainIndex != -1) {
+                _selectChannel(mainIndex);
+              }
+            }
+          },
+          child: Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    // Kanal-Logo/Icon
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey[800],
+                        child: channel.logo != null && channel.logo!.isNotEmpty
+                          ? Image.network(
+                              channel.logo!,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(
+                                Icons.tv,
+                                color: Colors.white54,
+                                size: 30,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.tv,
+                              color: Colors.white54,
+                              size: 30,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Kanalinformationen
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            channel.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (channel.currentShow != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Row(
+                                children: [
+                                  if (channel.isLive)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE53A56),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'JETZT',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  Expanded(
+                                    child: Text(
+                                      channel.currentShow!,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Favoriten-Stern, wenn der Kanal als Favorit markiert ist
+              if (channel.favorite)
+                Positioned(
+                  right: 16,
+                  top: 28, // Vertikal mittig positioniert
+                  child: const Icon(
+                    Icons.star,
+                    color: Color(0xFFE53A56),
+                    size: 24,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
   
   @override
@@ -103,19 +345,31 @@ class _TvScreenState extends State<TvScreen> {
             color: Colors.black54,
             child: Stack(
               children: [
-                // Video-Player-Platzhalter
-                Center(
-                  child: Image.network(
-                    'https://via.placeholder.com/800x450',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.error,
-                      color: Colors.white,
-                      size: 50,
+                if (_currentStreamUrl != null)
+                  Center(
+                    child: Text(
+                      'Stream URL: $_currentStreamUrl',
+                      style: const TextStyle(color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else if (_isLoading)
+                  const Center(child: CircularProgressIndicator())
+                else
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.tv_off, color: Colors.white54, size: 50),
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMessage ?? 'Kein Kanal ausgewählt',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                // Hier werden später Video-Steuerelemente hinzugefügt.
+                // Später wird hier der Video-Player hinzugefügt.
               ],
             ),
           ),
@@ -190,132 +444,17 @@ class _TvScreenState extends State<TvScreen> {
             ),
           ),
           
-          // Kanalliste
+          // Kanalauswahl (Scrollbare Seitenleiste)
           Expanded(
-            child: ListView.builder(
-              itemCount: _channels.length,
-              itemBuilder: (context, index) {
-                final channel = _channels[index];
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedChannelIndex = index;
-                    });
-                  },
-                  child: Stack(
-                    children: [
-                      Container(
-                      height: 80,
-                      margin: const EdgeInsets.symmetric(vertical: 4.0),
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      decoration: BoxDecoration(
-                        color: index == _selectedChannelIndex ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
-                      ),
-                      child: Row(
-                    children: [
-                      // Kanallogo
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          width: 64,
-                          height: 64,
-                          color: Colors.white,
-                          child: Image.network(
-                            channel['logo'],
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.tv,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Kanalinformationen
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                if (channel['isLive'])
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE53A56),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      'JETZT',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                Expanded(
-                                  child: Text(
-                                    channel['currentShow'],
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Text(
-                                  channel['time'],
-                                  style: const TextStyle(
-                                    color: Color(0xFFE53A56),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    channel['nextShow'],
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                      ),
-                      // Favoriten-Stern, wenn der Kanal als Favorit markiert ist
-                      if (_favoriteChannels[index])
-                        Positioned(
-                          right: 16,
-                          top: 28, // Vertikal mittig positioniert (80px Höhe/2 - Iconsize/2)
-                          child: Icon(
-                            Icons.star,
-                            color: const Color(0xFFE53A56),
-                            size: 24,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
+            child: Container(
+              color: Colors.black,
+              child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                  ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)))
+                  : _selectedTabIndex == 3 // Favoriten-Tab
+                    ? _buildChannelList(_favoriteChannels)
+                    : _buildChannelList(_channels),
             ),
           ),
         ],
