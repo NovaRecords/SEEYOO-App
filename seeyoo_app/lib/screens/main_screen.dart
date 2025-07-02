@@ -342,14 +342,28 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         minLeadingWidth: 36, // Mehr Platz für die größeren Icons
         minVerticalPadding: 6.0, // Mehr vertikaler Abstand
         onTap: () {
-          // Menü mit Bounce-Effekt schließen
-          _closeMenu(fromMenuItem: true);
-          
-          // Aktualisiere den ausgewählten Index
-          if (_selectedIndex != index) {
+          // Unterscheiden zwischen bereits ausgewähltem und neuem Menüpunkt
+          if (_selectedIndex == index) {
+            // BEREITS AUSGEWÄHLTER Menüpunkt: Sanft schließen ohne Bounce
+            _useBounceClosure = false;  // Wichtig: KEIN Bounce-Effekt verwenden
+            
+            // Verwende die reguläre _closeMenu-Methode, aber ohne Bounce
+            // Dies stellt sicher, dass alle Status korrekt aktualisiert werden
+            _closeMenu(fromMenuItem: false);
+            
+            // Passe die Animationsdauer für sanftere Bewegung an
+            _animationController.duration = const Duration(milliseconds: 400);
+          } else {
+            // NEUER Menüpunkt: Mit Bounce-Effekt schließen
+            _closeMenu(fromMenuItem: true);
+            
+            // Aktualisiere den ausgewählten Index
             setState(() {
               _selectedIndex = index;
             });
+            
+            // Stelle sicher, dass die Animationsdauer zurückgesetzt wird
+            _animationController.duration = const Duration(milliseconds: 250);
           }
         },
       ),
