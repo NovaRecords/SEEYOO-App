@@ -8,7 +8,7 @@ class TvScreen extends StatefulWidget {
 }
 
 class _TvScreenState extends State<TvScreen> {
-  int _selectedTabIndex = 0;
+  int _selectedTabIndex = -1; // -1 bedeutet kein Tab ist ausgewählt
   int _selectedChannelIndex = 0; // Index des ausgewählten Kanals
   List<bool> _favoriteChannels = []; // Liste zur Verfolgung der Favoriten
   final List<String> _tabTitles = ['Programm', 'Mediathek', 'Kategorien', 'Favoriten'];
@@ -139,7 +139,8 @@ class _TvScreenState extends State<TvScreen> {
                       else if (index == 3 && _selectedTabIndex == 3) {
                         _toggleFavorite();
                       }
-                      _selectedTabIndex = index;
+                      // Wenn der Tab bereits ausgewählt ist, deaktiviere ihn
+                      _selectedTabIndex = _selectedTabIndex == index ? -1 : index;
                     });
                   },
                   child: Container(
