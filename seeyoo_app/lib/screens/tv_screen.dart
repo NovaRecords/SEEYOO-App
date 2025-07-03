@@ -222,7 +222,11 @@ class _TvScreenState extends State<TvScreen> {
   // Baut die Ansicht für die EPG-Daten
   Widget _buildEpgView() {
     if (_isLoadingEpg) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+        ),
+      );
     }
     
     if (_currentEpgData.isEmpty) {
@@ -587,7 +591,9 @@ class _TvScreenState extends State<TvScreen> {
                     ),
                   )
                 else if (_isLoading)
-                  const Center(child: CircularProgressIndicator())
+                  const Center(child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+                  ))
                 else
                   Center(
                     child: Column(
@@ -692,7 +698,9 @@ class _TvScreenState extends State<TvScreen> {
             child: Container(
               color: Colors.black,
               child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+                  ))
                 : _errorMessage != null
                   ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)))
                   : _showEpgView && _selectedTabIndex == 0 // EPG-Ansicht für Programm-Tab
