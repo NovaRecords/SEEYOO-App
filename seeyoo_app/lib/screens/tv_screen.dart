@@ -36,6 +36,7 @@ class _TvScreenState extends State<TvScreen> {
   String? _errorMessage;
   bool _showEpgView = false;
   bool _showGenresView = false;
+  bool _showMediaLibraryMessage = false;
   
   // Gibt das passende Stern-Icon zurück (gefüllt oder leer)
   IconData _getFavoriteIcon() {
@@ -343,7 +344,38 @@ class _TvScreenState extends State<TvScreen> {
     );
   }
   
-  // Baut die Ansicht für die EPG-Daten
+  // Baut die Ansicht für die Mediathek-Meldung
+  Widget _buildMediaLibraryMessage() {
+    return Container(
+      color: const Color(0xFF1B1E22),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.video_library, color: Colors.grey, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'Mediathek-Funktion',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Diese Funktion befindet sich noch in der Entwicklung\nund wird mit dem nächsten Release verfügbar sein.',
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // Baut die EPG-Ansicht
   Widget _buildEpgView() {
     if (_isLoadingEpg) {
       return const Center(
@@ -753,16 +785,25 @@ class _TvScreenState extends State<TvScreen> {
                         _loadEpgData();
                         _showEpgView = true;
                         _showGenresView = false;
+                        _showMediaLibraryMessage = false;
+                      }
+                      // Wenn Mediathek-Tab gewählt
+                      else if (index == 1) {
+                        _showEpgView = false;
+                        _showGenresView = false;
+                        _showMediaLibraryMessage = true;
                       }
                       // Wenn Kategorien-Tab gewählt
                       else if (index == 2) {
                         _showEpgView = false;
                         _showGenresView = true;
+                        _showMediaLibraryMessage = false;
                       }
-                      // Wenn ein anderer Tab gewählt wird, beide Ansichten ausblenden
+                      // Wenn ein anderer Tab gewählt wird, alle Ansichten ausblenden
                       else {
                         _showEpgView = false;
                         _showGenresView = false;
+                        _showMediaLibraryMessage = false;
                       }
                       
                       // Wenn Favoriten-Tab gewählt und vorher ein anderer Tab aktiv war
@@ -834,13 +875,15 @@ class _TvScreenState extends State<TvScreen> {
                   ))
                 : _errorMessage != null
                   ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)))
-                  : _showEpgView && _selectedTabIndex == 0 // EPG-Ansicht für Programm-Tab
-                    ? _buildEpgView()
-                    : _showGenresView && _selectedTabIndex == 2 // Kategorien-Ansicht
-                      ? _buildGenresView()
-                    : _selectedTabIndex == 3 // Favoriten-Tab
-                      ? _buildChannelList(_favoriteChannels)
-                      : _buildChannelList(_filteredChannels), // Zeige alle Kanäle, wenn kein oder ein anderer Tab ausgewählt ist
+                  : _showMediaLibraryMessage && _selectedTabIndex == 1 // Mediathek-Meldung
+                    ? _buildMediaLibraryMessage()
+                    : _showEpgView && _selectedTabIndex == 0 // EPG-Ansicht für Programm-Tab
+                      ? _buildEpgView()
+                      : _showGenresView && _selectedTabIndex == 2 // Kategorien-Ansicht
+                        ? _buildGenresView()
+                        : _selectedTabIndex == 3 // Favoriten-Tab
+                          ? _buildChannelList(_favoriteChannels)
+                          : _buildChannelList(_filteredChannels) // Zeige alle Kanäle, wenn kein oder ein anderer Tab ausgewählt ist
             ),
           ),
         ],
