@@ -27,11 +27,21 @@
 
 ## Tag 3 (03.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 **Heutige Hauptaufgaben:** Logos für TV-Kanäle, EPG-Daten, Kategorien, TV-Favoriten.
+- 🟢 **Fortschritt & Ergebnisse:** Ich habe die Logos für die Sender kreiert. Genauer gesagt habe ich die Logos für die Sender aus der API abgerufen und in die App eingebunden. EPG-Daten voll implementiert und unter "Programm" gebracht. Habe auch "Kategorien" gemacht, jetzt kann man die Sender nach Kategorien filtern. Zu Favoriten bin leider noch nicht gekommen... 
+- 🟢 **Herausforderungen & Blockaden:** Die API ist sehr komplex und es nimmt unheimlich viel Zeit in Anspruch. Aber es klappt!
+- 🟢 **Was ich heute gelernt habe:** Heute habe ich gelenrt dass man am besten schon nach kleinen änderungen, die man geprüft hat und die funktionieren - am besten sofort die Änderungen ins Repo pusht. Hatte heute fast alles verloren gehabt... 
+- 🟢 **Plan für morgen:** Ich plane mir die TV-Favoriten zu implementieren.
+Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID implementiert werden, danach könnte ich die Favoriten unter die Lupe nehmen.
+
+![Screenshot des Menü Bereichs](pics/tv-screen03.png)
+*Abbildung 1: Menü Bereich*
+
+![Screenshot des EPG Bereichs](pics/EPG-screen01.png)
+*Abbildung 2: EPG Bereich*
+
+![Screenshot des Kategorien Bereichs](pics/Kat-screen01.png)
+*Abbildung 3: Kategorien Bereich* 
 
 ## Tag 4 (04.07.2025)
 
