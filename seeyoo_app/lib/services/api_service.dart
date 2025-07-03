@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:seeyoo_app/models/auth_response.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
+import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -445,8 +446,80 @@ class ApiService {
   
   // Weitere HTTP-Methoden (POST, PUT, DELETE) können nach Bedarf hinzugefügt werden
 
+  // Holt alle verfügbaren TV-Kategorien/Genres
+  Future<List<TvGenre>> getTvGenres() async {
+    try {
+      // In der API-Dokumentation ist kein spezifischer Endpunkt für Genres dokumentiert,
+      // daher verwenden wir einen allgemeinen Endpunkt und extrahieren die Genres aus den Kanälen
+      final channels = await getTvChannels();
+      
+      // Sammle alle eindeutigen genre_ids
+      final Map<String, String> genreMap = {};
+      for (var channel in channels) {
+        if (channel.genreId != null && channel.genreId!.isNotEmpty) {
+          // Hier übersetzen wir die Genre-IDs in deutsche Bezeichnungen
+          genreMap[channel.genreId!] = _translateGenreName(channel.genreId!);
+        }
+      }
+      
+      // Erstelle TvGenre-Objekte
+      final genres = genreMap.entries.map((entry) => 
+        TvGenre(id: entry.key, title: entry.value)
+      ).toList();
+      
+      // Füge "Alle" als erste Option hinzu
+      genres.insert(0, const TvGenre(id: 'all', title: 'Alle Kanäle'));
+      
+      return genres;
+    } catch (e) {
+      print('Fehler beim Laden der TV-Kategorien: $e');
+      return [const TvGenre(id: 'all', title: 'Alle Kanäle')];
+    }
+  }
 
-
+  // Übersetzt Genre-IDs in deutsche Namen
+  String _translateGenreName(String genreId) {
+    // Mapping von Genre-IDs zu deutschen Namen
+    final Map<String, String> genreTranslations = {
+      'news': 'Nachrichten',
+      'sport': 'Sport',
+      'sports': 'Sport',
+      'movie': 'Filme',
+      'series': 'Serien',
+      'children': 'Kinder',
+      'childrens': 'Kinder',
+      'music': 'Musik',
+      'documentary': 'Dokumentation',
+      'comedy': 'Komödie',
+      'entertainment': 'Unterhaltung',
+      'entertainments': 'Unterhaltung',
+      'info': 'Information',
+      'information': 'Information',
+      'cinema': 'Filme',
+      'science': 'Wissenschaft',
+      'education': 'Bildung',
+      'business': 'Wirtschaft',
+      'fashion': 'Mode',
+      'travel': 'Reisen',
+      'culture': 'Kultur',
+      'adult': 'Erwachsene',
+      'shopping': 'Shopping',
+      'politics': 'Politik',
+      'religion': 'Religion',
+      'nature': 'Natur',
+      'technology': 'Technologie',
+      'hobby': 'Hobby',
+      'lifestyle': 'Lifestyle',
+      'auto': 'Auto & Motor',
+      'health': 'Gesundheit',
+      'cooking': 'Kochen',
+      'general': 'Allgemein',
+    };
+    
+    // Wenn eine Übersetzung existiert, verwende sie, ansonsten verwende die ID
+    return genreTranslations[genreId.toLowerCase()] ?? genreId;
+  }
+  
   // Holt EPG-Daten (TV-Programm) für einen Kanal
   // Basierend auf API-Doku: /tv-channels/<ch_id>/epg?next=<count>
   Future<List<EpgProgram>> getEpgForChannel(int channelId, {int next = 10}) async {

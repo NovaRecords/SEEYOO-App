@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
+import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/services/api_service.dart';
 
 class TvScreen extends StatefulWidget {
@@ -25,11 +26,16 @@ class _TvScreenState extends State<TvScreen> {
   List<TvChannel> _channels = [];
   List<TvChannel> _favoriteChannels = [];
   List<EpgProgram> _currentEpgData = [];
+  List<TvGenre> _genres = [];
+  String? _selectedGenreId; // null bedeutet alle Kategorien
+  List<TvChannel> _filteredChannels = [];
   bool _isLoading = true;
   bool _isLoadingEpg = false;
+  bool _isLoadingGenres = false;
   String? _currentStreamUrl;
   String? _errorMessage;
   bool _showEpgView = false;
+  bool _showGenresView = false;
   
   // Gibt das passende Stern-Icon zurück (gefüllt oder leer)
   IconData _getFavoriteIcon() {
@@ -45,8 +51,44 @@ class _TvScreenState extends State<TvScreen> {
   void initState() {
     super.initState();
     _loadChannels();
+    _loadGenres();
   }
 
+  // Lädt TV-Kategorien/Genres aus der API
+  Future<void> _loadGenres() async {
+    setState(() {
+      _isLoadingGenres = true;
+    });
+    
+    try {
+      final genres = await _apiService.getTvGenres();
+      setState(() {
+        _genres = genres;
+        _isLoadingGenres = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingGenres = false;
+        _errorMessage = 'Fehler beim Laden der Kategorien: $e';
+      });
+    }
+  }
+
+  // Filtert Kanäle nach ausgewähltem Genre
+  void _filterChannelsByGenre(String? genreId) {
+    setState(() {
+      _selectedGenreId = genreId;
+      
+      if (genreId == null || genreId == 'all') {
+        _filteredChannels = List.from(_channels);
+      } else {
+        _filteredChannels = _channels
+            .where((channel) => channel.genreId == genreId)
+            .toList();
+      }
+    });
+  }
+  
   // Lädt TV-Kanäle aus der API
   Future<void> _loadChannels() async {
     setState(() {
@@ -62,6 +104,7 @@ class _TvScreenState extends State<TvScreen> {
       setState(() {
         _channels = channels;
         _favoriteChannels = favoriteChannels;
+        _filteredChannels = List.from(channels); // Initialisiere gefilterte Liste mit allen Kanälen
         _isLoading = false;
       });
       
@@ -218,6 +261,87 @@ class _TvScreenState extends State<TvScreen> {
   }
   
 
+  
+  // Baut die Ansicht für die Kategorien
+  Widget _buildGenresView() {
+    if (_isLoadingGenres) {
+      return Container(
+        color: const Color(0xFF1B1E22),
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+          ),
+        ),
+      );
+    }
+    
+    if (_genres.isEmpty) {
+      return Container(
+        color: const Color(0xFF1B1E22),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.category_outlined, color: Colors.grey, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Keine Kategorien verfügbar',
+                style: TextStyle(color: Colors.grey[400], fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    return Container(
+      color: const Color(0xFF1B1E22),
+      child: ListView.separated(
+        itemCount: _genres.length,
+        separatorBuilder: (context, index) {
+          // Trennlinie mit 20% Platz links und rechts
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.2),
+            child: const Divider(
+              color: Color(0xFF3B4248),
+              height: 1,
+              thickness: 1,
+            ),
+          );
+        },
+        itemBuilder: (context, index) {
+          final genre = _genres[index];
+          final isSelected = genre.id == _selectedGenreId || 
+                            (genre.id == 'all' && _selectedGenreId == null);
+          
+          return ListTile(
+            title: Center(
+              child: Text(
+                genre.title,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFFA1273B) : Colors.white,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 18, // Gleiche Textgröße wie im Hauptmenü
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            selected: isSelected,
+            onTap: () {
+              // Bei Auswahl einer Kategorie die Kanalliste filtern
+              _filterChannelsByGenre(genre.id == 'all' ? null : genre.id);
+              
+              // Tab auf "Kanalliste" wechseln, aber Genre-Filterung beibehalten
+              setState(() {
+                _selectedTabIndex = -1; // Zurück zur normalen Kanalliste
+                _showGenresView = false;
+              });
+            },
+          );
+        },
+      ),
+    );
+  }
   
   // Baut die Ansicht für die EPG-Daten
   Widget _buildEpgView() {
@@ -628,10 +752,17 @@ class _TvScreenState extends State<TvScreen> {
                       if (index == 0) {
                         _loadEpgData();
                         _showEpgView = true;
+                        _showGenresView = false;
                       }
-                      // Wenn ein anderer Tab gewählt wird, EPG-Ansicht ausblenden
-                      else if (index != 0) {
+                      // Wenn Kategorien-Tab gewählt
+                      else if (index == 2) {
                         _showEpgView = false;
+                        _showGenresView = true;
+                      }
+                      // Wenn ein anderer Tab gewählt wird, beide Ansichten ausblenden
+                      else {
+                        _showEpgView = false;
+                        _showGenresView = false;
                       }
                       
                       // Wenn Favoriten-Tab gewählt und vorher ein anderer Tab aktiv war
@@ -705,9 +836,11 @@ class _TvScreenState extends State<TvScreen> {
                   ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)))
                   : _showEpgView && _selectedTabIndex == 0 // EPG-Ansicht für Programm-Tab
                     ? _buildEpgView()
+                    : _showGenresView && _selectedTabIndex == 2 // Kategorien-Ansicht
+                      ? _buildGenresView()
                     : _selectedTabIndex == 3 // Favoriten-Tab
                       ? _buildChannelList(_favoriteChannels)
-                      : _buildChannelList(_channels), // Zeige alle Kanäle, wenn kein oder ein anderer Tab ausgewählt ist
+                      : _buildChannelList(_filteredChannels), // Zeige alle Kanäle, wenn kein oder ein anderer Tab ausgewählt ist
             ),
           ),
         ],
