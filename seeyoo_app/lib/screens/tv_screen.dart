@@ -243,8 +243,30 @@ class _TvScreenState extends State<TvScreen> {
       // Nächste 20 Sendungen abrufen
       final epgData = await _apiService.getEpgForChannel(channelId, next: 20);
       
+      // Nur aktuelle und zukünftige Sendungen behalten, keine Archiv-Sendungen
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final filteredEpgData = epgData
+          .where((program) => program.end > now && !program.inArchive) // Sendungen, die noch nicht beendet und nicht im Archiv sind
+          .toList();
+      
+      // Sendungen sortieren, damit aktuelle Sendung an erster Stelle steht
+      filteredEpgData.sort((a, b) {
+        // Prüfen, ob eine der Sendungen aktuell läuft
+        final aIsRunning = a.isCurrentlyRunning;
+        final bIsRunning = b.isCurrentlyRunning;
+        
+        if (aIsRunning && !bIsRunning) {
+          return -1; // a kommt zuerst
+        } else if (!aIsRunning && bIsRunning) {
+          return 1; // b kommt zuerst
+        } else {
+          // Beide laufen oder beide laufen nicht, nach Startzeit sortieren
+          return a.start.compareTo(b.start);
+        }
+      });
+      
       setState(() {
-        _currentEpgData = epgData;
+        _currentEpgData = filteredEpgData;
         _isLoadingEpg = false;
       });
     } catch (e) {
@@ -453,7 +475,7 @@ class _TvScreenState extends State<TvScreen> {
               
               return Container(
                 decoration: BoxDecoration(
-                  color: isNowPlaying ? const Color(0xFF293742) : Colors.black,
+                  color: isNowPlaying ? const Color(0xFF3B4248) : Colors.black,
                   border: Border(
                     bottom: BorderSide(
                       color: Colors.grey[900]!,
@@ -502,23 +524,14 @@ class _TvScreenState extends State<TvScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            program.name,
-                            style: TextStyle(
-                              color: isNowPlaying ? Colors.white : Colors.grey[300],
-                              fontSize: 16,
-                              fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (isNowPlaying) ...[  
-                            const SizedBox(height: 6),
+                          // "JETZT"-Label über dem Programmtitel anzeigen
+                          if (isNowPlaying)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(4),
+                              margin: const EdgeInsets.only(bottom: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFA1273B),
+                                borderRadius: BorderRadius.all(Radius.circular(4)),
                               ),
                               child: const Text(
                                 'JETZT',
@@ -529,7 +542,17 @@ class _TvScreenState extends State<TvScreen> {
                                 ),
                               ),
                             ),
-                          ],
+                          // Programmtitel
+                          Text(
+                            program.name,
+                            style: TextStyle(
+                              color: isNowPlaying ? Colors.white : Colors.grey[300],
+                              fontSize: 16,
+                              fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           if (program.inArchive) ...[  
                             const SizedBox(height: 6),
                             Container(
