@@ -229,12 +229,10 @@ class _TvScreenState extends State<TvScreen> {
   // Lädt EPG-Daten für den aktuell ausgewählten Kanal
   Future<void> _loadEpgData() async {
     if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _channels.length) {
-      print('DEBUG: Kein gültiger Kanal ausgewählt für EPG');
       return;
     }
     
     final channelId = _channels[_selectedChannelIndex].id;
-    print('DEBUG: EPG laden für Kanal ID: $channelId, Name: ${_channels[_selectedChannelIndex].name}');
     
     setState(() {
       _isLoadingEpg = true;
@@ -242,18 +240,14 @@ class _TvScreenState extends State<TvScreen> {
     });
     
     try {
-      
-      // Nächste 10 Sendungen abrufen
-      print('DEBUG: API-Aufruf getEpgForChannel mit ID $channelId');
-      final epgData = await _apiService.getEpgForChannel(channelId, next: 10);
-      print('DEBUG: EPG-Daten erhalten: ${epgData.length} Einträge');
+      // Nächste 20 Sendungen abrufen
+      final epgData = await _apiService.getEpgForChannel(channelId, next: 20);
       
       setState(() {
         _currentEpgData = epgData;
         _isLoadingEpg = false;
       });
     } catch (e) {
-      print('DEBUG: Fehler beim Laden des EPG: $e');
       setState(() {
         _isLoadingEpg = false;
         _errorMessage = 'Fehler beim Laden des TV-Programms: $e';

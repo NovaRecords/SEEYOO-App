@@ -47,13 +47,20 @@ class EpgProgram {
   }
 
   factory EpgProgram.fromJson(Map<String, dynamic> json) {
+    // Konvertierung von String zu int für numerische Felder
+    int parseIntValue(dynamic value) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+    
     return EpgProgram(
-      id: json['id'],
-      start: json['start'],
-      end: json['end'],
-      name: json['name'],
-      inArchive: json['in_archive'] == 1,
-      downloadable: json['downloadable'] == 1,
+      id: parseIntValue(json['id']),
+      start: parseIntValue(json['start']),
+      end: parseIntValue(json['end']),
+      name: json['name'] ?? '',
+      inArchive: json['in_archive'] == 1 || json['in_archive'] == '1',
+      downloadable: json['downloadable'] == 1 || json['downloadable'] == '1',
     );
   }
 
