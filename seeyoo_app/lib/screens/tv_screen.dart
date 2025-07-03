@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/services/api_service.dart';
 
@@ -23,9 +24,12 @@ class _TvScreenState extends State<TvScreen> {
   final ApiService _apiService = ApiService();
   List<TvChannel> _channels = [];
   List<TvChannel> _favoriteChannels = [];
+  List<EpgProgram> _currentEpgData = [];
   bool _isLoading = true;
+  bool _isLoadingEpg = false;
   String? _currentStreamUrl;
   String? _errorMessage;
+  bool _showEpgView = false;
   
   // Gibt das passende Stern-Icon zurück (gefüllt oder leer)
   IconData _getFavoriteIcon() {
@@ -79,6 +83,8 @@ class _TvScreenState extends State<TvScreen> {
       setState(() {
         _selectedChannelIndex = index;
         _currentStreamUrl = null; // Zurücksetzen, während wir laden
+        _currentEpgData = []; // EPG-Daten zurücksetzen
+        _showEpgView = false; // EPG-Ansicht ausblenden
       });
       
       // Lade den Stream-Link für diesen Kanal
@@ -174,6 +180,231 @@ class _TvScreenState extends State<TvScreen> {
         _errorMessage = 'Fehler beim Laden der Favoriten: $e';
       });
     }
+  }
+  
+  // Lädt EPG-Daten für den aktuell ausgewählten Kanal
+  Future<void> _loadEpgData() async {
+    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _channels.length) {
+      print('DEBUG: Kein gültiger Kanal ausgewählt für EPG');
+      return;
+    }
+    
+    final channelId = _channels[_selectedChannelIndex].id;
+    print('DEBUG: EPG laden für Kanal ID: $channelId, Name: ${_channels[_selectedChannelIndex].name}');
+    
+    setState(() {
+      _isLoadingEpg = true;
+      _errorMessage = null;
+    });
+    
+    try {
+      
+      // Nächste 10 Sendungen abrufen
+      print('DEBUG: API-Aufruf getEpgForChannel mit ID $channelId');
+      final epgData = await _apiService.getEpgForChannel(channelId, next: 10);
+      print('DEBUG: EPG-Daten erhalten: ${epgData.length} Einträge');
+      
+      setState(() {
+        _currentEpgData = epgData;
+        _isLoadingEpg = false;
+      });
+    } catch (e) {
+      print('DEBUG: Fehler beim Laden des EPG: $e');
+      setState(() {
+        _isLoadingEpg = false;
+        _errorMessage = 'Fehler beim Laden des TV-Programms: $e';
+      });
+    }
+  }
+  
+
+  
+  // Baut die Ansicht für die EPG-Daten
+  Widget _buildEpgView() {
+    if (_isLoadingEpg) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    if (_currentEpgData.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.event_busy, color: Colors.grey, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'Programminfo wird demnächst verfügbar',
+              style: TextStyle(color: Colors.grey[400], fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Die elektronischen Programminformationen (EPG) werden in Kürze aktiviert.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Zeigt die EPG-Daten in einer Liste an
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Kanal-Titel
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: const Color(0xFF1B1E22),
+          child: Row(
+            children: [
+              _channels[_selectedChannelIndex].logo != null
+                ? Image.network(
+                    _channels[_selectedChannelIndex].logo!,
+                    width: 40,
+                    height: 40,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.tv,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                  )
+                : const Icon(
+                    Icons.tv,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _channels[_selectedChannelIndex].name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // EPG-Liste
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.zero,
+            itemCount: _currentEpgData.length,
+            itemBuilder: (context, index) {
+              final program = _currentEpgData[index];
+              final isNowPlaying = program.isCurrentlyRunning;
+              
+              return Container(
+                decoration: BoxDecoration(
+                  color: isNowPlaying ? const Color(0xFF293742) : Colors.black,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey[900]!,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Zeitspanne
+                    SizedBox(
+                      width: 100,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            program.startTimeFormatted,
+                            style: TextStyle(
+                              color: isNowPlaying ? Colors.white : Colors.grey,
+                              fontSize: 16,
+                              fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          Text(
+                            program.endTimeFormatted,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            '${program.durationMinutes} min',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Programminhalt
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            program.name,
+                            style: TextStyle(
+                              color: isNowPlaying ? Colors.white : Colors.grey[300],
+                              fontSize: 16,
+                              fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (isNowPlaying) ...[  
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'JETZT',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (program.inArchive) ...[  
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[800],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'ARCHIV',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
   
   // Baut die Kanal-Liste abhängig von den übergebenen Kanälen
@@ -387,6 +618,16 @@ class _TvScreenState extends State<TvScreen> {
                 (index) => GestureDetector(
                   onTap: () {
                     setState(() {
+                      // Wenn Programm-Tab gewählt
+                      if (index == 0) {
+                        _loadEpgData();
+                        _showEpgView = true;
+                      }
+                      // Wenn ein anderer Tab gewählt wird, EPG-Ansicht ausblenden
+                      else if (index != 0) {
+                        _showEpgView = false;
+                      }
+                      
                       // Wenn Favoriten-Tab gewählt und vorher ein anderer Tab aktiv war
                       if (index == 3 && _selectedTabIndex != 3) {
                         _toggleFavorite();
@@ -446,7 +687,7 @@ class _TvScreenState extends State<TvScreen> {
             ),
           ),
           
-          // Kanalauswahl (Scrollbare Seitenleiste)
+          // Kanalauswahl oder EPG-Daten (Scrollbare Seitenleiste)
           Expanded(
             child: Container(
               color: Colors.black,
@@ -454,9 +695,11 @@ class _TvScreenState extends State<TvScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _errorMessage != null
                   ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.white)))
-                  : _selectedTabIndex == 3 // Favoriten-Tab
-                    ? _buildChannelList(_favoriteChannels)
-                    : _buildChannelList(_channels), // Zeige alle Kanäle, wenn kein oder ein anderer Tab ausgewählt ist
+                  : _showEpgView && _selectedTabIndex == 0 // EPG-Ansicht für Programm-Tab
+                    ? _buildEpgView()
+                    : _selectedTabIndex == 3 // Favoriten-Tab
+                      ? _buildChannelList(_favoriteChannels)
+                      : _buildChannelList(_channels), // Zeige alle Kanäle, wenn kein oder ein anderer Tab ausgewählt ist
             ),
           ),
         ],

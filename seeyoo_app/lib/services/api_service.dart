@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:seeyoo_app/models/auth_response.dart';
+import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
 import 'package:uuid/uuid.dart';
@@ -362,7 +363,7 @@ class ApiService {
       if (data['status'] == 'OK' && data['results'] != null) {
         return data['results'];
       } else {
-        print('API error: ${data['error'] ?? 'Unknown error'}');
+        print('API error: ${data["error"] ?? "Unknown error"}');
         return null;
       }
     } catch (e) {
@@ -443,4 +444,49 @@ class ApiService {
   }
   
   // Weitere HTTP-Methoden (POST, PUT, DELETE) können nach Bedarf hinzugefügt werden
+
+
+
+  // Holt EPG-Daten (TV-Programm) für einen Kanal
+  // Basierend auf API-Doku: /tv-channels/<ch_id>/epg?next=<count>
+  Future<List<EpgProgram>> getEpgForChannel(int channelId, {int next = 10}) async {
+    try {
+      final userId = await _storageService.getUserId();
+      if (userId == null) {
+        print('No user ID available');
+        return [];
+      }
+
+      // Laut API-Dokumentation, Abschnitt 3.12 "Ресурс EPG"
+      // GET /tv-channels/<ch_id>/epg?next=<count>
+      final endpoint = '/api/v2/tv-channels/$channelId/epg?next=$next';
+      
+      final response = await get(endpoint);
+      
+      if (response == null) {
+        print('Failed to get EPG data - null response');
+        return [];
+      }
+      
+      if (response.statusCode != 200) {
+        print('Failed to get EPG data: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return [];
+      }
+
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'OK' && data['results'] != null) {
+        final List<dynamic> programData = data['results'];
+        final epgList = programData.map((json) => EpgProgram.fromJson(json)).toList();
+        return epgList;
+      } else {
+        print('API error: ${data["error"] ?? "Unknown error"}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching EPG data: $e');
+      return [];
+    }
+  }
 }
