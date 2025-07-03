@@ -313,47 +313,48 @@ class _TvScreenState extends State<TvScreen> {
     
     return Container(
       color: const Color(0xFF1B1E22),
-      child: ListView.separated(
+      child: ListView.builder(
+        padding: EdgeInsets.zero,
         itemCount: _genres.length,
-        separatorBuilder: (context, index) {
-          // Trennlinie mit 20% Platz links und rechts
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.2),
-            child: const Divider(
-              color: Color(0xFF3B4248),
-              height: 1,
-              thickness: 1,
-            ),
-          );
-        },
         itemBuilder: (context, index) {
           final genre = _genres[index];
           final isSelected = genre.id == _selectedGenreId || 
                             (genre.id == 'all' && _selectedGenreId == null);
           
-          return ListTile(
-            title: Center(
-              child: Text(
-                genre.title,
-                style: TextStyle(
-                  color: isSelected ? const Color(0xFFA1273B) : Colors.white,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 18, // Gleiche Textgröße wie im Hauptmenü
+          return Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1B1E22),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey[900]!,
+                  width: 1,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
-            selected: isSelected,
-            onTap: () {
-              // Bei Auswahl einer Kategorie die Kanalliste filtern
-              _filterChannelsByGenre(genre.id == 'all' ? null : genre.id);
-              
-              // Tab auf "Kanalliste" wechseln, aber Genre-Filterung beibehalten
-              setState(() {
-                _selectedTabIndex = -1; // Zurück zur normalen Kanalliste
-                _showGenresView = false;
-              });
-            },
+            child: ListTile(
+              title: Center(
+                child: Text(
+                  genre.title,
+                  style: TextStyle(
+                    color: isSelected ? const Color(0xFFA1273B) : Colors.white,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 18,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              selected: isSelected,
+              onTap: () {
+                // Bei Auswahl einer Kategorie die Kanalliste filtern
+                _filterChannelsByGenre(genre.id == 'all' ? null : genre.id);
+                
+                // Tab auf "Kanalliste" wechseln, aber Genre-Filterung beibehalten
+                setState(() {
+                  _selectedTabIndex = -1; // Zurück zur normalen Kanalliste
+                  _showGenresView = false;
+                });
+              },
+            ),
           );
         },
       ),
@@ -427,42 +428,6 @@ class _TvScreenState extends State<TvScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Kanal-Titel
-        Container(
-          padding: const EdgeInsets.all(16),
-          color: const Color(0xFF1B1E22),
-          child: Row(
-            children: [
-              _channels[_selectedChannelIndex].logo != null
-                ? Image.network(
-                    _channels[_selectedChannelIndex].logo!,
-                    width: 40,
-                    height: 40,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.tv,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  )
-                : const Icon(
-                    Icons.tv,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _channels[_selectedChannelIndex].name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
         
         // EPG-Liste
         Expanded(
@@ -475,7 +440,7 @@ class _TvScreenState extends State<TvScreen> {
               
               return Container(
                 decoration: BoxDecoration(
-                  color: isNowPlaying ? const Color(0xFF3B4248) : Colors.black,
+                  color: isNowPlaying ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
                   border: Border(
                     bottom: BorderSide(
                       color: Colors.grey[900]!,
@@ -502,17 +467,10 @@ class _TvScreenState extends State<TvScreen> {
                             ),
                           ),
                           Text(
-                            program.endTimeFormatted,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
                             '${program.durationMinutes} min',
                             style: TextStyle(
                               color: Colors.grey[600],
-                              fontSize: 12,
+                              fontSize: 14,
                             ),
                           ),
                         ],
