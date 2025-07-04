@@ -314,46 +314,52 @@ class _TvScreenState extends State<TvScreen> {
     return Container(
       color: const Color(0xFF1B1E22),
       child: ListView.builder(
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.only(bottom: 30),
         itemCount: _genres.length,
         itemBuilder: (context, index) {
           final genre = _genres[index];
           final isSelected = genre.id == _selectedGenreId || 
                             (genre.id == 'all' && _selectedGenreId == null);
           
-          return Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1B1E22),
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.grey[800]!,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: ListTile(
-              title: Center(
-                child: Text(
-                  genre.title,
-                  style: TextStyle(
-                    color: isSelected ? const Color(0xFFE53A56) : Colors.white,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 18,
+          return GestureDetector(
+            onTap: () {
+              // Bei Auswahl einer Kategorie die Kanalliste filtern
+              _filterChannelsByGenre(genre.id == 'all' ? null : genre.id);
+              
+              // Tab auf "Kanalliste" wechseln, aber Genre-Filterung beibehalten
+              setState(() {
+                _selectedTabIndex = -1; // Zurück zur normalen Kanalliste
+                _showGenresView = false;
+              });
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.grey[850]!,
+                    width: 1,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
-              selected: isSelected,
-              onTap: () {
-                // Bei Auswahl einer Kategorie die Kanalliste filtern
-                _filterChannelsByGenre(genre.id == 'all' ? null : genre.id);
-                
-                // Tab auf "Kanalliste" wechseln, aber Genre-Filterung beibehalten
-                setState(() {
-                  _selectedTabIndex = -1; // Zurück zur normalen Kanalliste
-                  _showGenresView = false;
-                });
-              },
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        genre.title,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : Colors.grey[500]!,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 18,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -382,7 +388,7 @@ class _TvScreenState extends State<TvScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Diese Funktion befindet sich noch in der Entwicklung\nund wird mit dem nächsten Release verfügbar sein.',
+              'Diese Funktion befindet sich noch\nin der Entwicklung\nund wird mit dem nächsten Release verfügbar sein.',
               style: const TextStyle(color: Colors.white70, fontSize: 16),
               textAlign: TextAlign.center,
             ),
