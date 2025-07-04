@@ -468,7 +468,7 @@ class _TvScreenState extends State<TvScreen> {
                           Text(
                             program.startTimeFormatted,
                             style: TextStyle(
-                              color: isNowPlaying ? Colors.white : Colors.grey,
+                              color: isNowPlaying ? const Color(0xFFE53A56) : Colors.grey,
                               fontSize: 20,
                               fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
                             ),
@@ -492,14 +492,14 @@ class _TvScreenState extends State<TvScreen> {
                           // "JETZT"-Label über dem Programmtitel anzeigen
                           if (isNowPlaying)
                             Container(
-                              margin: const EdgeInsets.only(bottom: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              margin: const EdgeInsets.only(bottom: 4, top: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: const BoxDecoration(
                                 color: Color(0xFFE53A56),
                                 borderRadius: BorderRadius.all(Radius.circular(4)),
                               ),
                               child: const Text(
-                                'JETZT',
+                                'Läuft gerade',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 10,
