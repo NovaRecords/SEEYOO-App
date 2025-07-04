@@ -463,7 +463,7 @@ class _TvScreenState extends State<TvScreen> {
                             program.startTimeFormatted,
                             style: TextStyle(
                               color: isNowPlaying ? Colors.white : Colors.grey,
-                              fontSize: 16,
+                              fontSize: 20,
                               fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
@@ -471,7 +471,7 @@ class _TvScreenState extends State<TvScreen> {
                             '${program.durationMinutes} min',
                             style: TextStyle(
                               color: Colors.grey[600],
-                              fontSize: 14,
+                              fontSize: 16,
                             ),
                           ),
                         ],
