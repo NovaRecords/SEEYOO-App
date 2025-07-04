@@ -116,8 +116,8 @@ class _TvScreenState extends State<TvScreen> {
     });
     
     try {
-      // Nur 2 EPG-Einträge laden (aktuelle und nächste Sendung)
-      final epgData = await _apiService.getEpgForChannel(channel.id, next: 2);
+      // Für Kanalliste 10 Sendungen laden (aktuelle und nächste Sendungen)
+      final epgData = await _apiService.getEpgForChannel(channel.id, next: 10);
       setState(() {
         _epgDataMap[channel.id] = epgData;
         _epgLoadingStatus[channel.id] = false;
@@ -305,7 +305,7 @@ class _TvScreenState extends State<TvScreen> {
   }
   
   // Lädt EPG-Daten für den ausgewählten Kanal
-  Future<void> _loadEpgForChannel(int channelId) async {
+  Future<void> _loadEpgForChannel(int channelId, {int epgCount = 20}) async {
     if (_isLoadingEpg) {
       return; // Bereits am Laden
     }
@@ -320,15 +320,20 @@ class _TvScreenState extends State<TvScreen> {
       // Überprüfen, ob bereits EPG-Daten geladen sind
       if (_epgDataMap.containsKey(channelId) && _epgDataMap[channelId] != null) {
         final epgData = _epgDataMap[channelId] ?? [];
-        setState(() {
-          _currentEpgData = epgData;
-          _isLoadingEpg = false;
-        });
-        return;
+        // Wenn für die Programmansicht mehr Sendungen benötigt werden und die vorhandenen nicht ausreichen
+        if (epgCount > 10 && epgData.length <= 10) {
+          // Neue Anfrage mit der höheren Anzahl starten
+        } else {
+          setState(() {
+            _currentEpgData = epgData;
+            _isLoadingEpg = false;
+          });
+          return;
+        }
       }
       
-      // Nächste 20 Sendungen abrufen
-      final epgData = await _apiService.getEpgForChannel(channelId, next: 20);
+      // Sendungen abrufen mit der angegebenen Anzahl
+      final epgData = await _apiService.getEpgForChannel(channelId, next: epgCount);
       
       // Nur aktuelle und zukünftige Sendungen behalten, keine Archiv-Sendungen
       final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -379,7 +384,8 @@ class _TvScreenState extends State<TvScreen> {
     }
     
     final channelId = _channels[_selectedChannelIndex].id;
-    await _loadEpgForChannel(channelId);
+    // Für die Programmansicht immer 20 Sendungen laden
+    await _loadEpgForChannel(channelId, epgCount: 20);
   }
   
 
@@ -470,7 +476,7 @@ class _TvScreenState extends State<TvScreen> {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                                fontSize: 16,
                               ),
                             ),
                             const Text(
@@ -488,7 +494,7 @@ class _TvScreenState extends State<TvScreen> {
                           style: const TextStyle(
                             color: Colors.grey,
                             fontWeight: FontWeight.normal,
-                            fontSize: 18,
+                            fontSize: 16,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -616,7 +622,7 @@ class _TvScreenState extends State<TvScreen> {
                             '${program.durationMinutes} min',
                             style: TextStyle(
                               color: Colors.grey[600],
-                              fontSize: 16,
+                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -758,7 +764,8 @@ class _TvScreenState extends State<TvScreen> {
                             
                             // Wenn keine EPG-Daten vorhanden sind, versuche sie zu laden
                             if (epgData.isEmpty && _epgLoadingStatus[channel.id] != true) {
-                              _loadChannelEpgData(channel);
+                              // Verwende Future.microtask, um setState() nicht während des Builds aufzurufen
+                              Future.microtask(() => _loadChannelEpgData(channel));
                               return Text(
                                 'Programminformationen werden geladen...',
                                 style: TextStyle(
