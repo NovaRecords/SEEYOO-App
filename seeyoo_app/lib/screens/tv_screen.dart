@@ -312,9 +312,9 @@ class _TvScreenState extends State<TvScreen> {
     }
     
     return Container(
-      color: const Color(0xFF1B1E22),
+      color: Colors.black,
       child: ListView.builder(
-        padding: const EdgeInsets.only(bottom: 30),
+        padding: const EdgeInsets.only(top: 8, bottom: 30),
         itemCount: _genres.length,
         itemBuilder: (context, index) {
           final genre = _genres[index];
@@ -342,7 +342,7 @@ class _TvScreenState extends State<TvScreen> {
                   ),
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 26),
               child: Row(
                 children: [
                   Expanded(
@@ -350,7 +350,7 @@ class _TvScreenState extends State<TvScreen> {
                       child: Text(
                         genre.title,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.grey[500]!,
+                          color: isSelected ? Colors.white : Colors.grey,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           fontSize: 18,
                         ),
@@ -370,7 +370,7 @@ class _TvScreenState extends State<TvScreen> {
   // Baut die Ansicht für die Mediathek-Meldung
   Widget _buildMediaLibraryMessage() {
     return Container(
-      color: const Color(0xFF1B1E22),
+      color: Colors.black,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -439,7 +439,7 @@ class _TvScreenState extends State<TvScreen> {
         // EPG-Liste
         Expanded(
           child: ListView.builder(
-            padding: EdgeInsets.zero,
+            padding: const EdgeInsets.only(top: 8),
             itemCount: _currentEpgData.length,
             itemBuilder: (context, index) {
               final program = _currentEpgData[index];
@@ -450,7 +450,7 @@ class _TvScreenState extends State<TvScreen> {
                   color: isNowPlaying ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey[800]!,
+                      color: Colors.grey[850]!,
                       width: 1,
                     ),
                   ),
