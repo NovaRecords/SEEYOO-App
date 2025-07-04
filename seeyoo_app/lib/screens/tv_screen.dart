@@ -29,6 +29,8 @@ class _TvScreenState extends State<TvScreen> {
   List<TvGenre> _genres = [];
   String? _selectedGenreId; // null bedeutet alle Kategorien
   List<TvChannel> _filteredChannels = [];
+  Map<int, List<EpgProgram>> _epgDataMap = {}; // Speichert EPG-Daten für alle Kanäle
+  Map<int, bool> _epgLoadingStatus = {}; // Speichert den Ladestatus für jeden Kanal
   bool _isLoading = true;
   bool _isLoadingEpg = false;
   bool _isLoadingGenres = false;
@@ -53,6 +55,79 @@ class _TvScreenState extends State<TvScreen> {
     super.initState();
     _loadChannels();
     _loadGenres();
+  }
+  
+  // Lädt EPG-Daten für alle Kanäle auf einmal
+  Future<void> _loadAllChannelsEpgData() async {
+    // Zeige einen Ladeindikator an
+    setState(() {
+      _isLoadingEpg = true;
+    });
+    
+    try {
+      // Erstellung einer Liste von Futures für alle API-Anfragen
+      final List<Future> futures = [];
+      
+      // Für jeden Kanal EPG-Daten laden
+      for (final channel in _channels) {
+        // Status auf "wird geladen" setzen
+        _epgLoadingStatus[channel.id] = true;
+        
+        // Ein Future erstellen, das EPG-Daten für diesen Kanal lädt
+        final future = _apiService.getEpgForChannel(channel.id, next: 10).then((epgData) {
+          // EPG-Daten im Map speichern
+          setState(() {
+            _epgDataMap[channel.id] = epgData;
+            _epgLoadingStatus[channel.id] = false;
+          });
+        }).catchError((e) {
+          setState(() {
+            _epgLoadingStatus[channel.id] = false;
+          });
+          print('Fehler beim Laden der EPG-Daten für Kanal ${channel.id}: $e');
+        });
+        
+        futures.add(future);
+      }
+      
+      // Auf alle API-Anfragen warten
+      await Future.wait(futures);
+      
+      setState(() {
+        _isLoadingEpg = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingEpg = false;
+      });
+      print('Fehler beim Laden der EPG-Daten: $e');
+    }
+  }
+  
+  // Lädt EPG-Daten für einen bestimmten Kanal
+  Future<void> _loadChannelEpgData(TvChannel channel) async {
+    // Überprüfen, ob bereits EPG-Daten geladen werden oder vorhanden sind
+    if (_epgLoadingStatus[channel.id] == true) {
+      return; // Bereits am Laden
+    }
+    
+    setState(() {
+      _epgLoadingStatus[channel.id] = true;
+    });
+    
+    try {
+      // Nur 2 EPG-Einträge laden (aktuelle und nächste Sendung)
+      final epgData = await _apiService.getEpgForChannel(channel.id, next: 2);
+      setState(() {
+        _epgDataMap[channel.id] = epgData;
+        _epgLoadingStatus[channel.id] = false;
+      });
+    } catch (e) {
+      setState(() {
+        _epgLoadingStatus[channel.id] = false;
+      });
+      print('Fehler beim Laden der EPG-Daten für Kanal ${channel.id}: $e');
+    }
   }
 
   // Lädt TV-Kategorien/Genres aus der API
@@ -112,6 +187,9 @@ class _TvScreenState extends State<TvScreen> {
       // Wähle den ersten Kanal aus, wenn vorhanden
       if (_channels.isNotEmpty) {
         _selectChannel(0);
+        
+        // Lade EPG-Daten für alle Kanäle auf einmal
+        await _loadAllChannelsEpgData();
       }
     } catch (e) {
       setState(() {
@@ -226,27 +304,40 @@ class _TvScreenState extends State<TvScreen> {
     }
   }
   
-  // Lädt EPG-Daten für den aktuell ausgewählten Kanal
-  Future<void> _loadEpgData() async {
-    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _channels.length) {
-      return;
+  // Lädt EPG-Daten für den ausgewählten Kanal
+  Future<void> _loadEpgForChannel(int channelId) async {
+    if (_isLoadingEpg) {
+      return; // Bereits am Laden
     }
-    
-    final channelId = _channels[_selectedChannelIndex].id;
     
     setState(() {
       _isLoadingEpg = true;
+      _currentEpgData = []; // Zurücksetzen der alten Daten
       _errorMessage = null;
     });
     
     try {
+      // Überprüfen, ob bereits EPG-Daten geladen sind
+      if (_epgDataMap.containsKey(channelId) && _epgDataMap[channelId] != null) {
+        final epgData = _epgDataMap[channelId] ?? [];
+        setState(() {
+          _currentEpgData = epgData;
+          _isLoadingEpg = false;
+        });
+        return;
+      }
+      
       // Nächste 20 Sendungen abrufen
       final epgData = await _apiService.getEpgForChannel(channelId, next: 20);
       
       // Nur aktuelle und zukünftige Sendungen behalten, keine Archiv-Sendungen
       final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       final filteredEpgData = epgData
-          .where((program) => program.end > now && !program.inArchive) // Sendungen, die noch nicht beendet und nicht im Archiv sind
+          .where((program) => 
+              // Sendungen, die noch nicht beendet sind
+              program.end > now && 
+              // UND nicht im Archiv sind
+              !program.inArchive)
           .toList();
       
       // Sendungen sortieren, damit aktuelle Sendung an erster Stelle steht
@@ -265,6 +356,10 @@ class _TvScreenState extends State<TvScreen> {
         }
       });
       
+      // EPG-Daten auch für die Kanalliste speichern
+      _epgDataMap[channelId] = filteredEpgData;
+      _epgLoadingStatus[channelId] = false;
+      
       setState(() {
         _currentEpgData = filteredEpgData;
         _isLoadingEpg = false;
@@ -275,6 +370,16 @@ class _TvScreenState extends State<TvScreen> {
         _errorMessage = 'Fehler beim Laden des TV-Programms: $e';
       });
     }
+  }
+  
+  // Lädt EPG-Daten für den aktuell ausgewählten Kanal
+  Future<void> _loadEpgForSelectedChannel() async {
+    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _channels.length) {
+      return;
+    }
+    
+    final channelId = _channels[_selectedChannelIndex].id;
+    await _loadEpgForChannel(channelId);
   }
   
 
@@ -462,6 +567,9 @@ class _TvScreenState extends State<TvScreen> {
       );
     }
     
+    // Filtere die Archiv-Sendungen aus
+    final filteredEpgData = _currentEpgData.where((program) => !program.inArchive).toList();
+    
     // Zeigt die EPG-Daten in einer Liste an
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,9 +579,9 @@ class _TvScreenState extends State<TvScreen> {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.only(top: 8),
-            itemCount: _currentEpgData.length,
+            itemCount: filteredEpgData.length,
             itemBuilder: (context, index) {
-              final program = _currentEpgData[index];
+              final program = filteredEpgData[index];
               final isNowPlaying = program.isCurrentlyRunning;
               
               return Container(
@@ -549,24 +657,6 @@ class _TvScreenState extends State<TvScreen> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (program.inArchive) ...[  
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[800],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'ARCHIV',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -659,53 +749,132 @@ class _TvScreenState extends State<TvScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            channel.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (channel.currentShow != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Row(
+                          // Kanalname wurde entfernt
+                          
+                          // EPG-Informationen anzeigen
+                          Builder(builder: (context) {
+                            // Aktuelle EPG-Daten laden, falls vorhanden
+                            final epgData = _epgDataMap[channel.id] ?? [];
+                            
+                            // Wenn keine EPG-Daten vorhanden sind, versuche sie zu laden
+                            if (epgData.isEmpty && _epgLoadingStatus[channel.id] != true) {
+                              _loadChannelEpgData(channel);
+                              return Text(
+                                'Programminformationen werden geladen...',
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              );
+                            }
+                            
+                            // EPG-Daten werden geladen
+                            if (_epgLoadingStatus[channel.id] == true && epgData.isEmpty) {
+                              return const SizedBox(
+                                height: 12,
+                                width: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+                                ),
+                              );
+                            }
+                            
+                            // Wenn EPG-Daten vorhanden sind
+                            if (epgData.isNotEmpty) {
+                              // Finde das aktuell laufende Programm
+                              final currentProgram = epgData.firstWhere(
+                                (program) => program.isCurrentlyRunning,
+                                orElse: () => epgData.first,
+                              );
+                              
+                              // Finde die nächste Sendung (falls verfügbar)
+                              EpgProgram? nextProgram;
+                              if (epgData.length > 1) {
+                                final currentIndex = epgData.indexOf(currentProgram);
+                                if (currentIndex < epgData.length - 1) {
+                                  nextProgram = epgData[currentIndex + 1];
+                                }
+                              }
+                              
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (channel.isLive)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE53A56),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'JETZT',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
+                                  // Aktuelle Sendung mit JETZT-Label
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE53A56),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Text(
+                                          'JETZT',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  Expanded(
-                                    child: Text(
-                                      channel.currentShow!,
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 14,
+                                      Expanded(
+                                        child: Text(
+                                          currentProgram.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                    ],
                                   ),
+                                  
+                                  // Nächste Sendung mit Startzeit
+                                  if (nextProgram != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            nextProgram.startTimeFormatted,
+                                            style: TextStyle(
+                                              color: const Color(0xFFE53A56),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              nextProgram.name,
+                                              style: TextStyle(
+                                                color: Colors.grey[400],
+                                                fontSize: 12,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                 ],
+                              );
+                            }
+                            
+                            return Text(
+                              'Keine Programminformationen verfügbar',
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
                               ),
-                            ),
+                            );
+                          }),
                         ],
                       ),
                     ),
@@ -795,7 +964,7 @@ class _TvScreenState extends State<TvScreen> {
                     setState(() {
                       // Wenn Programm-Tab gewählt
                       if (index == 0) {
-                        _loadEpgData();
+                        _loadEpgForSelectedChannel();
                         _showEpgView = true;
                         _showGenresView = false;
                         _showMediaLibraryMessage = false;
