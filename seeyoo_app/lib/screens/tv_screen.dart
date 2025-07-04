@@ -412,6 +412,7 @@ class _TvScreenState extends State<TvScreen> {
             Text(
               'Programminfo wird demnächst verfügbar',
               style: TextStyle(color: Colors.grey[400], fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
