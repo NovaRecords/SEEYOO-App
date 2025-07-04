@@ -326,7 +326,7 @@ class _TvScreenState extends State<TvScreen> {
               color: const Color(0xFF1B1E22),
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.grey[900]!,
+                  color: Colors.grey[800]!,
                   width: 1,
                 ),
               ),
@@ -336,7 +336,7 @@ class _TvScreenState extends State<TvScreen> {
                 child: Text(
                   genre.title,
                   style: TextStyle(
-                    color: isSelected ? const Color(0xFFA1273B) : Colors.white,
+                    color: isSelected ? const Color(0xFFE53A56) : Colors.white,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 18,
                   ),
@@ -444,7 +444,7 @@ class _TvScreenState extends State<TvScreen> {
                   color: isNowPlaying ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey[900]!,
+                      color: Colors.grey[800]!,
                       width: 1,
                     ),
                   ),
@@ -489,7 +489,7 @@ class _TvScreenState extends State<TvScreen> {
                               margin: const EdgeInsets.only(bottom: 4),
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: const BoxDecoration(
-                                color: Color(0xFFA1273B),
+                                color: Color(0xFFE53A56),
                                 borderRadius: BorderRadius.all(Radius.circular(4)),
                               ),
                               child: const Text(
