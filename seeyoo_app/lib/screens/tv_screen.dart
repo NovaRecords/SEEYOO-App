@@ -347,15 +347,46 @@ class _TvScreenState extends State<TvScreen> {
                 children: [
                   Expanded(
                     child: Center(
-                      child: Text(
-                        genre.title,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.grey,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 18,
+                      child: isSelected
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              "- ",
+                              style: TextStyle(
+                                color: Color(0xFFE53A56),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            Text(
+                              genre.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            const Text(
+                              " -",
+                              style: TextStyle(
+                                color: Color(0xFFE53A56),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          genre.title,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.normal,
+                            fontSize: 18,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
                     ),
                   ),
                 ],
@@ -469,7 +500,7 @@ class _TvScreenState extends State<TvScreen> {
                             program.startTimeFormatted,
                             style: TextStyle(
                               color: isNowPlaying ? const Color(0xFFE53A56) : Colors.grey,
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
@@ -492,7 +523,7 @@ class _TvScreenState extends State<TvScreen> {
                           // "JETZT"-Label über dem Programmtitel anzeigen
                           if (isNowPlaying)
                             Container(
-                              margin: const EdgeInsets.only(bottom: 4, top: 4),
+                              margin: const EdgeInsets.only(bottom: 4, top: 3),
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: const BoxDecoration(
                                 color: Color(0xFFE53A56),
