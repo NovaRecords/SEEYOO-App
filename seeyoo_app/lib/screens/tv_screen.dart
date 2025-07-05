@@ -834,7 +834,7 @@ class _TvScreenState extends State<TvScreen> {
                                           currentProgram.name,
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 13,
+                                            fontSize: 14,
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -852,7 +852,7 @@ class _TvScreenState extends State<TvScreen> {
                                             nextProgram.startTimeFormatted,
                                             style: TextStyle(
                                               color: const Color(0xFFE53A56),
-                                              fontSize: 12,
+                                              fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -862,7 +862,7 @@ class _TvScreenState extends State<TvScreen> {
                                               nextProgram.name,
                                               style: TextStyle(
                                                 color: Colors.grey[400],
-                                                fontSize: 12,
+                                                fontSize: 14,
                                               ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
