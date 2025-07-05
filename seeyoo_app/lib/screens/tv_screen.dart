@@ -31,6 +31,7 @@ class _TvScreenState extends State<TvScreen> {
   List<TvChannel> _filteredChannels = [];
   Map<int, List<EpgProgram>> _epgDataMap = {}; // Speichert EPG-Daten für alle Kanäle
   Map<int, bool> _epgLoadingStatus = {}; // Speichert den Ladestatus für jeden Kanal
+  Map<int, bool> _epgRequestAttempted = {}; // Speichert, ob EPG-Daten für einen Kanal bereits angefragt wurden
   bool _isLoading = true;
   bool _isLoadingEpg = false;
   bool _isLoadingGenres = false;
@@ -113,6 +114,7 @@ class _TvScreenState extends State<TvScreen> {
     
     setState(() {
       _epgLoadingStatus[channel.id] = true;
+      _epgRequestAttempted[channel.id] = true; // Markieren, dass für diesen Kanal EPG-Daten angefragt wurden
     });
     
     try {
@@ -762,8 +764,8 @@ class _TvScreenState extends State<TvScreen> {
                             // Aktuelle EPG-Daten laden, falls vorhanden
                             final epgData = _epgDataMap[channel.id] ?? [];
                             
-                            // Wenn keine EPG-Daten vorhanden sind, versuche sie zu laden
-                            if (epgData.isEmpty && _epgLoadingStatus[channel.id] != true) {
+                            // Wenn keine EPG-Daten vorhanden sind UND noch nicht versucht wurde, sie zu laden
+                            if (epgData.isEmpty && _epgLoadingStatus[channel.id] != true && _epgRequestAttempted[channel.id] != true) {
                               // Verwende Future.microtask, um setState() nicht während des Builds aufzurufen
                               Future.microtask(() => _loadChannelEpgData(channel));
                               return Text(
@@ -786,6 +788,17 @@ class _TvScreenState extends State<TvScreen> {
                                 ),
                               );
                             }
+                            
+                            // Wenn keine EPG-Daten vorhanden sind, aber bereits versucht wurde, sie zu laden
+                            if (epgData.isEmpty && _epgRequestAttempted[channel.id] == true) {
+                              return Text(
+                                'Keine Programminformationen verfügbar',
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              );
+                            }  
                             
                             // Wenn EPG-Daten vorhanden sind
                             if (epgData.isNotEmpty) {
