@@ -516,27 +516,30 @@ class _TvScreenState extends State<TvScreen> {
     return Container(
       color: Colors.black,
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        child: Transform.translate(
+          offset: const Offset(0, -30), // 30px nach oben verschieben
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
             const Icon(Icons.video_library, color: Colors.grey, size: 48),
             const SizedBox(height: 16),
             Text(
               'Mediathek-Funktion',
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
+                color: Colors.grey[400],
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Diese Funktion befindet sich noch\nin der Entwicklung\nund wird mit dem nächsten Release verfügbar sein.',
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
+              'Diese Funktion befindet sich\nnoch in der Entwicklung\nund wird mit dem nächsten\nRelease verfügbar sein.',
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
               textAlign: TextAlign.center,
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -554,23 +557,26 @@ class _TvScreenState extends State<TvScreen> {
     
     if (_currentEpgData.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.event_busy, color: Colors.grey, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'Programminfo wird demnächst verfügbar',
-              style: TextStyle(color: Colors.grey[400], fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Die elektronischen Programminformationen (EPG) werden in Kürze aktiviert.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[500], fontSize: 14),
-            ),
-          ],
+        child: Transform.translate(
+          offset: const Offset(0, -30), // 30px nach oben verschieben
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.event_busy, color: Colors.grey, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Programminfo zur Zeit\nnicht verfügbar',
+                style: TextStyle(color: Colors.grey[400], fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Die elektronischen Programminformationen (EPG) werden in Kürze aktiviert.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[500], fontSize: 14),
+              ),
+            ],
+          ),
         ),
       );
     }
