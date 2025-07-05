@@ -63,19 +63,11 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 ## Tag 5 (05.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 ** Samstag **
 
 ## Tag 6 (06.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 ** Sonntag **
 
 ## Tag 7 (07.07.2025)
 
@@ -119,19 +111,11 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 ## Tag 12 (12.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 ** Samstag **
 
 ## Tag 13 (13.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 ** Sonntag **
 
 ## Tag 14 (14.07.2025)
 
@@ -175,19 +159,11 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 ## Tag 19 (19.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 ** Samstag **
 
 ## Tag 20 (20.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 ** Sonntag **
 
 ## Tag 21 (21.07.2025)
 
@@ -231,11 +207,11 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 ## Tag 26 (26.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 ** Samstag **
+
+## Tag 27 (27.07.2025)
+
+- 🟢 ** Sonntag **
 
 ## Tag 27 (27.07.2025)
 
