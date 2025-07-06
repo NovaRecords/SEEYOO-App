@@ -449,9 +449,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         ),
                         child: Scaffold(
                           backgroundColor: const Color(0xFF1B1E22), // Undurchsichtiger Hintergrund
+                          extendBodyBehindAppBar: false, // Verhindert, dass der Body hinter den AppBar reicht
                           appBar: AppBar(
-                            backgroundColor: Colors.transparent,
+                            backgroundColor: const Color(0xFF1B1E22), // Feste Farbe statt transparent
                             elevation: 0,
+                            scrolledUnderElevation: 0, // Deaktiviert Elevation-Änderung beim Scrollen
+                            shadowColor: Colors.transparent, // Keine Schatten
                             leading: IconButton(
                               icon: AnimatedIcon(
                                 icon: AnimatedIcons.menu_close,
