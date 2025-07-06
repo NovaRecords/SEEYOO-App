@@ -412,11 +412,11 @@ class _TvScreenState extends State<TvScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.category_outlined, color: Colors.grey, size: 48),
+              const Icon(Icons.category_outlined, color: Color(0xFF8D9296), size: 48),
               const SizedBox(height: 16),
               Text(
                 'Keine Kategorien verfügbar',
-                style: TextStyle(color: Colors.grey[400], fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -478,7 +478,7 @@ class _TvScreenState extends State<TvScreen> {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 18,
                               ),
                             ),
                             const Text(
@@ -494,9 +494,9 @@ class _TvScreenState extends State<TvScreen> {
                       : Text(
                           genre.title,
                           style: const TextStyle(
-                            color: Colors.grey,
+                            color: Color(0xFF8D9296),
                             fontWeight: FontWeight.normal,
-                            fontSize: 16,
+                            fontSize: 18,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -526,7 +526,7 @@ class _TvScreenState extends State<TvScreen> {
             Text(
               'Mediathek-Funktion',
               style: TextStyle(
-                color: Colors.grey[400],
+                color: const Color(0xFF8D9296),
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -535,7 +535,7 @@ class _TvScreenState extends State<TvScreen> {
             const SizedBox(height: 12),
             Text(
               'Diese Funktion befindet sich\nnoch in der Entwicklung\nund wird mit dem nächsten\nRelease verfügbar sein.',
-              style: TextStyle(color: Colors.grey[500], fontSize: 14),
+              style: TextStyle(color: const Color(0xFF8D9296), fontSize: 14),
               textAlign: TextAlign.center,
             ),
             ],
@@ -566,14 +566,14 @@ class _TvScreenState extends State<TvScreen> {
               const SizedBox(height: 16),
               Text(
                 'Programminfo zur Zeit\nnicht verfügbar',
-                style: TextStyle(color: Colors.grey[400], fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 18, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Die elektronischen Programminformationen (EPG) werden in Kürze aktiviert.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 14),
               ),
             ],
           ),
@@ -614,23 +614,29 @@ class _TvScreenState extends State<TvScreen> {
                   children: [
                     // Zeitspanne
                     SizedBox(
-                      width: 100,
+                      width: 82,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            program.startTimeFormatted,
-                            style: TextStyle(
-                              color: isNowPlaying ? const Color(0xFFE53A56) : Colors.grey,
-                              fontSize: 18,
-                              fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              program.startTimeFormatted,
+                              style: TextStyle(
+                                color: isNowPlaying ? Colors.white : const Color(0xFF8D9296),
+                                fontSize: 16,
+                                fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
+                              ),
                             ),
                           ),
-                          Text(
-                            '${program.durationMinutes} min',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              '${program.durationMinutes} min',
+                              style: TextStyle(
+                                color: isNowPlaying ? Colors.white : const Color(0xFF8D9296),
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -664,7 +670,7 @@ class _TvScreenState extends State<TvScreen> {
                           Text(
                             program.name,
                             style: TextStyle(
-                              color: isNowPlaying ? Colors.white : Colors.grey[300],
+                              color: isNowPlaying ? Colors.white : const Color(0xFF8D9296),
                               fontSize: 16,
                               fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
                             ),
@@ -698,7 +704,7 @@ class _TvScreenState extends State<TvScreen> {
     // Erstelle die Liste der Kanäle
     return ListView.builder(
       itemCount: channels.length,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       itemBuilder: (context, index) {
         final channel = channels[index];
         final isSelected = _selectedTabIndex != 3 ?
@@ -763,7 +769,6 @@ class _TvScreenState extends State<TvScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Kanalname wurde entfernt
                           
                           // EPG-Informationen anzeigen
                           Builder(builder: (context) {
@@ -777,7 +782,7 @@ class _TvScreenState extends State<TvScreen> {
                               return Text(
                                 'Programminformationen werden geladen...',
                                 style: TextStyle(
-                                  color: Colors.grey[500],
+                                  color: const Color(0xFF8D9296),
                                   fontSize: 12,
                                 ),
                               );
@@ -800,7 +805,7 @@ class _TvScreenState extends State<TvScreen> {
                               return Text(
                                 'Keine Programminformationen verfügbar',
                                 style: TextStyle(
-                                  color: Colors.grey[500],
+                                  color: const Color(0xFF8D9296),
                                   fontSize: 12,
                                 ),
                               );
@@ -853,7 +858,7 @@ class _TvScreenState extends State<TvScreen> {
                                           currentProgram.name,
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 14,
+                                            fontSize: 16,
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -880,7 +885,7 @@ class _TvScreenState extends State<TvScreen> {
                                             child: Text(
                                               nextProgram.name,
                                               style: TextStyle(
-                                                color: Colors.grey[400],
+                                                color: const Color(0xFF8D9296),
                                                 fontSize: 14,
                                               ),
                                               overflow: TextOverflow.ellipsis,
@@ -896,7 +901,7 @@ class _TvScreenState extends State<TvScreen> {
                             return Text(
                               'Keine Programminformationen verfügbar',
                               style: TextStyle(
-                                color: Colors.grey[500],
+                                color: const Color(0xFF8D9296),
                                 fontSize: 12,
                               ),
                             );
@@ -1049,7 +1054,7 @@ class _TvScreenState extends State<TvScreen> {
                             child: Icon(
                               // Für Favoriten-Tab das dynamische Icon verwenden
                               index == 3 ? _getFavoriteIcon() : _tabIcons[index],
-                              color: _selectedTabIndex == index ? Colors.white : Colors.grey, // Ausgewähltes Symbol weiß, andere grau
+                              color: _selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296), // Ausgewähltes Symbol weiß, andere hellgrau
                               size: 26,
                             ),
                           ),
@@ -1058,7 +1063,8 @@ class _TvScreenState extends State<TvScreen> {
                         Text(
                           _tabTitles[index],
                           style: TextStyle(
-                            color: _selectedTabIndex == index ? Colors.white : Colors.grey,
+                            color: _selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296),
+                            fontWeight: _selectedTabIndex == index ? FontWeight.bold : FontWeight.normal,
                             fontSize: 12,
                           ),
                           textAlign: TextAlign.center,

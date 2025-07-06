@@ -307,7 +307,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final selectedColor = const Color(0xFFE53A56);
     return Container(
       decoration: BoxDecoration(
-        color: isSelected ? Colors.black : null, // Schwarzer Hintergrund für ausgewählten Menüpunkt
+        color: isSelected ? const Color(0xFF3B4248) : null, // Hintergrundfarbe für ausgewählten Menüpunkt
         border: Border(
           left: BorderSide(
             color: isSelected ? selectedColor : Colors.transparent, // Rote Farbe oder transparent
@@ -323,7 +323,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               offset: const Offset(0, -1), // 1px nach oben verschieben
               child: Icon(
                 icon, 
-                color: isSelected ? selectedColor : Colors.white,
+                color: isSelected ? Colors.white : const Color(0xFF8D9296),
                 size: 28.0,
               ),
             ),
@@ -332,7 +332,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         title: Text(
           title,
           style: TextStyle(
-            color: isSelected ? selectedColor : Colors.white,
+            color: isSelected ? Colors.white : const Color(0xFF8D9296),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 18.0, // Größere Schrift für bessere Lesbarkeit
             height: 1.2, // Etwas mehr Zeilenabstand
