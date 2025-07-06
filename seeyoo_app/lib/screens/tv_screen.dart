@@ -24,6 +24,10 @@ class _TvScreenState extends State<TvScreen> {
   
   // ScrollController für die Kategorien-Liste
   final ScrollController _genresScrollController = ScrollController();
+  // ScrollController für die Kanalliste
+  final ScrollController _channelListController = ScrollController();
+  // Speichert die letzte Scroll-Position der Kanalliste
+  double _lastChannelListScrollPosition = 0.0;
   
   final ApiService _apiService = ApiService();
   List<TvChannel> _channels = [];
@@ -65,6 +69,7 @@ class _TvScreenState extends State<TvScreen> {
   void dispose() {
     // ScrollController freigeben, wenn das Widget entsorgt wird
     _genresScrollController.dispose();
+    _channelListController.dispose();
     super.dispose();
   }
   
@@ -223,6 +228,13 @@ class _TvScreenState extends State<TvScreen> {
       
       // Lade den Stream-Link für diesen Kanal
       final channel = _channels[index];
+      
+      // Scroll-Verhalten nur für größere Listen aktivieren
+      if (_filteredChannels.length > 7) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _scrollToSelectedChannel();
+        });
+      }
       
       // Wenn die URL bereits im Kanal-Objekt vorhanden ist, verwende diese
       // Ansonsten hole sie über die API
@@ -735,6 +747,7 @@ class _TvScreenState extends State<TvScreen> {
     
     // Erstelle die Liste der Kanäle
     return ListView.builder(
+      controller: _channelListController,
       itemCount: channels.length,
       padding: const EdgeInsets.symmetric(vertical: 4),
       itemBuilder: (context, index) {
@@ -962,6 +975,38 @@ class _TvScreenState extends State<TvScreen> {
     );
   }
   
+  // Scrollt zum ausgewählten Kanal in der Liste
+  void _scrollToSelectedChannel() {
+    // Prüfe, ob der Controller an eine ScrollView angebunden ist
+    if (!_channelListController.hasClients) return;
+    
+    // Bestimme den Index des zu scrollenden Elements je nach aktuellem Tab/Filter
+    int channelIndexToShow;
+    
+    if (_selectedTabIndex == 3) { // Favoriten-Tab
+      channelIndexToShow = _selectedChannelIndex;
+    } else {
+      // Suche den ausgewählten Kanal in der gefilterten Liste
+      channelIndexToShow = _filteredChannels.indexWhere((channel) => 
+          _channels.isNotEmpty && _selectedChannelIndex < _channels.length &&
+          channel.id == _channels[_selectedChannelIndex].id);
+    }
+    
+    // Wenn der Kanal nicht in der aktuellen Liste gefunden wurde
+    if (channelIndexToShow < 0) return;
+    
+    // Berechne die Position zum Scrollen (Höhe pro Eintrag * Index)
+    final double itemHeight = 92.0; // Höhe eines Kanaleintrags (inkl. Margin)
+    final double offset = channelIndexToShow * itemHeight;
+    
+    // Scrolle zur Position mit Animation
+    _channelListController.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
     // Bildschirmdimensionen abrufen, um die UI responsiv zu gestalten
@@ -1025,6 +1070,11 @@ class _TvScreenState extends State<TvScreen> {
                 (index) => GestureDetector(
                   onTap: () {
                     setState(() {
+                      // Aktuelle Scroll-Position speichern, bevor ein Tab gewechselt wird
+                      if (_channelListController.hasClients && !_showEpgView && !_showGenresView) {
+                        _lastChannelListScrollPosition = _channelListController.offset;
+                      }
+                      
                       // Wenn Programm-Tab gewählt
                       if (index == 0) {
                         _loadEpgForSelectedChannel();
@@ -1059,8 +1109,28 @@ class _TvScreenState extends State<TvScreen> {
                       else if (index == 3 && _selectedTabIndex == 3) {
                         _toggleFavorite();
                       }
+                      // Speichere den vorherigen Zustand und Sichtbarkeiten
+                      final bool wasEpgView = _showEpgView;
+                      final bool wasGenresView = _showGenresView;
+                      
                       // Wenn der Tab bereits ausgewählt ist, deaktiviere ihn
                       _selectedTabIndex = _selectedTabIndex == index ? -1 : index;
+                      
+                      // Spezielle Behandlung, wenn vom EPG zurück zur Kanalliste
+                      if (_selectedTabIndex == -1 && (wasEpgView || wasGenresView)) {
+                        // Explizit setzen, damit neu gerendert wird
+                        _showEpgView = false;
+                        _showGenresView = false;
+                        _showMediaLibraryMessage = false;
+                        
+                        // Nach dem Rendern zur gespeicherten Position scrollen
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_channelListController.hasClients && _lastChannelListScrollPosition > 0) {
+                            // Die gespeicherte Position wiederherstellen
+                            _channelListController.jumpTo(_lastChannelListScrollPosition);
+                          }
+                        });
+                      }
                     });
                   },
                   child: Container(
