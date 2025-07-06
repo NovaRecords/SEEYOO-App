@@ -171,13 +171,11 @@ class _TvScreenState extends State<TvScreen> {
   void _filterChannelsByGenre(String? genreId) {
     setState(() {
       _selectedGenreId = genreId;
-      
-      if (genreId == null || genreId == 'all') {
+      if (genreId == null) {
         _filteredChannels = List.from(_channels);
       } else {
-        _filteredChannels = _channels
-            .where((channel) => channel.genreId == genreId)
-            .toList();
+        _filteredChannels = _channels.where((channel) => 
+          channel.genreId == genreId).toList();
       }
     });
   }
@@ -498,6 +496,18 @@ class _TvScreenState extends State<TvScreen> {
               setState(() {
                 _selectedTabIndex = -1; // Zurück zur normalen Kanalliste
                 _showGenresView = false;
+                
+                // Automatisch den ersten Sender aus der gefilterten Liste auswählen
+                if (_filteredChannels.isNotEmpty) {
+                  // Den ersten Sender der gefilterten Liste in der Gesamtliste finden
+                  int originalIndex = _channels.indexWhere((channel) => 
+                    channel.id == _filteredChannels[0].id);
+                  
+                  if (originalIndex >= 0) {
+                    _selectedChannelIndex = originalIndex;
+                    _selectChannel(originalIndex);
+                  }
+                }
               });
             },
             child: Container(
