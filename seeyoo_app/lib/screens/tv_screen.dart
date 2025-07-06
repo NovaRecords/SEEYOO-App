@@ -22,6 +22,9 @@ class _TvScreenState extends State<TvScreen> {
     Icons.star_border // Favoriten - wird dynamisch aktualisiert
   ];
   
+  // ScrollController für die Kategorien-Liste
+  final ScrollController _genresScrollController = ScrollController();
+  
   final ApiService _apiService = ApiService();
   List<TvChannel> _channels = [];
   List<TvChannel> _favoriteChannels = [];
@@ -56,6 +59,13 @@ class _TvScreenState extends State<TvScreen> {
     super.initState();
     _loadChannels();
     _loadGenres();
+  }
+  
+  @override
+  void dispose() {
+    // ScrollController freigeben, wenn das Widget entsorgt wird
+    _genresScrollController.dispose();
+    super.dispose();
   }
   
   // Lädt EPG-Daten für alle Kanäle auf einmal
@@ -424,9 +434,42 @@ class _TvScreenState extends State<TvScreen> {
       );
     }
     
+    // Verzögertes Scrollen zur ausgewählten Kategorie, wenn die Liste gebaut wird
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_selectedGenreId != null) {
+        // Finde den Index der ausgewählten Kategorie
+        final selectedIndex = _genres.indexWhere((genre) => 
+            genre.id == _selectedGenreId || 
+            (genre.id == 'all' && _selectedGenreId == null));
+        
+        if (selectedIndex != -1) {
+          // Berechne die Gesamthöhe der Liste und des sichtbaren Bereichs
+          final itemHeight = 70.0; // Geschätzte Höhe jedes Eintrags (anpassen nach Bedarf)
+          final totalHeight = _genres.length * itemHeight;
+          final viewportHeight = _genresScrollController.position.viewportDimension;
+          
+          // Berechne die maximale Scroll-Position
+          final maxScroll = _genresScrollController.position.maxScrollExtent;
+          
+          // Berechne die Zielposition für das ausgewählte Element
+          // Stellt sicher, dass bei Elementen am Ende nicht über das Ende hinaus gescrollt wird
+          final targetPosition = (selectedIndex * itemHeight)
+              .clamp(0.0, maxScroll);
+              
+          // Scrolle zur berechneten Position
+          _genresScrollController.animateTo(
+            targetPosition,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    });
+    
     return Container(
       color: Colors.black,
       child: ListView.builder(
+        controller: _genresScrollController,
         padding: const EdgeInsets.only(top: 8, bottom: 30),
         itemCount: _genres.length,
         itemBuilder: (context, index) {
