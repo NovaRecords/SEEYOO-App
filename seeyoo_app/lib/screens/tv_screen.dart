@@ -461,35 +461,24 @@ class _TvScreenState extends State<TvScreen> {
                   Expanded(
                     child: Center(
                       child: isSelected
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              "- ",
-                              style: TextStyle(
+                      ? Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
                                 color: Color(0xFFE53A56),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                                width: 2.0,
                               ),
                             ),
-                            Text(
-                              genre.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
+                          ),
+                          padding: const EdgeInsets.only(bottom: 1), // 1px Abstand zwischen Text und Linie
+                          child: Text(
+                            genre.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
                             ),
-                            const Text(
-                              " -",
-                              style: TextStyle(
-                                color: Color(0xFFE53A56),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
+                          ),
                         )
                       : Text(
                           genre.title,
