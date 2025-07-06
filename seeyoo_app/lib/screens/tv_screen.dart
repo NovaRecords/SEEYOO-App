@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
@@ -1005,11 +1006,32 @@ class _TvScreenState extends State<TvScreen> {
     // Wenn der Kanal nicht in der aktuellen Liste gefunden wurde
     if (channelIndexToShow < 0) return;
     
-    // Berechne die Position zum Scrollen (Höhe pro Eintrag * Index)
-    final double itemHeight = 92.0; // Höhe eines Kanaleintrags (inkl. Margin)
-    final double offset = channelIndexToShow * itemHeight;
+    // Für kleine Listen kein Scrollen durchführen
+    if (_filteredChannels.length <= 7) return;
     
-    // Scrolle zur Position mit Animation
+    // Höhe eines Kanaleintrags (inkl. Margin)
+    final double itemHeight = 92.0;
+    
+    // Gesamtanzahl der Sender in der aktuellen Liste
+    final int totalChannels = _filteredChannels.length;
+    
+    // Berechne die sichtbare Höhe des Containers (ungefähr)
+    final double viewportHeight = MediaQuery.of(context).size.height - 300; // Abzug von Header, Tabs etc.
+    
+    // Anzahl der sichtbaren Sender im Viewport
+    final int visibleItemCount = (viewportHeight / itemHeight).floor();
+    
+    // Ganz einfache Logik für alle Sender
+    // Die letzten 4 Sender werden nicht automatisch gescrollt
+    if (channelIndexToShow >= totalChannels - 4) {
+      // Nichts tun - aktuelle Position beibehalten
+      return;
+    } 
+    
+    // Für alle anderen Sender: Normal zum Sender scrollen
+    double offset = channelIndexToShow * itemHeight;
+    
+    // Scrolle zur berechneten Position mit Animation
     _channelListController.animateTo(
       offset,
       duration: const Duration(milliseconds: 300),
