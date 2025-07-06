@@ -190,17 +190,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           TweenSequenceItem<double>(
             tween: Tween<double>(
               begin: currentPos,
-              end: currentPos * 1.2, // 20% Überschwung von der aktuellen Position
+              end: currentPos * 1.1, // 10% Überschwung von der aktuellen Position
             ).chain(CurveTween(curve: Curves.easeOut)),
-            weight: 25.0,
+            weight: 50.0,
           ),
           // Phase 2: Von der Bounce-Position komplett zurück nach links (geschlossen)
           TweenSequenceItem<double>(
             tween: Tween<double>(
-              begin: currentPos * 1.2, // Von der Bounce-Position mit 20% Überschwung
+              begin: currentPos * 1.1, // Von der Bounce-Position mit 10% Überschwung
               end: 0.0, // Ganz nach links (geschlossen)
             ).chain(CurveTween(curve: Curves.easeInOut)),
-            weight: 75.0,
+            weight: 50.0,
           ),
         ]).animate(_bounceController);
         
