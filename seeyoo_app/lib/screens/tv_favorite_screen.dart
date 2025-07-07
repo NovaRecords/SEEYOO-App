@@ -16,12 +16,12 @@ class TvFavoriteScreen extends StatefulWidget {
 class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   int _selectedTabIndex = -1; // -1 bedeutet kein Tab ist ausgewählt
   int _selectedChannelIndex = 0; // Index des ausgewählten Kanals
-  final List<String> _tabTitles = ['Programm', 'Mediathek', 'Kategorien', 'Verschieben'];
+  final List<String> _tabTitles = ['Programm', 'Mediathek', 'Kategorien', 'Bearbeiten'];
   final List<IconData> _tabIcons = [
     Icons.list_alt, // Programm
     Icons.video_library, // Mediathek
     Icons.grid_view, // Kategorien
-    Icons.sync // Verschieben-Icon mit zwei halbkreisförmigen Pfeilen
+    Icons.sync // Bearbeiten-Icon mit zwei halbkreisförmigen Pfeilen
   ];
   
   // ScrollController für die Kategorien-Liste
@@ -50,9 +50,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   bool _showEpgView = false;
   bool _showGenresView = false;
   bool _showMediaLibraryMessage = false;
-  bool _isInReorderMode = false; // Status für den Verschieben-Modus
+  bool _isInReorderMode = false; // Status für den Bearbeiten-Modus
   
-  // Gibt das Verschieben-Icon zurück mit optionalem roten Punkt
+  // Gibt das Bearbeiten-Icon zurück mit optionalem roten Punkt
   Widget _getReorderIcon() {
     return Stack(
       children: [
@@ -78,11 +78,11 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     );
   }
   
-  // Schaltet den Verschieben-Modus ein oder aus
+  // Schaltet den Bearbeiten-Modus ein oder aus
   void _toggleReorderMode() {
     setState(() {
       _isInReorderMode = !_isInReorderMode;
-      // Wenn wir in den Verschieben-Modus wechseln, deaktivieren wir alle anderen Ansichten
+      // Wenn wir in den Bearbeiten-Modus wechseln, deaktivieren wir alle anderen Ansichten
       if (_isInReorderMode) {
         _showEpgView = false;
         _showGenresView = false;
@@ -924,7 +924,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
       );
     }
     
-    // Im Verschieben-Modus verwenden wir ReorderableListView mit der bestehenden Ansicht
+    // Im Bearbeiten-Modus verwenden wir ReorderableListView mit der bestehenden Ansicht
     if (_isInReorderMode) {
       return ReorderableListView.builder(
         buildDefaultDragHandles: false, // Wir erstellen eigene Drag-Handles
@@ -969,12 +969,12 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         padding: const EdgeInsets.symmetric(vertical: 4),
         itemBuilder: (context, index) {
           final channel = channels[index];
-          // Im Verschieben-Modus keine Sender als ausgewählt markieren
+          // Im Bearbeiten-Modus keine Sender als ausgewählt markieren
           final isSelected = _isInReorderMode ? false : (_selectedTabIndex != 3 ?
               channels[index].id == _channels[_selectedChannelIndex].id :
               index == _selectedChannelIndex);
           
-          // Im Verschieben-Modus verwenden wir die bestehenden Items mit Drag-Handle
+          // Im Bearbeiten-Modus verwenden wir die bestehenden Items mit Drag-Handle
           return Container(
             key: ValueKey(channel.id),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1335,7 +1335,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     final isLandscape = screenWidth > screenHeight;
     
     // Größenanpassung für Tesla-Bildschirme im Querformat
-    // Im Verschieben-Modus wird der Player ausgeblendet
+    // Im Bearbeiten-Modus wird der Player ausgeblendet
     final playerHeight = _isInReorderMode ? 0.0 : (isLandscape ? screenHeight * 0.4 : screenHeight * 0.3);
     
     return Scaffold(
@@ -1390,9 +1390,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                 _tabTitles.length,
                 (index) => GestureDetector(
                   onTap: () {
-                    // Im Verschieben-Modus sind alle Tabs außer dem Verschieben-Tab blockiert
+                    // Im Bearbeiten-Modus sind alle Tabs außer dem Bearbeiten-Tab blockiert
                     if (_isInReorderMode && index != 3) {
-                      // Keine Aktion für andere Tabs im Verschieben-Modus
+                      // Keine Aktion für andere Tabs im Bearbeiten-Modus
                       return;
                     }
                     
@@ -1428,9 +1428,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                         _showMediaLibraryMessage = false;
                       }
                       
-                      // Wenn Verschieben-Tab (letzte Tab) gewählt wurde
+                      // Wenn Bearbeiten-Tab (letzte Tab) gewählt wurde
                       if (index == 3) {
-                        // Verschieben-Modus umschalten
+                        // Bearbeiten-Modus umschalten
                         _toggleReorderMode();
                       }
                       // Speichere den vorherigen Zustand und Sichtbarkeiten
@@ -1481,10 +1481,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                           ),
                           child: Center(
                             child: index == 3 
-                              ? _getReorderIcon() // Für Verschieben-Tab das spezielle Widget mit Dot verwenden
+                              ? _getReorderIcon() // Für Bearbeiten-Tab das spezielle Widget mit Dot verwenden
                               : Icon(
                                   _tabIcons[index],
-                                  // Tab-Farbe: Wenn im Verschieben-Modus und nicht der Verschieben-Tab, dann Grau mit geringerer Deckkraft
+                                  // Tab-Farbe: Wenn im Bearbeiten-Modus und nicht der Bearbeiten-Tab, dann Grau mit geringerer Deckkraft
                                   color: _isInReorderMode && index != 3 
                                     ? const Color(0xFF8D9296).withOpacity(0.5) 
                                     : (_selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296)),
