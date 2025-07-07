@@ -21,19 +21,19 @@
 - [x] Hauptnavigationsleiste implementieren
 - [x] Bottom Navigation für Hauptbereiche (TV, Filme/Serien, Musik, Radio, Einstellungen)
 - [x] Splash Screen mit App-Logo
-- [ ] Ladeanimationen für Seitenübergänge
-- [ ] Error-Boundaries für stabile Navigation
+- [x] Ladeanimationen für Seitenübergänge
+- [x] Error-Boundaries für stabile Navigation
 
 ### 2. Benutzeroberfläche für Kanalübersicht (US-5, US-6, US-7)
 **Ziel:** Eine ansprechende und benutzerfreundliche Übersicht aller verfügbaren Kanäle.
 
 **Tasks:**
 - [x] Grundlayout für die Kanalübersicht erstellen
-- [ ] Kachelansicht für Kanäle implementieren
-- [ ] Ladeanimation während des Ladens der Kanäle
-- [ ] Suchfunktion mit Echtzeit-Vorschlägen
-- [ ] Filterfunktion nach Kategorien
-- [ ] Fehlerbehandlung bei Verbindungsproblemen
+- [x] Kachelansicht für Kanäle implementieren
+- [x] Ladeanimation während des Ladens der Kanäle
+- [-] Suchfunktion mit Echtzeit-Vorschlägen (fällt aus)
+- [x] Filterfunktion nach Kategorien
+- [-] Fehlerbehandlung bei Verbindungsproblemen (Im nächsten Release)
 
 ### 3. Basis-Streaming-Funktionalität (US-9, US-11, US-12)
 **Ziel:** Grundlegende Wiedergabefunktionen für Live-TV-Streams.
@@ -41,7 +41,7 @@
 **Tasks:**
 - [ ] Integration eines Video-Players (z.B. video_player oder vlc_player)
 - [ ] Vollbildmodus mit Steuerelementen
-- [ ] Pause/Fortsetzen-Funktion
+- [-] Pause/Fortsetzen-Funktion (fällt aus)
 - [ ] Automatische Anpassung der Videoqualität
 - [ ] Fehlerbehandlung bei Streaming-Problemen
 
@@ -51,8 +51,8 @@
 **Tasks:**
 - [x] Registrierungsbildschirm mit E-Mail/Passwort
 - [x] Anmeldebildschirm
-- [ ] Passwort zurücksetzen Funktion
-- [ ] E-Mail-Verifizierung
+- [-] Passwort zurücksetzen Funktion (Im nächsten Release)
+- [-] E-Mail-Verifizierung (Im nächsten Release)
 - [ ] Sichere Speicherung von Anmeldedaten
 
 ### 5. Grundlegende Einstellungen (TECH-3)
@@ -60,9 +60,9 @@
 
 **Tasks:**
 - [ ] Einstellungsseite erstellen
-- [ ] Dark/Light Mode Umschalter
-- [ ] Sprachauswahl (Deutsch/Englisch)
-- [ ] Benachrichtigungseinstellungen
+- [-] Dark/Light Mode Umschalter (Im nächsten Release)
+- [-] Sprachauswahl (Deutsch/Englisch) (Im nächsten Release)
+- [-] Benachrichtigungseinstellungen (Im nächsten Release)
 - [ ] Datenschutzeinstellungen
 
 ## Technische Schwerpunkte
@@ -137,4 +137,5 @@
 
 ---
 *Letztes Update: 26.06.2025 - Vitali Mack*
+*Letztes Update: 07.07.2025 - Vitali Mack*
 
