@@ -142,5 +142,25 @@
 
 ---
 *Letztes Update: 26.06.2025 - Vitali Mack*
+
+![Screenshot Start](pics/Definition of Done/start2.png)
+*Abbildung 1: Startbildschirm*
+
+![Screenshot Login](pics/Definition of Done/login3.png)
+*Abbildung 2: Login-Bildschirm*
+
+![Screenshot Menu](pics/menu-screen03.png)
+*Abbildung 3: Hauptmenü*
+
+![Screenshot TV](pics/tv-screen05.png)
+*Abbildung 4: TV-Übersicht*
+
+![Screenshot EPG](pics/EPG-screen03.png)
+*Abbildung 5: EPG*  
+
+![Screenshot Kategorien](pics/Kat-screen03.png)
+*Abbildung 6: Kategorien*
+
+
 *Letztes Update: 07.07.2025 - Vitali Mack*
 
