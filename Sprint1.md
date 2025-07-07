@@ -18,11 +18,12 @@
 
 **Tasks:**
 - [x] Grundlegende App-Struktur mit Flutter einrichten
-- [x] Hauptnavigationsleiste implementieren
-- [x] Bottom Navigation für Hauptbereiche (TV, Filme/Serien, Musik, Radio, Einstellungen)
+- [x] Hauptnavigationsleiste implementieren (TV, Filme/Serien, Musik, Radio, Einstellungen, Mein Konto)
+- [x] Bottom Navigation für Hauptbereiche (Programm, Mediathek, Kategorien, Favoriten)
 - [x] Splash Screen mit App-Logo
 - [x] Ladeanimationen für Seitenübergänge
 - [x] Error-Boundaries für stabile Navigation
+- [ ] USER_ID API Request Implementation (Damit die user Einstellungen geladen und gespeichert werden. z.B. Favoriten, letzte geschaute Sender, Startlogik - z.B. direkt mit Favoriten starten, etc.) 
 
 ### 2. Benutzeroberfläche für Kanalübersicht (US-5, US-6, US-7)
 **Ziel:** Eine ansprechende und benutzerfreundliche Übersicht aller verfügbaren Kanäle.
@@ -34,6 +35,10 @@
 - [-] Suchfunktion mit Echtzeit-Vorschlägen (fällt aus)
 - [x] Filterfunktion nach Kategorien
 - [-] Fehlerbehandlung bei Verbindungsproblemen (Im nächsten Release)
+- [x] Programm Übersicht (EPG-Daten)
+- [-] Mediathek (Aufgenommene Sendungen) - Im nächsten Release
+- [x] Kategorien (Sortierung nach Kategorien)
+- [ ] Favoriten (Favorisierte Kanäle)
 
 ### 3. Basis-Streaming-Funktionalität (US-9, US-11, US-12)
 **Ziel:** Grundlegende Wiedergabefunktionen für Live-TV-Streams.
