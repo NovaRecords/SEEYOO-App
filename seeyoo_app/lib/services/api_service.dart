@@ -809,6 +809,51 @@ class ApiService {
     return genreTranslations[genreId.toLowerCase()] ?? genreId;
   }
   
+  // Aktualisiert die Reihenfolge der Favoriten-Kanäle
+  // Basierend auf API-Doku: PUT /users/<user_id>/tv-favorites mit ch_id=1,2,3,...
+  Future<bool> updateFavoritesOrder(List<int> channelIds) async {
+    try {
+      final userId = await _storageService.getUserId();
+      final token = await _storageService.getAccessToken();
+      
+      if (userId == null || token == null) {
+        print('No user ID or token available');
+        return false;
+      }
+
+      // Erstelle kommagetrennte Liste der Kanal-IDs
+      final String channelIdsParam = channelIds.join(',');
+      
+      // Verwende den gleichen Endpunkt wie bei addChannelToFavorites
+      final endpoint = '/api/v2/users/$userId/tv-favorites';
+      
+      // PUT-Anfrage mit den gleichen Headern wie bei addChannelToFavorites
+      final response = await http.put(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        body: {
+          'ch_id': channelIdsParam,
+        },
+      );
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('Successfully updated favorites order');
+        return true;
+      } else {
+        print('Failed to update favorites order: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error updating favorites order: $e');
+      return false;
+    }
+  }
+  
   // Holt EPG-Daten (TV-Programm) für einen Kanal
   // Basierend auf API-Doku: /tv-channels/<ch_id>/epg?next=<count>
   Future<List<EpgProgram>> getEpgForChannel(int channelId, {int next = 10}) async {

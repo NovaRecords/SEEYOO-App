@@ -4,6 +4,7 @@ import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/services/api_service.dart';
+import 'package:seeyoo_app/services/storage_service.dart';
 
 class TvFavoriteScreen extends StatefulWidget {
   const TvFavoriteScreen({super.key});
@@ -31,6 +32,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   double _lastChannelListScrollPosition = 0.0;
   
   final ApiService _apiService = ApiService();
+  final StorageService _storageService = StorageService();
   List<TvChannel> _channels = [];
   List<TvChannel> _favoriteChannels = [];
   List<EpgProgram> _currentEpgData = [];
@@ -48,19 +50,66 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   bool _showEpgView = false;
   bool _showGenresView = false;
   bool _showMediaLibraryMessage = false;
+  bool _isInReorderMode = false; // Status für den Verschieben-Modus
   
-  // Gibt das Sync-Icon zurück (immer das gleiche, keine Dynamik nötig)
-  IconData _getFavoriteIcon() {
-    // Immer das Sync-Icon zurückgeben
-    return Icons.sync;
+  // Gibt das Verschieben-Icon zurück mit optionalem roten Punkt
+  Widget _getReorderIcon() {
+    return Stack(
+      children: [
+        Icon(
+          Icons.sync,
+          color: _selectedTabIndex == 3 ? Colors.white : const Color(0xFF8D9296),
+          size: 26,
+        ),
+        if (_isInReorderMode)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE53A56), // Rot für den Punkt
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+  
+  // Schaltet den Verschieben-Modus ein oder aus
+  void _toggleReorderMode() {
+    setState(() {
+      _isInReorderMode = !_isInReorderMode;
+      // Wenn wir in den Verschieben-Modus wechseln, deaktivieren wir alle anderen Ansichten
+      if (_isInReorderMode) {
+        _showEpgView = false;
+        _showGenresView = false;
+        _showMediaLibraryMessage = false;
+      }
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    // Beide laden - alle Kanäle für Kontext und Favoriten für Anzeige
-    _loadChannels();
+    // Favoriten mit sortierter Reihenfolge laden
+    _loadFavoriteChannels();
     _loadGenres();
+  }
+  
+  // Wird aufgerufen, wenn der Screen in den Vordergrund kommt
+  bool _firstLoad = true;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Überspringe beim ersten Laden, da initState() bereits _loadFavoriteChannels() aufruft
+    if (!_firstLoad) {
+      // Favoriten jedes Mal neu laden, wenn der Screen angezeigt wird
+      _loadFavoriteChannels();
+    }
+    _firstLoad = false;
   }
   
   @override
@@ -251,6 +300,29 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     }
   }
 
+  // Aktualisiert die Reihenfolge der Favoriten auf dem Server und lokal
+  Future<void> _updateFavoriteOrder() async {
+    try {
+      // Extrahiere IDs aller Favoriten-Kanäle in der aktuellen Reihenfolge
+      final List<int> channelIds = _favoriteChannels.map((channel) => channel.id).toList();
+      
+      // Sende die aktualisierte Reihenfolge an den Server
+      final success = await _apiService.updateFavoritesOrder(channelIds);
+      
+      // Speichere die Reihenfolge auch lokal (unabhängig vom Servererfolg)
+      await _storageService.saveFavoritesOrder(channelIds);
+      
+      if (success) {
+        print('Favoriten-Reihenfolge erfolgreich gespeichert');
+      } else {
+        print('Fehler beim Speichern der Favoriten-Reihenfolge auf dem Server');
+        // Trotzdem behalten wir die lokale Reihenfolge bei
+      }
+    } catch (e) {
+      print('Fehler beim Aktualisieren der Favoriten-Reihenfolge: $e');
+    }
+  }
+
   // Wähle einen Kanal aus und lade den Stream
   void _selectChannel(int index) async {
     if (index >= 0 && index < _channels.length) {
@@ -356,15 +428,52 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     });
     
     try {
+      // Favoriten vom Server laden
       final favoriteChannels = await _apiService.getFavoriteTvChannels();
       final allChannels = await _apiService.getTvChannels(); // Alle Kanäle für vollständige Informationen
       
-      setState(() {
-        _favoriteChannels = favoriteChannels;
-        _channels = allChannels; // Wir brauchen alle Kanäle für komplette Informationen
-        _filteredChannels = favoriteChannels; // Zeige standardmäßig nur Favoriten an
-        _isLoading = false;
-      });
+      // Lokal gespeicherte Reihenfolge abrufen
+      final savedOrder = await _storageService.getFavoritesOrder();
+      
+      // Wenn wir eine gespeicherte Reihenfolge haben, sortieren wir die Favoriten entsprechend
+      if (savedOrder != null && savedOrder.isNotEmpty) {
+        // Erstelle eine Map für schnellen Zugriff auf Kanäle nach ID
+        final Map<int, TvChannel> channelsMap = {};
+        for (final channel in favoriteChannels) {
+          channelsMap[channel.id] = channel;
+        }
+        
+        // Neue sortierte Liste erstellen
+        List<TvChannel> sortedFavorites = [];
+        
+        // Für jede ID in der gespeicherten Reihenfolge den entsprechenden Kanal hinzufügen
+        for (final id in savedOrder) {
+          if (channelsMap.containsKey(id)) {
+            sortedFavorites.add(channelsMap[id]!);
+            // Entfernen, um zu verfolgen, welche Kanäle bereits hinzugefügt wurden
+            channelsMap.remove(id);
+          }
+        }
+        
+        // Füge alle übrigen Kanäle hinzu (falls neue Favoriten hinzugekommen sind)
+        sortedFavorites.addAll(channelsMap.values);
+        
+        // Ersetze die ursprüngliche Liste durch die sortierte
+        setState(() {
+          _favoriteChannels = sortedFavorites;
+          _channels = allChannels;
+          _filteredChannels = sortedFavorites;
+          _isLoading = false;
+        });
+      } else {
+        // Keine gespeicherte Reihenfolge vorhanden, verwende die vom Server gelieferte
+        setState(() {
+          _favoriteChannels = favoriteChannels;
+          _channels = allChannels;
+          _filteredChannels = favoriteChannels;
+          _isLoading = false;
+        });
+      }
       
       // Wähle den ersten Favoriten aus, wenn vorhanden
       if (_favoriteChannels.isNotEmpty) {
@@ -815,7 +924,165 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
       );
     }
     
-    // Erstelle die Liste der Kanäle
+    // Im Verschieben-Modus verwenden wir ReorderableListView mit der bestehenden Ansicht
+    if (_isInReorderMode) {
+      return ReorderableListView.builder(
+        buildDefaultDragHandles: false, // Wir erstellen eigene Drag-Handles
+        // Anpassen des Aussehens während des Ziehens
+        proxyDecorator: (Widget child, int index, Animation<double> animation) {
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (BuildContext context, Widget? child) {
+              // Während des Ziehens dunkelgrauen Hintergrund statt weißen Rahmen verwenden
+              return Material(
+                elevation: 0.0, // Keine Schatten
+                color: Colors.transparent,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B4248), // Dunkelgrauer Hintergrund wie bei Auswahl
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: child,
+                ),
+              );
+            },
+            child: child,
+          );
+        },
+        onReorder: (oldIndex, newIndex) {
+          // Anpassung für den Fall, dass nach unten verschoben wird
+          if (newIndex > oldIndex) newIndex--;
+          
+          setState(() {
+            // Kanal aus der alten Position entfernen und an der neuen einfügen
+            final channel = _favoriteChannels.removeAt(oldIndex);
+            _favoriteChannels.insert(newIndex, channel);
+            
+            // Gefilterte Kanäle aktualisieren
+            _filteredChannels = List.from(_favoriteChannels);
+            
+            // API-Aufruf, um die neue Reihenfolge zu speichern
+            _updateFavoriteOrder(); 
+          });
+        },
+        itemCount: channels.length,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        itemBuilder: (context, index) {
+          final channel = channels[index];
+          // Im Verschieben-Modus keine Sender als ausgewählt markieren
+          final isSelected = _isInReorderMode ? false : (_selectedTabIndex != 3 ?
+              channels[index].id == _channels[_selectedChannelIndex].id :
+              index == _selectedChannelIndex);
+          
+          // Im Verschieben-Modus verwenden wir die bestehenden Items mit Drag-Handle
+          return Container(
+            key: ValueKey(channel.id),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                // Drag-Handle (dreifach-Strich), nur dieser Bereich kann zum Ziehen verwendet werden
+                ReorderableDragStartListener(
+                  index: index,
+                  child: const Icon(
+                    Icons.drag_handle,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                  
+                // Kanal-Logo/Icon
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    color: Colors.grey[800],
+                    child: channel.logo != null && channel.logo!.isNotEmpty
+                      ? Image.network(
+                          channel.logo!.startsWith('http') 
+                            ? channel.logo! 
+                            : 'http://app.seeyoo.tv${channel.logo!}',
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(child: Icon(Icons.live_tv, size: 30, color: Colors.white54));
+                          },
+                        )
+                      : const Icon(Icons.live_tv, size: 30, color: Colors.white54),
+                  ),
+                ),
+                  
+                // Kanal-Informationen
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Kanalname
+                        Text(
+                          channel.name,
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        // Aktuelle Sendung
+                        if (channel.currentShow != null)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              // JETZT-Label
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE53A56),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'JETZT',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                channel.currentShow!,
+                                style: const TextStyle(color: Colors.white, fontSize: 16),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (channel.currentShowTime != null)
+                                Text(
+                                  channel.currentShowTime!,
+                                  style: const TextStyle(color: Color(0xFF8D9296)),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+    
+    // Normale Liste für den Standard-Modus
     return ListView.builder(
       controller: _channelListController,
       itemCount: channels.length,
@@ -871,169 +1138,142 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                                 size: 30,
                               ),
                             )
-                          : const Icon(
-                              Icons.tv,
-                              color: Colors.white54,
-                              size: 30,
-                            ),
+                          : const Icon(Icons.tv, size: 30, color: Colors.white54),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // Kanalinformationen
+                    
+                    // Kanal-Informationen
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          
-                          // EPG-Informationen anzeigen
-                          Builder(builder: (context) {
-                            // Aktuelle EPG-Daten laden, falls vorhanden
-                            final epgData = _epgDataMap[channel.id] ?? [];
-                            
-                            // Wenn keine EPG-Daten vorhanden sind UND noch nicht versucht wurde, sie zu laden
-                            if (epgData.isEmpty && _epgLoadingStatus[channel.id] != true && _epgRequestAttempted[channel.id] != true) {
-                              // Verwende Future.microtask, um setState() nicht während des Builds aufzurufen
-                              Future.microtask(() => _loadChannelEpgData(channel));
-                              return Text(
-                                'Programminformationen werden geladen...',
-                                style: TextStyle(
-                                  color: const Color(0xFF8D9296),
-                                  fontSize: 12,
-                                ),
-                              );
-                            }
-                            
-                            // EPG-Daten werden geladen
-                            if (_epgLoadingStatus[channel.id] == true && epgData.isEmpty) {
-                              return const SizedBox(
-                                height: 12,
-                                width: 12,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
-                                ),
-                              );
-                            }
-                            
-                            // Wenn keine EPG-Daten vorhanden sind, aber bereits versucht wurde, sie zu laden
-                            if (epgData.isEmpty && _epgRequestAttempted[channel.id] == true) {
-                              return Text(
-                                'Keine Programminformationen verfügbar',
-                                style: TextStyle(
-                                  color: const Color(0xFF8D9296),
-                                  fontSize: 12,
-                                ),
-                              );
-                            }  
-                            
-                            // Wenn EPG-Daten vorhanden sind
-                            if (epgData.isNotEmpty) {
-                              // Finde das aktuell laufende Programm
-                              final currentProgram = epgData.firstWhere(
-                                (program) => program.isCurrentlyRunning,
-                                orElse: () => epgData.first,
-                              );
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Kanalname
+                            Text(
+                              channel.name,
+                              style: const TextStyle(color: Colors.white, fontSize: 16),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            // EPG-Daten wenn vorhanden
+                            Builder(builder: (context) {
+                              // EPG-Daten für diesen Kanal holen
+                              final epgData = _epgDataMap[channel.id] ?? [];
                               
-                              // Finde die nächste Sendung (falls verfügbar)
-                              EpgProgram? nextProgram;
-                              if (epgData.length > 1) {
-                                final currentIndex = epgData.indexOf(currentProgram);
-                                if (currentIndex < epgData.length - 1) {
-                                  nextProgram = epgData[currentIndex + 1];
-                                }
+                              // Wenn keine EPG-Daten und kein Loading-Status, lade Daten
+                              if (epgData.isEmpty && _epgLoadingStatus[channel.id] != true && _epgRequestAttempted[channel.id] != true) {
+                                // Asynchron Daten laden
+                                Future.microtask(() => _loadChannelEpgData(channel));
+                                return Text(
+                                  'Lade Programmdaten...',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                );
                               }
                               
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Aktuelle Sendung mit JETZT-Label
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        margin: const EdgeInsets.only(right: 8),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE53A56),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: const Text(
-                                          'JETZT',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Text(
-                                          currentProgram.name,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
+                              // Wenn gerade geladen wird
+                              if (_epgLoadingStatus[channel.id] == true && epgData.isEmpty) {
+                                return const Text(
+                                  'Lade Programmdaten...',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
                                   ),
-                                  
-                                  // Nächste Sendung mit Startzeit
-                                  if (nextProgram != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            nextProgram.startTimeFormatted,
+                                );
+                              }
+                              
+                              // Wenn keine Daten nach Ladeversuch
+                              if (epgData.isEmpty && _epgRequestAttempted[channel.id] == true) {
+                                return Text(
+                                  'Keine Programmdaten verfügbar',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                );
+                              }
+                              
+                              // Wenn EPG-Daten vorhanden
+                              if (epgData.isNotEmpty) {
+                                // Finde aktuelle und nächste Sendung
+                                final currentProgram = epgData[0]; // Aktuelle Sendung ist die erste
+                                EpgProgram? nextProgram;
+                                
+                                // Wenn mehr als eine Sendung vorhanden ist
+                                if (epgData.length > 1) {
+                                  final currentIndex = 0; // Aktuelle Sendung ist immer Index 0
+                                  if (currentIndex < epgData.length - 1) {
+                                    nextProgram = epgData[currentIndex + 1];
+                                  }
+                                }
+                                
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Aktuelle Sendung mit JETZT-Label
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          margin: const EdgeInsets.only(right: 8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE53A56),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            'JETZT',
                                             style: TextStyle(
-                                              color: const Color(0xFFE53A56),
-                                              fontSize: 14,
+                                              color: Colors.white,
+                                              fontSize: 10,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              nextProgram.name,
-                                              style: TextStyle(
-                                                color: const Color(0xFF8D9296),
-                                                fontSize: 14,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            currentProgram.name,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
                                             ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                ],
+                                    // Nächste Sendung wurde entfernt, um die Einträge kompakter zu machen
+                                  ],
+                                );
+                              }
+                              
+                              // Fallback wenn irgendwas schiefging
+                              return Text(
+                                'Keine Daten',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
                               );
-                            }
-                            
-                            return Text(
-                              'Keine Programminformationen verfügbar',
-                              style: TextStyle(
-                                color: const Color(0xFF8D9296),
-                                fontSize: 12,
-                              ),
-                            );
-                          }),
-                        ],
+                            }),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              // In der Favoriten-Ansicht zeigen wir keine Sterne an, da alle Kanäle Favoriten sind
             ],
           ),
         );
       },
     );
   }
+
   
   // Scrollt zum ausgewählten Kanal in der Liste
   void _scrollToSelectedChannel() {
@@ -1095,7 +1335,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     final isLandscape = screenWidth > screenHeight;
     
     // Größenanpassung für Tesla-Bildschirme im Querformat
-    final playerHeight = isLandscape ? screenHeight * 0.4 : screenHeight * 0.3;
+    // Im Verschieben-Modus wird der Player ausgeblendet
+    final playerHeight = _isInReorderMode ? 0.0 : (isLandscape ? screenHeight * 0.4 : screenHeight * 0.3);
     
     return Scaffold(
       backgroundColor: Colors.black,
@@ -1149,6 +1390,12 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                 _tabTitles.length,
                 (index) => GestureDetector(
                   onTap: () {
+                    // Im Verschieben-Modus sind alle Tabs außer dem Verschieben-Tab blockiert
+                    if (_isInReorderMode && index != 3) {
+                      // Keine Aktion für andere Tabs im Verschieben-Modus
+                      return;
+                    }
+                    
                     setState(() {
                       // Aktuelle Scroll-Position speichern, bevor ein Tab gewechselt wird
                       if (_channelListController.hasClients && !_showEpgView && !_showGenresView) {
@@ -1183,8 +1430,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                       
                       // Wenn Verschieben-Tab (letzte Tab) gewählt wurde
                       if (index == 3) {
-                        // Hier später die Logik für die Verschieben-Funktion implementieren
-                        // Momentan keine Aktion ausführen
+                        // Verschieben-Modus umschalten
+                        _toggleReorderMode();
                       }
                       // Speichere den vorherigen Zustand und Sichtbarkeiten
                       final bool wasEpgView = _showEpgView;
@@ -1233,12 +1480,16 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Center(
-                            child: Icon(
-                              // Für Favoriten-Tab das dynamische Icon verwenden
-                              index == 3 ? _getFavoriteIcon() : _tabIcons[index],
-                              color: _selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296), // Ausgewähltes Symbol weiß, andere hellgrau
-                              size: 26,
-                            ),
+                            child: index == 3 
+                              ? _getReorderIcon() // Für Verschieben-Tab das spezielle Widget mit Dot verwenden
+                              : Icon(
+                                  _tabIcons[index],
+                                  // Tab-Farbe: Wenn im Verschieben-Modus und nicht der Verschieben-Tab, dann Grau mit geringerer Deckkraft
+                                  color: _isInReorderMode && index != 3 
+                                    ? const Color(0xFF8D9296).withOpacity(0.5) 
+                                    : (_selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296)),
+                                  size: 26,
+                                ),
                           ),
                         ),
                         const SizedBox(height: 4),

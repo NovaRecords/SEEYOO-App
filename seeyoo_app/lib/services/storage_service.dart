@@ -125,6 +125,30 @@ class StorageService {
     }
   }
   
+  // Speichern der Favoriten-Reihenfolge (als Liste von Kanal-IDs)
+  Future<void> saveFavoritesOrder(List<int> channelIds) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('favorites_order', jsonEncode(channelIds));
+  }
+  
+  // Abrufen der Favoriten-Reihenfolge
+  Future<List<int>?> getFavoritesOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final orderString = prefs.getString('favorites_order');
+    
+    if (orderString == null || orderString.isEmpty) {
+      return null;
+    }
+    
+    try {
+      final List<dynamic> orderList = jsonDecode(orderString);
+      return orderList.cast<int>();
+    } catch (e) {
+      print('Error parsing favorites order: $e');
+      return null;
+    }
+  }
+  
   // Alle Benutzerdaten löschen (zusätzlich zu Auth-Daten)
   @override
   Future<void> clearAuthData() async {
@@ -136,5 +160,6 @@ class StorageService {
     await prefs.remove(_userIdKey);
     await prefs.remove(_userDataKey);
     await prefs.remove(_userSettingsKey);
+    await prefs.remove('favorites_order'); // Lösche auch die gespeicherte Favoriten-Reihenfolge
   }
 }

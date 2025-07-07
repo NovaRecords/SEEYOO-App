@@ -825,6 +825,17 @@ class _TvScreenState extends State<TvScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Kanalname anzeigen
+                          Text(
+                            channel.name,
+                            style: const TextStyle(
+                              color: Colors.white, 
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
                           
                           // EPG-Informationen anzeigen
                           Builder(builder: (context) {
@@ -921,35 +932,7 @@ class _TvScreenState extends State<TvScreen> {
                                       ),
                                     ],
                                   ),
-                                  
-                                  // Nächste Sendung mit Startzeit
-                                  if (nextProgram != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            nextProgram.startTimeFormatted,
-                                            style: TextStyle(
-                                              color: const Color(0xFFE53A56),
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              nextProgram.name,
-                                              style: TextStyle(
-                                                color: const Color(0xFF8D9296),
-                                                fontSize: 14,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                  // Nächste Sendung wurde entfernt, um die Einträge kompakter zu machen
                                 ],
                               );
                             }
