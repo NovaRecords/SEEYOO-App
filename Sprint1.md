@@ -143,6 +143,8 @@
 ---
 *Letztes Update: 26.06.2025 - Vitali Mack*
 
+*Nach eine Woche Sprint siehe Bilder:*
+
 ![Screenshot Splash](pics/Definition%20of%20Done/start2.png)
 *Abbildung 1: Startbildschirm*
 
