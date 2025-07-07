@@ -7,6 +7,7 @@ import 'package:seeyoo_app/models/auth_response.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
+import 'package:seeyoo_app/models/user.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -226,6 +227,9 @@ class ApiService {
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       );
       
@@ -252,6 +256,9 @@ class ApiService {
           headers: {
             'Authorization': 'Bearer ${refreshResponse.accessToken}',
             'Accept': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         );
       }
@@ -445,6 +452,288 @@ class ApiService {
   }
   
   // Weitere HTTP-Methoden (POST, PUT, DELETE) können nach Bedarf hinzugefügt werden
+
+  // Holt die Benutzerinformationen von der API
+  Future<User?> getUserInfo() async {
+    try {
+      final userId = await _storageService.getUserId();
+      
+      if (userId == null) {
+        print('No user ID available');
+        return null;
+      }
+      
+      // Endpunkt aus der Doku: /users/<user_id>
+    // Füge einen Zeitstempel hinzu, um Caching zu verhindern
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final endpoint = '/api/v2/users/$userId?_ts=$timestamp';
+      
+      final response = await get(endpoint);
+      
+      if (response == null) {
+        print('Failed to get user info - null response');
+        return null;
+      }
+      
+      if (response.statusCode != 200) {
+        print('Failed to get user info: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return null;
+      }
+      
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'OK' && data['results'] != null) {
+        final userData = data['results'];
+        final user = User.fromJson(userData);
+        
+        // Benutzerinformationen im Speicher aktualisieren
+        await _storageService.saveUser(user);
+        
+        return user;
+      } else {
+        print('API error: ${data["error"] ?? "Unknown error"}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching user info: $e');
+      return null;
+    }
+  }
+  
+  // Holt die Benutzereinstellungen von der API
+  Future<Map<String, dynamic>?> getUserSettings() async {
+    try {
+      final userId = await _storageService.getUserId();
+      
+      if (userId == null) {
+        print('No user ID available');
+        return null;
+      }
+      
+      // Endpunkt aus der Doku: /users/<user_id>/settings
+      final endpoint = '/api/v2/users/$userId/settings';
+      
+      final response = await get(endpoint);
+      
+      if (response == null) {
+        print('Failed to get user settings - null response');
+        return null;
+      }
+      
+      if (response.statusCode != 200) {
+        print('Failed to get user settings: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return null;
+      }
+      
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'OK' && data['results'] != null) {
+        final settingsData = data['results'];
+        
+        // Einstellungen im Speicher aktualisieren
+        await _storageService.saveUserSettings(settingsData);
+        
+        return settingsData;
+      } else {
+        print('API error: ${data["error"] ?? "Unknown error"}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching user settings: $e');
+      return null;
+    }
+  }
+  
+  // Aktualisiert die Benutzereinstellungen
+  Future<bool> updateUserSettings(Map<String, dynamic> settings) async {
+    try {
+      final userId = await _storageService.getUserId();
+      
+      if (userId == null) {
+        print('No user ID available');
+        return false;
+      }
+      
+      // Endpunkt aus der Doku: /users/<user_id>/settings
+      final endpoint = '/api/v2/users/$userId/settings';
+      
+      final uri = Uri.parse('$baseUrl$endpoint');
+      final token = await _storageService.getAccessToken();
+      
+      if (token == null) {
+        print('No access token available');
+        return false;
+      }
+      
+      final response = await http.put(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(settings),
+      );
+      
+      if (response.statusCode != 200) {
+        print('Failed to update user settings: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return false;
+      }
+      
+      // Aktualisierte Einstellungen im Speicher aktualisieren
+      final updatedSettings = await getUserSettings();
+      if (updatedSettings != null) {
+        await _storageService.saveUserSettings(updatedSettings);
+      }
+      
+      return true;
+    } catch (e) {
+      print('Error updating user settings: $e');
+      return false;
+    }
+  }
+
+  // Ruft den Ping-Endpunkt auf, um das Gerät als online zu markieren
+  Future<bool> pingServer() async {
+    try {
+      final userId = await _storageService.getUserId();
+      
+      if (userId == null) {
+        print('No user ID available for ping');
+        return false;
+      }
+      
+      // Endpunkt aus der Doku: /users/<user_id>/ping
+      final endpoint = '/api/v2/users/$userId/ping';
+      
+      final response = await get(endpoint);
+      
+      return response?.statusCode == 200;
+    } catch (e) {
+      print('Error pinging server: $e');
+      return false;
+    }
+  }
+  
+  // Aktualisiert die Media-Info für aktuell abgespielten Content
+  Future<bool> updateMediaInfo({required String type, required int mediaId}) async {
+    try {
+      final userId = await _storageService.getUserId();
+      
+      if (userId == null) {
+        print('No user ID available');
+        return false;
+      }
+      
+      // Endpunkt aus der Doku: /users/<user_id>/media-info
+      final endpoint = '/api/v2/users/$userId/media-info';
+      
+      final uri = Uri.parse('$baseUrl$endpoint');
+      final token = await _storageService.getAccessToken();
+      
+      if (token == null) {
+        print('No access token available');
+        return false;
+      }
+      
+      final body = {
+        'type': type, // z.B. 'tv-channel', 'video', etc.
+        'media_id': mediaId,
+      };
+      
+      final response = await http.post(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error updating media info: $e');
+      return false;
+    }
+  }
+  
+  // Entfernt die Media-Info (beim Stoppen der Wiedergabe)
+  Future<bool> removeMediaInfo() async {
+    try {
+      final userId = await _storageService.getUserId();
+      
+      if (userId == null) {
+        print('No user ID available');
+        return false;
+      }
+      
+      // Endpunkt aus der Doku: /users/<user_id>/media-info
+      final endpoint = '/api/v2/users/$userId/media-info';
+      
+      final uri = Uri.parse('$baseUrl$endpoint');
+      final token = await _storageService.getAccessToken();
+      
+      if (token == null) {
+        print('No access token available');
+        return false;
+      }
+      
+      final response = await http.delete(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error removing media info: $e');
+      return false;
+    }
+  }
+
+  // Abrufen der verfügbaren Module
+  Future<List<String>> getAvailableModules() async {
+    try {
+      final userId = await _storageService.getUserId();
+      
+      if (userId == null) {
+        print('No user ID available');
+        return [];
+      }
+      
+      // Endpunkt aus der Doku: /users/<user_id>/modules
+      final endpoint = '/api/v2/users/$userId/modules';
+      
+      final response = await get(endpoint);
+      
+      if (response == null) {
+        print('Failed to get available modules - null response');
+        return [];
+      }
+      
+      if (response.statusCode != 200) {
+        print('Failed to get available modules: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return [];
+      }
+      
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'OK' && data['results'] != null) {
+        final List<dynamic> modulesList = data['results'];
+        return modulesList.map((module) => module.toString()).toList();
+      } else {
+        print('API error: ${data["error"] ?? "Unknown error"}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching available modules: $e');
+      return [];
+    }
+  }
 
   // Holt alle verfügbaren TV-Kategorien/Genres
   Future<List<TvGenre>> getTvGenres() async {
