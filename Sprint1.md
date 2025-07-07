@@ -32,11 +32,11 @@
 - [x] Grundlayout für die Kanalübersicht erstellen
 - [x] Kachelansicht für Kanäle implementieren
 - [x] Ladeanimation während des Ladens der Kanäle
-- [-] Suchfunktion mit Echtzeit-Vorschlägen (fällt aus)
+- [ ] Suchfunktion mit Echtzeit-Vorschlägen (fällt aus)
 - [x] Filterfunktion nach Kategorien
-- [-] Fehlerbehandlung bei Verbindungsproblemen (Im nächsten Release)
+- [ ] Fehlerbehandlung bei Verbindungsproblemen (Im nächsten Release)
 - [x] Programm Übersicht (EPG-Daten)
-- [-] Mediathek (Aufgenommene Sendungen) - Im nächsten Release
+- [ ] Mediathek (Aufgenommene Sendungen) - Im nächsten Release
 - [x] Kategorien (Sortierung nach Kategorien)
 - [ ] Favoriten (Favorisierte Kanäle)
 
@@ -46,7 +46,7 @@
 **Tasks:**
 - [ ] Integration eines Video-Players (z.B. video_player oder vlc_player)
 - [ ] Vollbildmodus mit Steuerelementen
-- [-] Pause/Fortsetzen-Funktion (fällt aus)
+- [ ] Pause/Fortsetzen-Funktion (fällt aus)
 - [ ] Automatische Anpassung der Videoqualität
 - [ ] Fehlerbehandlung bei Streaming-Problemen
 
@@ -56,8 +56,8 @@
 **Tasks:**
 - [x] Registrierungsbildschirm mit E-Mail/Passwort
 - [x] Anmeldebildschirm
-- [-] Passwort zurücksetzen Funktion (Im nächsten Release)
-- [-] E-Mail-Verifizierung (Im nächsten Release)
+- [ ] Passwort zurücksetzen Funktion (Im nächsten Release)
+- [ ] E-Mail-Verifizierung (Im nächsten Release)
 - [ ] Sichere Speicherung von Anmeldedaten
 
 ### 5. Grundlegende Einstellungen (TECH-3)
@@ -65,9 +65,9 @@
 
 **Tasks:**
 - [ ] Einstellungsseite erstellen
-- [-] Dark/Light Mode Umschalter (Im nächsten Release)
-- [-] Sprachauswahl (Deutsch/Englisch) (Im nächsten Release)
-- [-] Benachrichtigungseinstellungen (Im nächsten Release)
+- [ ] Dark/Light Mode Umschalter (Im nächsten Release)
+- [ ] Sprachauswahl (Deutsch/Englisch) (Im nächsten Release)
+- [ ] Benachrichtigungseinstellungen (Im nächsten Release)
 - [ ] Datenschutzeinstellungen
 
 ## Technische Schwerpunkte
