@@ -71,11 +71,11 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 ## Tag 7 (07.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 **Heutige Hauptaufgaben:** USERID und Favoriten
+- 🟢 **Fortschritt & Ergebnisse:** Ich habe erfolgreich den USERID implementiert. Auch Favoriten funktion wurde umgesetzt. Sortierung von Favoriten funktioniert.
+- 🟢 **Herausforderungen & Blockaden:** Es gibt noch ein paar Probleme die ich noch lösen muss. Die Scrolllogik funktioniert nicht so wie ich es wollte. Sowohl in tv_screen als auch in tv_favorite_screen.
+- 🟢 **Was ich heute gelernt habe:** Wenn man geduldig und hartnäckig ist, dann klapp schon alles!
+- 🟢 **Plan für morgen:** Scrolllogik in tv_screen und tv_favorite_screen verbessern, Favoriten Delete-funktion implementieren, Ping-Logik implementieren, Letzte geschater Kanal speichern...
 
 ## Tag 8 (08.07.2025)
 
