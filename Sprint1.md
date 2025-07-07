@@ -143,10 +143,10 @@
 ---
 *Letztes Update: 26.06.2025 - Vitali Mack*
 
-![Screenshot Start](pics/Definition of Done/start2.png)
+![Screenshot Splash](pics/Definition%20of%20Done/start2.png)
 *Abbildung 1: Startbildschirm*
 
-![Screenshot Login](pics/Definition of Done/login3.png)
+![Screenshot Login](pics/Definition%20of%20Done/login3.png)
 *Abbildung 2: Login-Bildschirm*
 
 ![Screenshot Menu](pics/menu-screen03.png)
