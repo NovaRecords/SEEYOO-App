@@ -189,7 +189,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 40),
           // Detailinformationen
           const Center(
             child: Text(
@@ -205,18 +205,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
             _buildInfoItem('Ablaufdatum', _formatDate(_user?.endDate)),
           if (_user?.accountBalance != null)
             _buildInfoItem('Kontostand', '${_user?.accountBalance} €'),
-          const SizedBox(height: 24),
-          // Technische Informationen
-          const Center(
-            child: Text(
-              'Technische Informationen',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const Divider(color: Color(0xFF3B4248)),
-          _buildInfoItem('User ID', _user?.id.toString() ?? '-'),
-          _buildInfoItem('MAC-Adresse', _user?.mac ?? '-'),
-          const SizedBox(height: 40),
+          const SizedBox(height: 60),
           // Ausloggen-Button
           Center(
             child: SizedBox(

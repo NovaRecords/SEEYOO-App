@@ -251,7 +251,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _buildDrawerItem(
             context: context,
             icon: Icons.star,
-            title: 'TV-Favorite',
+            title: 'TV-Favoriten',
             index: 1,
             isSelected: _selectedIndex == 1,
           ),
@@ -492,7 +492,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       case 0:
         return 'Live-TV';
       case 1:
-        return 'TV-Favorite';
+        return 'TV-Favoriten';
       case 2:
         return 'Filme & Serien';
       case 3:

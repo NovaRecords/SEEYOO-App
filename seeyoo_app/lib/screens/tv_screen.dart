@@ -1144,12 +1144,13 @@ class _TvScreenState extends State<TvScreen> {
                       // Speichere den vorherigen Zustand und Sichtbarkeiten
                       final bool wasEpgView = _showEpgView;
                       final bool wasGenresView = _showGenresView;
+                      final bool wasMediaLibraryView = _showMediaLibraryMessage;
                       
                       // Wenn der Tab bereits ausgewählt ist, deaktiviere ihn
                       _selectedTabIndex = _selectedTabIndex == index ? -1 : index;
                       
-                      // Spezielle Behandlung, wenn vom EPG zurück zur Kanalliste
-                      if (_selectedTabIndex == -1 && (wasEpgView || wasGenresView)) {
+                      // Spezielle Behandlung, wenn von einem Tab zurück zur Kanalliste
+                      if (_selectedTabIndex == -1 && (wasEpgView || wasGenresView || wasMediaLibraryView)) {
                         // Explizit setzen, damit neu gerendert wird
                         _showEpgView = false;
                         _showGenresView = false;
