@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'dart:async'; // Für Timer hinzugefügt
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
@@ -51,6 +52,12 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   bool _showGenresView = false;
   bool _showMediaLibraryMessage = false;
   bool _isInReorderMode = false; // Status für den Bearbeiten-Modus
+  
+  // Timer für regelmäßige Server-Pings
+  Timer? _pingTimer;
+  
+  // ID des aktuell ausgewählten Kanals (für Media-Info)
+  int? _currentChannelId;
   
   // Gibt das Bearbeiten-Icon zurück mit optionalem roten Punkt
   Widget _getReorderIcon() {
@@ -108,6 +115,14 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     // Favoriten mit sortierter Reihenfolge laden
     _loadFavoriteChannels();
     _loadGenres();
+    
+    // Sende sofort einen initialen Ping beim Start
+    _pingServer();
+    
+    // Starte den Ping-Timer (alle 120 Sekunden)
+    _pingTimer = Timer.periodic(const Duration(seconds: 120), (timer) {
+      _pingServer();
+    });
   }
   
   // Wird aufgerufen, wenn der Screen in den Vordergrund kommt
@@ -128,7 +143,23 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     // ScrollController freigeben, wenn das Widget entsorgt wird
     _genresScrollController.dispose();
     _channelListController.dispose();
+    
+    // Timer beenden und Media-Info entfernen
+    _pingTimer?.cancel();
+    if (_currentChannelId != null) {
+      _apiService.removeMediaInfo();
+    }
+    
     super.dispose();
+  }
+  
+  // Sendet einen Ping an den Server
+  Future<void> _pingServer() async {
+    try {
+      await _apiService.pingServer();
+    } catch (e) {
+      print('Fehler beim Senden des Pings: $e');
+    }
   }
   
   // Lädt EPG-Daten für alle Kanäle auf einmal
@@ -337,6 +368,11 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   // Wähle einen Kanal aus und lade den Stream
   void _selectChannel(int index) async {
     if (index >= 0 && index < _channels.length) {
+      // Wenn bereits ein Kanal ausgewählt war, entferne die Media-Info
+      if (_currentChannelId != null) {
+        await _apiService.removeMediaInfo();
+      }
+      
       setState(() {
         _selectedChannelIndex = index;
         _currentStreamUrl = null; // Zurücksetzen, während wir laden
@@ -346,6 +382,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
       
       // Lade den Stream-Link für diesen Kanal
       final channel = _channels[index];
+      
+      // Aktualisiere _currentChannelId
+      _currentChannelId = channel.id;
       
       // Scroll-Verhalten nur für größere Listen aktivieren
       if (_filteredChannels.length > 7) {
@@ -360,6 +399,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         setState(() {
           _currentStreamUrl = channel.url!;
         });
+        
+        // Aktualisiere Media-Info für den ausgewählten Kanal
+        await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+        print('Media-Info aktualisiert für Kanal ${channel.id}');
       } else {
         try {
           final streamUrl = await _apiService.getTvChannelLink(channel.id);
@@ -367,6 +410,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
             setState(() {
               _currentStreamUrl = streamUrl;
             });
+            
+            // Aktualisiere Media-Info für den ausgewählten Kanal
+            await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+            print('Media-Info aktualisiert für Kanal ${channel.id}');
           } else {
             setState(() {
               _errorMessage = 'Kanal-Stream nicht verfügbar';

@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
@@ -49,6 +50,10 @@ class _TvScreenState extends State<TvScreen> {
   bool _showGenresView = false;
   bool _showMediaLibraryMessage = false;
   
+  // Für Ping und Media-Info
+  Timer? _pingTimer;
+  int? _currentChannelId; // Speichert die ID des aktuell angesehenen Kanals
+  
   // Gibt das passende Stern-Icon zurück (gefüllt oder leer)
   Widget _getFavoriteIcon() {
     if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length) {
@@ -85,6 +90,14 @@ class _TvScreenState extends State<TvScreen> {
     super.initState();
     _loadChannels();
     _loadGenres();
+    
+    // Sende sofort einen initialen Ping beim Start
+    _pingServer();
+    
+    // Starte den Ping-Timer (alle 120 Sekunden)
+    _pingTimer = Timer.periodic(const Duration(seconds: 120), (timer) {
+      _pingServer();
+    });
   }
   
   @override
@@ -92,6 +105,11 @@ class _TvScreenState extends State<TvScreen> {
     // ScrollController freigeben, wenn das Widget entsorgt wird
     _genresScrollController.dispose();
     _channelListController.dispose();
+    
+    // Timer beenden und Media-Info entfernen
+    _pingTimer?.cancel();
+    _apiService.removeMediaInfo(); // Media-Info beim Verlassen des Screens entfernen
+    
     super.dispose();
   }
   
@@ -240,6 +258,11 @@ class _TvScreenState extends State<TvScreen> {
   // Wähle einen Kanal aus und lade den Stream
   void _selectChannel(int index) async {
     if (index >= 0 && index < _channels.length) {
+      // Falls ein vorheriger Kanal ausgewählt war, entferne dessen Media-Info
+      if (_currentChannelId != null) {
+        await _apiService.removeMediaInfo();
+      }
+      
       setState(() {
         _selectedChannelIndex = index;
         _currentStreamUrl = null; // Zurücksetzen, während wir laden
@@ -249,6 +272,9 @@ class _TvScreenState extends State<TvScreen> {
       
       // Lade den Stream-Link für diesen Kanal
       final channel = _channels[index];
+      
+      // Aktualisiere _currentChannelId
+      _currentChannelId = channel.id;
       
       // Scroll-Verhalten nur für größere Listen aktivieren
       if (_filteredChannels.length > 7) {
@@ -263,6 +289,10 @@ class _TvScreenState extends State<TvScreen> {
         setState(() {
           _currentStreamUrl = channel.url!;
         });
+        
+        // Aktualisiere Media-Info für den ausgewählten Kanal
+        await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+        print('Media-Info aktualisiert für Kanal ${channel.id}');
       } else {
         try {
           final streamUrl = await _apiService.getTvChannelLink(channel.id);
@@ -270,6 +300,10 @@ class _TvScreenState extends State<TvScreen> {
             setState(() {
               _currentStreamUrl = streamUrl;
             });
+            
+            // Aktualisiere Media-Info für den ausgewählten Kanal
+            await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+            print('Media-Info aktualisiert für Kanal ${channel.id}');
           } else {
             setState(() {
               _errorMessage = 'Kanal-Stream nicht verfügbar';
@@ -989,6 +1023,14 @@ class _TvScreenState extends State<TvScreen> {
     );
   }
   
+  // Sendet ein Ping zum Server
+  Future<void> _pingServer() async {
+    // Ping-Anfrage an den Server senden
+    await _apiService.pingServer();
+    // Debug-Ausgabe
+    print('Ping gesendet: ${DateTime.now()}');
+  }
+
   // Scrollt zum ausgewählten Kanal in der Liste
   void _scrollToSelectedChannel() {
     // Prüfe, ob der Controller an eine ScrollView angebunden ist

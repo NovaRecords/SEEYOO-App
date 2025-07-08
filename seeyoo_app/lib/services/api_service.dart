@@ -627,8 +627,10 @@ class ApiService {
         return false;
       }
       
-      // Endpunkt aus der Doku: /users/<user_id>/media-info
+      // Endpunkt /users/<user_id>/media-info
       final endpoint = '/api/v2/users/$userId/media-info';
+      print('Sende Media-Info Update zu: $baseUrl$endpoint');
+      print('Params: type=$type, media_id=$mediaId');
       
       final uri = Uri.parse('$baseUrl$endpoint');
       final token = await _storageService.getAccessToken();
@@ -643,14 +645,28 @@ class ApiService {
         'media_id': mediaId,
       };
       
+      // Formatieren wie im erfolgreichen curl-Befehl
+      // Hier als Map mit separaten Key-Value-Paaren
+      final Map<String, String> formData = {
+        'type': type,
+        'media_id': mediaId.toString(),
+      };
+      
+      print('Exakte Form-Daten: $formData');
+      
       final response = await http.post(
         uri,
         headers: {
           'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',  // Wichtig: Accept-Header hinzugefügt
         },
-        body: jsonEncode(body),
+        body: formData, // Dart http wandelt Map automatisch in Form-Daten um
       );
+      
+      // Debug: Server-Antwort ausgeben
+      print('Media-Info Update Antwort Status: ${response.statusCode}');
+      print('Media-Info Update Antwort Body: ${response.body}');
       
       return response.statusCode == 200;
     } catch (e) {
@@ -671,6 +687,7 @@ class ApiService {
       
       // Endpunkt aus der Doku: /users/<user_id>/media-info
       final endpoint = '/api/v2/users/$userId/media-info';
+      print('Entferne Media-Info: $baseUrl$endpoint');
       
       final uri = Uri.parse('$baseUrl$endpoint');
       final token = await _storageService.getAccessToken();
@@ -684,8 +701,13 @@ class ApiService {
         uri,
         headers: {
           'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Wichtig: Accept-Header hinzugefügt wie bei updateMediaInfo
         },
       );
+      
+      // Debug: Server-Antwort ausgeben
+      print('Media-Info Entfernen Antwort Status: ${response.statusCode}');
+      print('Media-Info Entfernen Antwort Body: ${response.body}');
       
       return response.statusCode == 200;
     } catch (e) {
