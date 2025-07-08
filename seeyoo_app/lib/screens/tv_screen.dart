@@ -240,9 +240,9 @@ class _TvScreenState extends State<TvScreen> {
         _isLoading = false;
       });
       
-      // Wähle den ersten Kanal aus, wenn vorhanden
+      // Versuche den zuletzt gesehenen Kanal zu laden, ansonsten den ersten
       if (_channels.isNotEmpty) {
-        _selectChannel(0);
+        await _loadLastWatchedChannel();
         
         // Lade EPG-Daten für alle Kanäle auf einmal
         await _loadAllChannelsEpgData();
@@ -252,6 +252,38 @@ class _TvScreenState extends State<TvScreen> {
         _isLoading = false;
         _errorMessage = 'Fehler beim Laden der Kanäle: $e';
       });
+    }
+  }
+
+  // Lädt und selektiert den zuletzt gesehenen Kanal
+  Future<void> _loadLastWatchedChannel() async {
+    try {
+      // Hole die ID des zuletzt gesehenen Kanals vom Server
+      final lastChannelId = await _apiService.getLastWatchedChannel();
+      
+      if (lastChannelId != null && _channels.isNotEmpty) {
+        // Suche den Kanal mit dieser ID
+        final index = _channels.indexWhere((channel) => channel.id == lastChannelId);
+        
+        if (index >= 0) {
+          // Zuletzt gesehener Kanal gefunden, wähle ihn aus
+          print('Wähle zuletzt gesehenen Kanal mit ID $lastChannelId aus');
+          _selectChannel(index);
+          return;
+        }
+      }
+      
+      // Fallback: Wenn kein zuletzt gesehener Kanal gefunden wurde, wähle den ersten
+      if (_channels.isNotEmpty) {
+        print('Kein zuletzt gesehener Kanal gefunden, wähle ersten Kanal');
+        _selectChannel(0);
+      }
+    } catch (e) {
+      print('Fehler beim Laden des zuletzt gesehenen Kanals: $e');
+      // Fallback im Fehlerfall: Ersten Kanal wählen
+      if (_channels.isNotEmpty) {
+        _selectChannel(0);
+      }
     }
   }
 
@@ -292,6 +324,8 @@ class _TvScreenState extends State<TvScreen> {
         
         // Aktualisiere Media-Info für den ausgewählten Kanal
         await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+        // Speichere diesen Kanal als zuletzt gesehenen
+        await _apiService.saveLastWatchedChannel(channel.id);
         print('Media-Info aktualisiert für Kanal ${channel.id}');
       } else {
         try {
@@ -303,6 +337,8 @@ class _TvScreenState extends State<TvScreen> {
             
             // Aktualisiere Media-Info für den ausgewählten Kanal
             await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+            // Speichere diesen Kanal als zuletzt gesehenen
+            await _apiService.saveLastWatchedChannel(channel.id);
             print('Media-Info aktualisiert für Kanal ${channel.id}');
           } else {
             setState(() {

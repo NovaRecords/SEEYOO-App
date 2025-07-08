@@ -79,11 +79,11 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 ## Tag 8 (08.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 **Heutige Hauptaufgaben:** Scrolllogik in tv_screen und tv_favorite_screen verbessern, Favoriten Delete-funktion implementieren, Ping-Logik implementieren, Letzte geschater Kanal speichern...
+- 🟢 **Fortschritt & Ergebnisse:** Heute habe ich sehr viele Kleinigkeiten umgesetzt die sehr wichtig waren. Scrolllogik in tv_screen und tv_favorite_screen verbessert. Favoriten Delete-funktion implementiert. Ping-Logik implementiert. Letzte geschauter Kanal speichert. Media-Info Status implementiert. 
+- 🟢 **Herausforderungen & Blockaden:**  Ich habe heute fast 8 Stunden damit verbracht den verdammten Scrolllogik in tv_screen und tv_favorite_screen zu verbessern, danach zu reparieren, danach alles löschen und neu implementieren.... Es war eine Katastrophe! Und am ende war es eine klitzekleine sache, die das ganze verhalten der scrolllogik beeinflusst hat. Aber es hat geklappt!!!
+- 🟢 **Was ich heute gelernt habe:** Heute habe ich das scrollen gelernt!!! 
+- 🟢 **Plan für morgen:** Morgen werde ich mir den Bereich Einstellungen vornehmen, den Authorisation Bereich. (Mac-Adresse, Serial Number, Device ID).
 
 ## Tag 9 (09.07.2025)
 

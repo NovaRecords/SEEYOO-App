@@ -402,6 +402,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         
         // Aktualisiere Media-Info für den ausgewählten Kanal
         await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+        // Speichere diesen Kanal als zuletzt gesehenen
+        await _apiService.saveLastWatchedChannel(channel.id);
         print('Media-Info aktualisiert für Kanal ${channel.id}');
       } else {
         try {
@@ -413,6 +415,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
             
             // Aktualisiere Media-Info für den ausgewählten Kanal
             await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+            // Speichere diesen Kanal als zuletzt gesehenen
+            await _apiService.saveLastWatchedChannel(channel.id);
             print('Media-Info aktualisiert für Kanal ${channel.id}');
           } else {
             setState(() {
@@ -533,16 +537,12 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         });
       }
       
-      // Wähle den ersten Favoriten aus, wenn vorhanden
+      // Versuche den zuletzt gesehenen Kanal zu laden, ansonsten den ersten Favoriten
       if (_favoriteChannels.isNotEmpty) {
-        // Finde den Index des ersten Favoriten-Kanals in der Hauptliste
-        final mainIndex = _channels.indexWhere((c) => c.id == _favoriteChannels[0].id);
-        if (mainIndex != -1) {
-          _selectChannel(mainIndex);
-          
-          // Lade EPG-Daten für alle Favoriten-Kanäle
-          await _loadAllChannelsEpgData();
-        }
+        await _loadLastWatchedChannel();
+        
+        // Lade EPG-Daten für alle Favoriten-Kanäle
+        await _loadAllChannelsEpgData();
       }
     } catch (e) {
       // Fehlerbehandlung
@@ -550,6 +550,54 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         _isLoading = false;
         _errorMessage = 'Fehler beim Laden der Favoriten: $e';
       });
+    }
+  }
+  
+  // Lädt den zuletzt gesehenen Kanal
+  Future<void> _loadLastWatchedChannel() async {
+    try {
+      // Hole die ID des zuletzt gesehenen Kanals vom Server
+      final lastChannelId = await _apiService.getLastWatchedChannel();
+      
+      if (lastChannelId != null && _channels.isNotEmpty) {
+        // Prüfe zuerst, ob der zuletzt gesehene Kanal in den Favoriten ist
+        final favoriteIndex = _favoriteChannels.indexWhere((channel) => channel.id == lastChannelId);
+        
+        if (favoriteIndex >= 0) {
+          // Zuletzt gesehener Kanal ist ein Favorit, finde seinen Index in der Hauptliste
+          final mainIndex = _channels.indexWhere((channel) => channel.id == lastChannelId);
+          
+          if (mainIndex >= 0) {
+            // Zuletzt gesehener Kanal gefunden, wähle ihn aus
+            print('Wähle zuletzt gesehenen Kanal mit ID $lastChannelId aus');
+            _selectChannel(mainIndex);
+            return;
+          }
+        } else {
+          print('Zuletzt gesehener Kanal mit ID $lastChannelId ist kein Favorit');
+        }
+      }
+      
+      // Fallback: Wenn kein zuletzt gesehener Kanal gefunden wurde oder er kein Favorit ist,
+      // wähle den ersten Favoriten
+      if (_favoriteChannels.isNotEmpty) {
+        // Finde den Index des ersten Favoriten-Kanals in der Hauptliste
+        final mainIndex = _channels.indexWhere((c) => c.id == _favoriteChannels[0].id);
+        if (mainIndex != -1) {
+          print('Wähle ersten Favoriten als Fallback');
+          _selectChannel(mainIndex);
+        }
+      }
+    } catch (e) {
+      print('Fehler beim Laden des zuletzt gesehenen Kanals: $e');
+      // Fallback im Fehlerfall: Ersten Favoriten wählen
+      if (_favoriteChannels.isNotEmpty) {
+        // Finde den Index des ersten Favoriten-Kanals in der Hauptliste
+        final mainIndex = _channels.indexWhere((c) => c.id == _favoriteChannels[0].id);
+        if (mainIndex != -1) {
+          _selectChannel(mainIndex);
+        }
+      }
     }
   }
   

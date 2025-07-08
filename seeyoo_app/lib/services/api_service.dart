@@ -716,6 +716,82 @@ class ApiService {
     }
   }
 
+  // Speichert den zuletzt gesehenen Kanal auf dem Server
+  Future<bool> saveLastWatchedChannel(int channelId) async {
+    try {
+      final userId = await _storageService.getUserId();
+      final token = await _storageService.getAccessToken();
+      
+      if (userId == null || token == null) {
+        print('No user ID or access token available');
+        return false;
+      }
+      
+      final endpoint = '/api/v2/users/$userId/tv-channels/last';
+      final uri = Uri.parse('$baseUrl$endpoint');
+      
+      print('Speichere letzten Kanal: $channelId');
+      
+      final response = await http.put(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        body: {
+          'ch_id': channelId.toString(),
+        },
+      );
+      
+      print('Speichern des letzten Kanals - Status: ${response.statusCode}, Body: ${response.body}');
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Fehler beim Speichern des letzten Kanals: $e');
+      return false;
+    }
+  }
+  
+  // Ruft den zuletzt gesehenen Kanal vom Server ab
+  Future<int?> getLastWatchedChannel() async {
+    try {
+      final userId = await _storageService.getUserId();
+      final token = await _storageService.getAccessToken();
+      
+      if (userId == null || token == null) {
+        print('No user ID or access token available');
+        return null;
+      }
+      
+      final endpoint = '/api/v2/users/$userId/tv-channels/last';
+      final uri = Uri.parse('$baseUrl$endpoint');
+      
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      print('Abrufen des letzten Kanals - Status: ${response.statusCode}, Body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['status'] == 'OK' && data['results'] != null) {
+          return int.tryParse(data['results'].toString());
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('Fehler beim Abrufen des letzten Kanals: $e');
+      return null;
+    }
+  }
+
   // Abrufen der verfügbaren Module
   Future<List<String>> getAvailableModules() async {
     try {
