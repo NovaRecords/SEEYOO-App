@@ -81,15 +81,26 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   // Schaltet den Bearbeiten-Modus ein oder aus
   void _toggleReorderMode() {
     setState(() {
+      // Vorherigen Zustand speichern
+      final bool wasInReorderMode = _isInReorderMode;
+      
       _isInReorderMode = !_isInReorderMode;
       // Wenn wir in den Bearbeiten-Modus wechseln, deaktivieren wir alle anderen Ansichten
       if (_isInReorderMode) {
         _showEpgView = false;
         _showGenresView = false;
         _showMediaLibraryMessage = false;
+      } else if (wasInReorderMode) {
+        // Wenn wir aus dem Bearbeiten-Modus zurückkehren, zum ausgewählten Kanal scrollen
+        // mit einem verzögerten Aufruf, damit der Bildschirm zuerst gerendert wird
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToSelectedChannel();
+        });
       }
     });
   }
+
+  // Diese Methode wird unten vollständig implementiert
 
   @override
   void initState() {
@@ -1298,7 +1309,6 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     );
   }
 
-  
   // Scrollt zum ausgewählten Kanal in der Liste
   void _scrollToSelectedChannel() {
     // Prüfe, ob der Controller an eine ScrollView angebunden ist
