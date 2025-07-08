@@ -975,7 +975,7 @@ class _TvScreenState extends State<TvScreen> {
               if (channel.favorite)
                 Positioned(
                   right: 16,
-                  top: 28, // Vertikal mittig positioniert
+                  top: 12,
                   child: const Icon(
                     Icons.star,
                     color: Color(0xFFE53A56),
