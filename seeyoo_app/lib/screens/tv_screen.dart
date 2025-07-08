@@ -50,13 +50,34 @@ class _TvScreenState extends State<TvScreen> {
   bool _showMediaLibraryMessage = false;
   
   // Gibt das passende Stern-Icon zurück (gefüllt oder leer)
-  IconData _getFavoriteIcon() {
+  Widget _getFavoriteIcon() {
     if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length) {
       // Prüfe, ob der ausgewählte Kanal in der Favoritenliste ist
       final selectedChannel = _channels[_selectedChannelIndex];
-      return selectedChannel.favorite ? Icons.star : Icons.star_border;
+      
+      // Stern-Farbe immer grau
+      const iconColor = Color(0xFF8D9296);
+      
+      // Wenn der Kanal ein Favorit ist, zeige einen gefüllten Stern
+      if (selectedChannel.favorite) {
+        return const Icon(
+          Icons.star,
+          color: iconColor,
+          size: 26,
+        );
+      } else {
+        return const Icon(
+          Icons.star_border,
+          color: iconColor,
+          size: 26,
+        );
+      }
     }
-    return Icons.star_border;
+    return const Icon(
+      Icons.star_border,
+      color: Color(0xFF8D9296),
+      size: 26,
+    );
   }
 
   @override
@@ -172,6 +193,7 @@ class _TvScreenState extends State<TvScreen> {
   void _filterChannelsByGenre(String? genreId) {
     setState(() {
       _selectedGenreId = genreId;
+      
       if (genreId == null) {
         _filteredChannels = List.from(_channels);
       } else {
@@ -303,10 +325,8 @@ class _TvScreenState extends State<TvScreen> {
           
           _channels = updatedChannels;
           
-          // Aktualisiere Favoriten-Liste, wenn nötig
-          if (_selectedTabIndex == 3) { // Favoriten-Tab
-            _loadFavoriteChannels();
-          }
+          // Aktualisiere die gefilterte Kanalliste basierend auf aktueller Kategorie
+          _filterChannelsByGenre(_selectedGenreId);
         });
       }
     }
@@ -1116,12 +1136,8 @@ class _TvScreenState extends State<TvScreen> {
                         _showMediaLibraryMessage = false;
                       }
                       
-                      // Wenn Favoriten-Tab gewählt und vorher ein anderer Tab aktiv war
-                      if (index == 3 && _selectedTabIndex != 3) {
-                        _toggleFavorite();
-                      }
-                      // Wenn Favoriten-Tab bereits aktiv war, deaktiviere Favorit
-                      else if (index == 3 && _selectedTabIndex == 3) {
+                      // Wenn Favoriten-Tab gewählt wird, Favoriten-Status umschalten
+                      if (index == 3) {
                         _toggleFavorite();
                       }
                       // Speichere den vorherigen Zustand und Sichtbarkeiten
@@ -1169,19 +1185,20 @@ class _TvScreenState extends State<TvScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Center(
-                            child: Icon(
-                              // Für Favoriten-Tab das dynamische Icon verwenden
-                              index == 3 ? _getFavoriteIcon() : _tabIcons[index],
-                              color: _selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296), // Ausgewähltes Symbol weiß, andere hellgrau
-                              size: 26,
-                            ),
+                            child: index == 3 
+                              ? _getFavoriteIcon() // Für Favoriten-Tab das Widget verwenden
+                              : Icon(
+                                  _tabIcons[index],
+                                  color: index == 3 ? const Color(0xFF8D9296) : (_selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296)),
+                                  size: 26,
+                                ),
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _tabTitles[index],
                           style: TextStyle(
-                            color: _selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296),
+                            color: index == 3 ? const Color(0xFF8D9296) : (_selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296)),
                             fontWeight: _selectedTabIndex == index ? FontWeight.bold : FontWeight.normal,
                             fontSize: 12,
                           ),
@@ -1213,9 +1230,7 @@ class _TvScreenState extends State<TvScreen> {
                       ? _buildEpgView()
                       : _showGenresView && _selectedTabIndex == 2 // Kategorien-Ansicht
                         ? _buildGenresView()
-                        : _selectedTabIndex == 3 // Favoriten-Tab
-                          ? _buildChannelList(_favoriteChannels)
-                          : _buildChannelList(_filteredChannels) // Zeige alle Kanäle, wenn kein oder ein anderer Tab ausgewählt ist
+                        : _buildChannelList(_filteredChannels) // Zeige immer die gefilterte Hauptliste, auch wenn Favoriten-Tab aktiv
             ),
           ),
         ],
