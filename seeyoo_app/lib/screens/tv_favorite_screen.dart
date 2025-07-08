@@ -1187,10 +1187,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                               // Wenn keine Daten nach Ladeversuch
                               if (epgData.isEmpty && _epgRequestAttempted[channel.id] == true) {
                                 return Text(
-                                  'Keine Programmdaten verfügbar',
+                                  'Keine EPG-Daten verfügbar',
                                   style: TextStyle(
                                     color: Colors.white70,
-                                    fontSize: 14,
+                                    fontSize: 12,
                                   ),
                                 );
                               }

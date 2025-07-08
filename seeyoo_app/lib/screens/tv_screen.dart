@@ -870,7 +870,7 @@ class _TvScreenState extends State<TvScreen> {
                             // Wenn keine EPG-Daten vorhanden sind, aber bereits versucht wurde, sie zu laden
                             if (epgData.isEmpty && _epgRequestAttempted[channel.id] == true) {
                               return Text(
-                                'Keine Programminformationen verfügbar',
+                                'Keine EPG-Daten verfügbar',
                                 style: TextStyle(
                                   color: const Color(0xFF8D9296),
                                   fontSize: 12,
