@@ -1075,6 +1075,30 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                     ),
                   ),
                 ),
+                // Löschsymbol für Favoriten im Bearbeitungsmodus
+                GestureDetector(
+                  onTap: () {
+                    // Kanal aus Favoriten entfernen
+                    setState(() {
+                      // Kanal aus den Favoriten entfernen
+                      _favoriteChannels.removeAt(index);
+                      
+                      // Gefilterte Liste aktualisieren
+                      _filteredChannels = List.from(_favoriteChannels);
+                      
+                      // Favoriten in der API aktualisieren
+                      _updateFavoriteOrder();
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8.0),
+                    child: const Icon(
+                      Icons.close,
+                      color: Color(0xFFE53A56),
+                      size: 24,
+                    ),
+                  ),
+                ),
               ],
             ),
           );
