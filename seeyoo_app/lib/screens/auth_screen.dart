@@ -18,9 +18,11 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
@@ -37,11 +39,11 @@ class _AuthScreenState extends State<AuthScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     // Bei Verlassen des Auth-Screens wird die Systemleiste für den MainScreen wieder aktiviert
     // MainScreen wird die Systemleiste basierend auf Menü-Status selbst verwalten
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    
     super.dispose();
   }
 
@@ -69,7 +71,51 @@ class _AuthScreenState extends State<AuthScreen> {
           );
           
           if (authResponse.isSuccess) {
-            // Navigation zum Hauptbildschirm nach erfolgreicher Anmeldung
+            // Nach erfolgreicher Anmeldung die richtige Benutzer-ID in der Billing-API finden
+            try {
+              // Zuerst versuchen, den Benutzer anhand der E-Mail-Adresse zu finden
+              final email = _emailController.text.trim();
+              print('Auth: Searching for user with email: $email in Billing API');
+              
+              final foundUser = await _apiService.findUserByEmail(email);
+              
+              if (foundUser != null && foundUser['id'] != null) {
+                // Benutzer in der Billing-API gefunden, ID separat speichern
+                final billingUserId = int.tryParse(foundUser['id'].toString());
+                if (billingUserId != null) {
+                  print('Auth: Found user in Billing API with ID: $billingUserId');
+                  await _storageService.setBillingUserId(billingUserId);
+                  print('Auth: Updated billing user ID in storage to: $billingUserId');
+                }
+              } else {
+                // Benutzer nicht gefunden, versuchen einen neuen zu erstellen
+                print('Auth: User not found in Billing API, creating a new one...');
+                
+                final result = await _apiService.createUser(
+                  name: email.split('@')[0], // Verwende den Teil vor @ als Namen
+                  email: email,
+                  tariff: 'full-de',
+                  password: _passwordController.text,
+                );
+                
+                if (result != null && result['id'] != null) {
+                  // Benutzer wurde erstellt, Billing-API ID separat speichern
+                  print('Auth: Created new user with ID: ${result["id"]}');
+                  final userId = int.tryParse(result["id"].toString());
+                  if (userId != null) {
+                    await _storageService.setBillingUserId(userId);
+                    print('Auth: Saved billing user ID: $userId');
+                    
+                    // Hinweis: Das Setzen des Ablaufdatums ist über die API nicht möglich
+                    // Das Ablaufdatum muss auf Server-Seite gesetzt werden
+                  }
+                }
+              }
+            } catch (e) {
+              print('Auth: Error checking/creating user: $e');
+            }
+            
+            // Navigation zum Hauptbildschirm
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const MainScreen()),
             );
@@ -80,11 +126,79 @@ class _AuthScreenState extends State<AuthScreen> {
             });
           }
         } else {
-          // Hier würde die Registrierung implementiert werden
-          // Für jetzt zeigen wir nur eine Nachricht an
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registrierungsfunktion noch nicht implementiert')),
-          );
+          // Implementierung der Registrierung
+          setState(() {
+            _isLoading = true;
+          });
+          
+          try {
+            // 1. Zuerst den Benutzer in der Billing-API erstellen
+            print('Registration: Creating new user in Billing API');
+            final email = _emailController.text.trim();
+            final firstName = _firstNameController.text.trim();
+            final lastName = _lastNameController.text.trim();
+            // Vollständigen Namen aus Vor- und Nachname bilden
+            final name = '$firstName $lastName';
+            final password = _passwordController.text;
+            
+            // Benutzer in der Billing-API erstellen
+            final result = await _apiService.createUser(
+              name: name,
+              email: email,
+              tariff: 'full-de', // Standard-Tarif
+              password: password,
+              isTest: false,    // Kein Testbenutzer
+            );
+            
+            if (result != null && result['id'] != null) {
+              // Benutzer wurde erstellt
+              final userId = int.tryParse(result['id'].toString());
+              print('Registration: Created user in Billing API with ID: $userId');
+              
+              if (userId != null) {
+                // Billing-API Benutzer-ID separat speichern
+                await _storageService.setBillingUserId(userId);
+                
+                // Hinweis: Das Setzen des Ablaufdatums ist über die API nicht möglich
+                // Das Ablaufdatum muss auf Server-Seite gesetzt werden
+                
+                // 2. Mit den gleichen Anmeldedaten in der Auth-API authentifizieren
+                final authResponse = await _apiService.authenticate(email, password);
+                
+                if (authResponse.isSuccess) {
+                  print('Registration: Authentication successful after registration');
+                  
+                  // 3. Zum Hauptbildschirm navigieren
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MainScreen()),
+                  );
+                  return; // Früher zurückkehren, da wir bereits navigiert haben
+                } else {
+                  // Authentifizierung fehlgeschlagen
+                  setState(() {
+                    _errorMessage = 'Registrierung erfolgreich, aber automatische Anmeldung fehlgeschlagen. Bitte melden Sie sich manuell an.';
+                  });
+                }
+              }
+            } else {
+              // Fehler bei der Benutzerregistrierung
+              final errorMsg = result != null && result['error'] != null ? result['error'] : 'Unbekannter Fehler';
+              setState(() {
+                _errorMessage = 'Registrierung fehlgeschlagen: $errorMsg';
+              });
+            }
+          } catch (e) {
+            print('Registration error: $e');
+            setState(() {
+              _errorMessage = 'Ein Fehler ist bei der Registrierung aufgetreten: $e';
+            });
+          } finally {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+          }
         }
       } catch (e) {
         setState(() {
@@ -213,6 +327,33 @@ class _AuthScreenState extends State<AuthScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
+                      // Felder für Vor- und Nachname nur bei Registrierung anzeigen
+                      if (!isLogin) ...[  
+                        _buildTextField(
+                          controller: _firstNameController,
+                          hint: 'Vorname',
+                          icon: Icons.person_outline,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Bitte geben Sie Ihren Vornamen ein';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _lastNameController,
+                          hint: 'Nachname',
+                          icon: Icons.person_outline,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Bitte geben Sie Ihren Nachnamen ein';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       _buildTextField(
                         controller: _emailController,
                         hint: 'E-Mail-Adresse',

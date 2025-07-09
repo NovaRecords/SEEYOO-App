@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -458,48 +460,353 @@ class ApiService {
   
 
   // Holt die Benutzerinformationen von der API
-  Future<User?> getUserInfo() async {
+  // Erstellt einen neuen Benutzer im Billing-System
+  // Basierend auf dem Beispiel: POST http://bill.seeyoo.tv/api/users
+  Future<Map<String, dynamic>?> createUser({
+    required String name,
+    String? secondName,
+    required String email,
+    required String tariff,
+    required String password,
+    String? phone,
+    String? address,
+    String? city,
+    String? country,
+    bool isTest = false,
+  }) async {
     try {
-      final userId = await _storageService.getUserId();
+      // Billing-API URL und Endpunkt
+      const String billingBaseUrl = 'http://bill.seeyoo.tv';
+      final endpoint = '/api/users';
+      final url = Uri.parse('$billingBaseUrl$endpoint');
       
-      if (userId == null) {
-        print('No user ID available');
-        return null;
-      }
+      print('### createUser: Calling API URL: $url');
       
-    // Füge einen Zeitstempel hinzu, um Caching zu verhindern
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final endpoint = '/api/v2/users/$userId?_ts=$timestamp';
+      // Basic Auth für die Billing-API
+      const String authHeader = 'Basic YmlsbGluZzpMam5iR0NGdHlyZCY2dDk4IyQ5XzBpMFk4N3RlNXJ0ODY3dDd5';
       
-      final response = await get(endpoint);
+      // Erstellen der Form-Daten für die POST-Anfrage
+      final Map<String, String> formData = {
+        'name': name,
+        'email': email,
+        'tariff': tariff,       // Pflichtparameter direkt einfügen
+        'password': password,   // Pflichtparameter direkt einfügen
+        'test': isTest ? '1' : '0',
+      };
       
-      if (response == null) {
-        print('Failed to get user info - null response');
-        return null;
-      }
+      
+      // Optionale Parameter hinzufügen
+      if (secondName != null) formData['second_name'] = secondName;
+      
+      print('### createUser: Form data: $formData');
+      
+      // POST-Anfrage durchführen
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'Authorization': authHeader,
+        },
+        body: formData,
+      ).timeout(const Duration(seconds: 15), onTimeout: () {
+        print('### createUser: Request timed out after 15 seconds');
+        throw TimeoutException('Request timed out');
+      });
+      
+      print('### createUser: Response status code: ${response.statusCode}');
       
       if (response.statusCode != 200) {
-        print('Failed to get user info: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('### createUser: Failed to create user: ${response.statusCode}');
+        print('### createUser: Response body: ${response.body}');
         return null;
       }
       
       final data = json.decode(response.body);
       
       if (data['status'] == 'OK' && data['results'] != null) {
-        final userData = data['results'];
-        final user = User.fromJson(userData);
-        
-        // Benutzerinformationen im Speicher aktualisieren
-        await _storageService.saveUser(user);
-        
-        return user;
+        print('### createUser: User created successfully');
+        print('### createUser: User ID: ${data['results']['id']}');
+        return data['results'];
       } else {
-        print('API error: ${data["error"] ?? "Unknown error"}');
+        print('### createUser: API error: ${data["error"] ?? "Unknown error"}');
         return null;
       }
-    } catch (e) {
-      print('Error fetching user info: $e');
+    } catch (e, stackTrace) {
+      print('### createUser: Error creating user: $e');
+      print('### createUser: Stack trace: $stackTrace');
+      return null;
+    }
+  }
+
+  // Aktualisiert die Benutzerinformationen im Billing-System
+  // Basierend auf dem Beispiel: PUT http://bill.seeyoo.tv/api/users/{email}
+  Future<bool> updateUserInfo({
+    required String email,
+    String? name,
+    String? secondName,
+    String? password,
+    String? country,
+    String? city,
+    String? address,
+    String? phone,
+  }) async {
+    try {
+      // Billing-API URL und Endpunkt mit E-Mail als Identifikator
+      const String billingBaseUrl = 'http://bill.seeyoo.tv';
+      final endpoint = '/api/users/$email';
+      final url = Uri.parse('$billingBaseUrl$endpoint');
+      
+      print('### updateUserInfo: Calling API URL: $url');
+      
+      // Basic Auth für die Billing-API
+      const String authHeader = 'Basic YmlsbGluZzpMam5iR0NGdHlyZCY2dDk4IyQ5XzBpMFk4N3RlNXJ0ODY3dDd5';
+      
+      // Erstellen der Form-Daten für die PUT-Anfrage
+      final Map<String, String> formData = {};
+      
+      // Nur Parameter hinzufügen, die nicht null sind
+      if (name != null) formData['name'] = name;
+      if (secondName != null) formData['second_name'] = secondName;
+      if (password != null) formData['password'] = password;
+      if (country != null) formData['country'] = country;
+      if (city != null) formData['city'] = city;
+      if (address != null) formData['address'] = address;
+      if (phone != null) formData['phone'] = phone;
+      
+      
+      // E-Mail ist sowohl Teil der URL als auch der Formulardaten
+      formData['email'] = email;
+      
+      print('### updateUserInfo: Form data: $formData');
+      
+      // PUT-Anfrage durchführen
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'Authorization': authHeader,
+        },
+        body: formData,
+      ).timeout(const Duration(seconds: 15), onTimeout: () {
+        print('### updateUserInfo: Request timed out after 15 seconds');
+        throw TimeoutException('Request timed out');
+      });
+      
+      print('### updateUserInfo: Response status code: ${response.statusCode}');
+      
+      if (response.statusCode != 200) {
+        print('### updateUserInfo: Failed to update user info: ${response.statusCode}');
+        print('### updateUserInfo: Response body: ${response.body}');
+        return false;
+      }
+      
+      final data = json.decode(response.body);
+      
+      if (data['status'] == 'OK' && data['results'] == true) {
+        print('### updateUserInfo: User data updated successfully');
+        
+        // Nach erfolgreicher Aktualisierung frische Benutzerdaten abrufen
+        final updatedUser = await getUserInfo();
+        if (updatedUser != null) {
+          print('### updateUserInfo: Retrieved updated user data');
+        }
+        
+        return true;
+      } else {
+        print('### updateUserInfo: API error: ${data["error"] ?? "Unknown error"}');
+        return false;
+      }
+    } catch (e, stackTrace) {
+      print('### updateUserInfo: Error updating user info: $e');
+      print('### updateUserInfo: Stack trace: $stackTrace');
+      return false;
+    }
+  }
+
+  // Suche nach Benutzern in der Billing-API anhand der E-Mail-Adresse
+  Future<Map<String, dynamic>?> findUserByEmail(String email) async {
+    try {
+      print('### findUserByEmail: Searching for user with email: $email');
+      
+      // Billing-API URL und Endpunkt - wir probieren verschiedene Ansätze
+      const String billingBaseUrl = 'http://bill.seeyoo.tv';
+      
+      // Versuch 1: Direkte Abfrage nach E-Mail als Parameter
+      final endpoint = '/api/users';
+      final uri = Uri.parse('$billingBaseUrl$endpoint')
+          .replace(queryParameters: {'email': email});
+      
+      print('### findUserByEmail: Calling API URL: $uri');
+      
+      // Basic Auth für die Billing-API
+      const String authHeader = 'Basic YmlsbGluZzpMam5iR0NGdHlyZCY2dDk4IyQ5XzBpMFk4N3RlNXJ0ODY3dDd5';
+      
+      // GET-Anfrage für die Suche
+      final response = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': authHeader,
+        },
+      ).timeout(const Duration(seconds: 15));
+      
+      print('### findUserByEmail: Response status code: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('### findUserByEmail: Response data: $data');
+        
+        if (data['status'] == 'OK' && data['results'] != null) {
+          if (data['results'] is List && data['results'].isNotEmpty) {
+            // Ersten gefundenen Benutzer zurückgeben
+            final userData = data['results'][0];
+            print('### findUserByEmail: Found user with ID: ${userData['id']}');
+            return userData;
+          } else {
+            print('### findUserByEmail: No users found with email: $email');
+          }
+        } else {
+          print('### findUserByEmail: API error: ${data["error"] ?? "Unknown error"}');
+        }
+      } else {
+        print('### findUserByEmail: Failed to search: ${response.statusCode}');
+        print('### findUserByEmail: Response body: ${response.body}');
+      }
+    } catch (e, stackTrace) {
+      print('### findUserByEmail: Error searching user: $e');
+      print('### findUserByEmail: Stack trace: $stackTrace');
+    }
+    
+    return null;
+  }
+
+  Future<User?> getUserInfo() async {
+    try {
+      // Versuchen, die Billing-API User-ID aus dem Speicher zu holen
+      final userId = await _storageService.getBillingUserId();
+      
+      if (userId == null) {
+        print('### getUserInfo: No billing user ID found in storage');
+        // Versuchen, stattdessen die gespeicherten Benutzerdaten zurückzugeben
+        print('### getUserInfo: Falling back to stored user data');
+        final storedUser = await _storageService.getUser();
+        if (storedUser != null) {
+          print('### getUserInfo: Found stored user data');
+          return storedUser;
+        }
+        return null;
+      }
+      
+      print('### getUserInfo: Attempting to fetch user data with ID: $userId');
+      
+      // Billing-API URL und Endpunkt
+      const String billingBaseUrl = 'http://bill.seeyoo.tv';
+      final endpoint = '/api/users/$userId';
+      final url = Uri.parse('$billingBaseUrl$endpoint');
+      
+      print('### getUserInfo: Calling API URL: $url');
+      
+      // Basic Auth für die Billing-API
+      const String authHeader = 'Basic YmlsbGluZzpMam5iR0NGdHlyZCY2dDk4IyQ5XzBpMFk4N3RlNXJ0ODY3dDd5';
+      
+      print('### getUserInfo: Making HTTP request...');
+      
+      // GET-Anfrage durchführen
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': authHeader,
+        },
+      ).timeout(const Duration(seconds: 15), onTimeout: () {
+        print('### getUserInfo: Request timed out after 15 seconds');
+        throw TimeoutException('Request timed out');
+      });
+      
+      print('### getUserInfo: Response status code: ${response.statusCode}');
+      
+      if (response.statusCode != 200) {
+        print('### getUserInfo: Failed to get user info from billing API: ${response.statusCode}');
+        print('### getUserInfo: Response body: ${response.body}');
+        
+        // Versuchen, stattdessen die gespeicherten Benutzerdaten zurückzugeben
+        print('### getUserInfo: Falling back to stored user data');
+        final storedUser = await _storageService.getUser();
+        if (storedUser != null) {
+          print('### getUserInfo: Found stored user data');
+          return storedUser;
+        }
+        return null;
+      }
+      
+      print('### getUserInfo: Decoding response JSON...');
+      final data = json.decode(response.body);
+      print('### getUserInfo: Response data status: ${data['status']}');
+      
+      if (data['status'] == 'OK' && data['results'] != null) {
+        final userData = data['results'];
+        print('### getUserInfo: User data received');
+        
+        try {
+          // Mapping der Billing-API-Daten in unser User-Modell
+          final user = User(
+            id: int.tryParse(userData['id']?.toString() ?? '0') ?? 0,
+            account: int.tryParse(userData['account_number']?.toString() ?? '0'),
+            mac: await _getDeviceInfo().then((info) => info['mac']),
+            fname: userData['name']?.toString() ?? '',
+            phone: userData['phone']?.toString() ?? '',
+            email: userData['email']?.toString() ?? '',
+            tariffPlan: userData['tariff']?.toString() ?? '',
+            endDate: userData['end_time']?.toString() ?? '',
+            // Accountsaldo ist in der neuen API möglicherweise nicht vorhanden
+            accountBalance: null,
+          );
+          
+          print('### getUserInfo: User object created: $user');
+          
+          // Benutzerinformationen im Speicher aktualisieren
+          await _storageService.saveUser(user);
+          print('### getUserInfo: User data saved to storage');
+          
+          return user;
+        } catch (e) {
+          print('### getUserInfo: Error mapping user data: $e');
+          
+          // Bei Mapping-Fehlern versuchen, gespeicherte Daten zu verwenden
+          final storedUser = await _storageService.getUser();
+          if (storedUser != null) {
+            print('### getUserInfo: Returning stored user data after mapping error');
+            return storedUser;
+          }
+        }
+      } else {
+        print('### getUserInfo: Billing API error: ${data["error"] ?? "Unknown error"}');
+        
+        // Bei API-Fehler versuchen, gespeicherte Daten zu verwenden
+        final storedUser = await _storageService.getUser();
+        if (storedUser != null) {
+          print('### getUserInfo: Returning stored user data after API error');
+          return storedUser;
+        }
+      }
+      return null;
+    } catch (e, stackTrace) {
+      print('### getUserInfo: Error fetching user info from billing API: $e');
+      print('### getUserInfo: Stack trace: $stackTrace');
+      
+      // Bei Ausnahmen versuchen, gespeicherte Daten zu verwenden
+      try {
+        final storedUser = await _storageService.getUser();
+        if (storedUser != null) {
+          print('### getUserInfo: Returning stored user data after exception');
+          return storedUser;
+        }
+      } catch (e) {
+        print('### getUserInfo: Error retrieving stored user data: $e');
+      }
+      
       return null;
     }
   }

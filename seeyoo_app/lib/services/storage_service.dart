@@ -9,7 +9,8 @@ class StorageService {
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
   static const String _tokenExpiryKey = 'token_expiry';
-  static const String _userIdKey = 'user_id';
+  static const String _userIdKey = 'user_id'; // Wird für Auth-API ID verwendet
+  static const String _billingUserIdKey = 'billing_user_id'; // Separate ID für Billing-API
   static const String _userDataKey = 'user_data';
   static const String _userSettingsKey = 'user_settings';
 
@@ -52,10 +53,28 @@ class StorageService {
     return prefs.getString(_refreshTokenKey);
   }
 
-  // User-ID abrufen
+  // Auth-API User-ID abrufen
   Future<int?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_userIdKey);
+  }
+  
+  // Auth-API User-ID direkt setzen
+  Future<void> setUserId(int userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_userIdKey, userId);
+  }
+  
+  // Billing-API User-ID abrufen
+  Future<int?> getBillingUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_billingUserIdKey);
+  }
+  
+  // Billing-API User-ID direkt setzen
+  Future<void> setBillingUserId(int userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_billingUserIdKey, userId);
   }
 
   // Prüfen, ob der Token abgelaufen ist

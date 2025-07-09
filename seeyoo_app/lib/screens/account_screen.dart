@@ -53,19 +53,31 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
   }
 
   Future<void> _loadUserInfo() async {
+    print('### _loadUserInfo: Start loading user info');
     setState(() {
       _isLoadingUserInfo = true;
     });
 
     try {
+      // Benutzer-ID aus dem Speicher abrufen, um zu überprüfen, ob sie verfügbar ist
+      final userId = await _storageService.getUserId();
+      print('### _loadUserInfo: Retrieved user ID: $userId');
+      
       // Immer aktuelle Daten vom Server holen
+      print('### _loadUserInfo: Calling getUserInfo()');
       _user = await _apiService.getUserInfo();
+      print('### _loadUserInfo: getUserInfo returned: ${_user != null ? 'User data received' : 'NULL - No user data'}');
       
       // Aktualisierte Daten im lokalen Speicher speichern
       if (_user != null) {
         await _storageService.saveUser(_user!);
+        print('### _loadUserInfo: User data saved to storage');
+      } else {
+        print('### _loadUserInfo: No user data to save');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('### _loadUserInfo: Exception during loading: $e');
+      print('### _loadUserInfo: Stack trace: $stackTrace');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Fehler beim Laden der Benutzerdaten: $e')),
@@ -75,6 +87,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
         setState(() {
           _isLoadingUserInfo = false;
         });
+        print('### _loadUserInfo: Loading complete, isLoading set to false');
       }
     }
   }
@@ -118,13 +131,61 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
         body: _isLoadingUserInfo
             ? const Center(child: CircularProgressIndicator(color: Color(0xFFA1273B)))
             : _user == null
-                ? const Center(
-                    child: Text(
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
                       'Benutzerdaten konnten nicht geladen werden',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.0,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  )
-                : _buildUserProfile(),
+                    const SizedBox(height: 20),
+                    // Button zum erneuten Laden der Benutzerdaten
+                    ElevatedButton.icon(
+                      onPressed: _loadUserInfo,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Erneut versuchen'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFA1273B), // SEEYOO Brand-Farbe
+                        minimumSize: const Size(200, 48), // Touch-optimiert
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Login Button statt Testbenutzer
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(builder: (context) => const AuthScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.login),
+                      label: const Text('Anmelden'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFA1273B), // Rot (Markenfarbe)
+                        minimumSize: const Size(200, 48), // Touch-optimiert
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    // Logout-Button - immer sichtbar
+                    ElevatedButton.icon(
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                      label: const Text(
+                        'Abmelden',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade800,
+                        minimumSize: const Size(200, 48), // Touch-optimiert
+                      ),
+                    ),
+                  ],
+                )  
+              : _buildUserProfile(),
       ),
     );
   }
@@ -181,7 +242,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      _user?.status == 1 ? 'Aktiv' : 'Inaktiv',
+                      _user?.status == 1 ? 'Account aktiviert' : 'Account deaktiviert',
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
@@ -199,13 +260,11 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
           ),
           const Divider(color: Color(0xFF3B4248)),
           _buildInfoItem('E-Mail', _user?.email ?? 'Nicht angegeben'),
-          _buildInfoItem('Telefon', _user?.phone ?? 'Nicht angegeben'),
+          _buildInfoItem('Version', _user?.mac ?? 'Nicht angegeben'),
           _buildInfoItem('Tarif', _user?.tariffPlan ?? 'Standard'),
           if (_user?.endDate != null)
             _buildInfoItem('Ablaufdatum', _formatDate(_user?.endDate)),
-          if (_user?.accountBalance != null)
-            _buildInfoItem('Kontostand', '${_user?.accountBalance} €'),
-          const SizedBox(height: 60),
+          const SizedBox(height: 30),
           // Ausloggen-Button
           Center(
             child: SizedBox(
