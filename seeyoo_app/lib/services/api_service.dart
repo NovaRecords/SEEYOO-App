@@ -34,31 +34,35 @@ class ApiService {
   Future<Map<String, String>> _getDeviceInfo() async {
     // Initialwerte nur deklarieren, werden dynamisch basierend auf der Plattform gesetzt
     late String deviceId;
-    String deviceMac = '00:00:00:00:00:00';
+    // String deviceMac = '00:00:00:00:00:00'; // Auskommentiert - MAC-Adresse wird nicht mehr verwendet
+    String platformType = 'Mobile-App'; // Standardwert
     String serialNumber = '';
     
     try {
       if (Platform.isAndroid) {
+        platformType = 'Mobile-App-Android';
         final androidInfo = await _deviceInfo.androidInfo;
         deviceId = androidInfo.id;
         serialNumber = androidInfo.serialNumber;
-        // MAC-Adresse auf Android erfordert möglicherweise zusätzliche Berechtigungen
-        deviceMac = androidInfo.id.substring(0, 12).replaceAllMapped(
-            RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+        // MAC-Adresse auf Android auskommentiert
+        // deviceMac = androidInfo.id.substring(0, 12).replaceAllMapped(
+        //     RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
       } else if (Platform.isIOS) {
+        platformType = 'Mobile-App-iOS';
         final iosInfo = await _deviceInfo.iosInfo;
         deviceId = iosInfo.identifierForVendor ?? _uuid.v4();
         serialNumber = iosInfo.utsname.machine;
-        // iOS bietet keinen direkten Zugriff auf die MAC-Adresse
-        deviceMac = deviceId.substring(0, 12).replaceAllMapped(
-            RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+        // iOS MAC-Adresse auskommentiert
+        // deviceMac = deviceId.substring(0, 12).replaceAllMapped(
+        //     RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
       } else if (kIsWeb) {
+        platformType = 'Mobile-App-Web';
         final webInfo = await _deviceInfo.webBrowserInfo;
         deviceId = webInfo.userAgent ?? 'web-browser';
         serialNumber = webInfo.browserName?.toString() ?? 'unknown';
-        // Generiere eine pseudo-MAC für Web
-        deviceMac = _uuid.v4().substring(0, 12).replaceAllMapped(
-            RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+        // Pseudo-MAC für Web auskommentiert
+        // deviceMac = _uuid.v4().substring(0, 12).replaceAllMapped(
+        //     RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
       }
     } catch (e) {
       print('Error getting device info: $e');
@@ -66,13 +70,14 @@ class ApiService {
       final uuid = _uuid.v4();
       deviceId = 'seeyoo-app-$uuid';
       serialNumber = uuid;
-      deviceMac = uuid.substring(0, 12).replaceAllMapped(
-          RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+      // Fallback MAC-Adresse auskommentiert
+      // deviceMac = uuid.substring(0, 12).replaceAllMapped(
+      //     RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
     }
     
     return {
       'device_id': deviceId,
-      'mac': deviceMac,
+      'mac': platformType, // Statt MAC-Adresse geben wir nun die Plattform-Identifikation zurück
       'serial_number': serialNumber,
     };
   }
@@ -91,7 +96,7 @@ class ApiService {
         'grant_type': 'password',
         'username': username,
         'password': password,
-        'mac': deviceInfo['mac'] ?? '00:00:00:00:00:00',
+        'mac': deviceInfo['mac'] ?? 'Mobile-App', // Nutze die Plattform-Identifikation statt einer MAC-Adresse
         'device_id': deviceInfo['device_id'] ?? _uuid.v4(),
         'serial_number': deviceInfo['serial_number'] ?? '',
       };
@@ -908,7 +913,7 @@ class ApiService {
   }
   
   // Aktualisiert die Reihenfolge der Favoriten-Kanäle
-  // Basierend auf API-Doku: PUT /users/<user_id>/tv-favorites mit ch_id=1,2,3,...
+  // PUT /users/<user_id>/tv-favorites mit ch_id=1,2,3,...
   Future<bool> updateFavoritesOrder(List<int> channelIds) async {
     try {
       final userId = await _storageService.getUserId();

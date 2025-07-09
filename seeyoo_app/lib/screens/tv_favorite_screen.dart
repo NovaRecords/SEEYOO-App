@@ -402,8 +402,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         
         // Aktualisiere Media-Info für den ausgewählten Kanal
         await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
-        // Speichere diesen Kanal als zuletzt gesehenen
+        // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
         await _apiService.saveLastWatchedChannel(channel.id);
+        // Speichere diesen Kanal auch lokal als zuletzt gesehenen Favoriten-Kanal
+        await _storageService.saveLastFavoriteChannel(channel.id);
         print('Media-Info aktualisiert für Kanal ${channel.id}');
       } else {
         try {
@@ -415,8 +417,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
             
             // Aktualisiere Media-Info für den ausgewählten Kanal
             await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
-            // Speichere diesen Kanal als zuletzt gesehenen
+            // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
             await _apiService.saveLastWatchedChannel(channel.id);
+            // Speichere diesen Kanal auch lokal als zuletzt gesehenen Favoriten-Kanal
+            await _storageService.saveLastFavoriteChannel(channel.id);
             print('Media-Info aktualisiert für Kanal ${channel.id}');
           } else {
             setState(() {
@@ -556,7 +560,28 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   // Lädt den zuletzt gesehenen Kanal
   Future<void> _loadLastWatchedChannel() async {
     try {
-      // Hole die ID des zuletzt gesehenen Kanals vom Server
+      // Zuerst versuchen, den lokal gespeicherten Favoriten-Kanal zu laden
+      final lastFavoriteChannelId = await _storageService.getLastFavoriteChannel();
+      
+      // Prüfen ob der lokal gespeicherte Favoriten-Kanal vorhanden ist
+      if (lastFavoriteChannelId != null && _channels.isNotEmpty) {
+        // Prüfe, ob der Kanal in den Favoriten ist
+        final favoriteIndex = _favoriteChannels.indexWhere((channel) => channel.id == lastFavoriteChannelId);
+        
+        if (favoriteIndex >= 0) {
+          // Lokal gespeicherter Kanal ist ein Favorit, finde seinen Index in der Hauptliste
+          final mainIndex = _channels.indexWhere((channel) => channel.id == lastFavoriteChannelId);
+          
+          if (mainIndex >= 0) {
+            // Lokal gespeicherter Kanal gefunden, wähle ihn aus
+            print('Wähle lokal gespeicherten Favoriten-Kanal mit ID $lastFavoriteChannelId aus');
+            _selectChannel(mainIndex);
+            return;
+          }
+        }
+      }
+      
+      // Fallback: Wenn kein lokaler Favoriten-Kanal gefunden wurde, versuche den vom Server
       final lastChannelId = await _apiService.getLastWatchedChannel();
       
       if (lastChannelId != null && _channels.isNotEmpty) {

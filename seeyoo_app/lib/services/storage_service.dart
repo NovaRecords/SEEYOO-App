@@ -149,6 +149,30 @@ class StorageService {
     }
   }
   
+  // Speichern des zuletzt gesehenen Kanals im TV-Screen
+  Future<void> saveLastTvChannel(int channelId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_tv_channel', channelId);
+  }
+  
+  // Abrufen des zuletzt gesehenen Kanals im TV-Screen
+  Future<int?> getLastTvChannel() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('last_tv_channel');
+  }
+  
+  // Speichern des zuletzt gesehenen Kanals im Favoriten-Screen
+  Future<void> saveLastFavoriteChannel(int channelId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_favorite_channel', channelId);
+  }
+  
+  // Abrufen des zuletzt gesehenen Kanals im Favoriten-Screen
+  Future<int?> getLastFavoriteChannel() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('last_favorite_channel');
+  }
+  
   // Alle Benutzerdaten löschen (zusätzlich zu Auth-Daten)
   @override
   Future<void> clearAuthData() async {
@@ -161,5 +185,7 @@ class StorageService {
     await prefs.remove(_userDataKey);
     await prefs.remove(_userSettingsKey);
     await prefs.remove('favorites_order'); // Lösche auch die gespeicherte Favoriten-Reihenfolge
+    await prefs.remove('last_tv_channel'); // Lösche den gespeicherten letzten TV-Kanal
+    await prefs.remove('last_favorite_channel'); // Lösche den gespeicherten letzten Favoriten-Kanal
   }
 }

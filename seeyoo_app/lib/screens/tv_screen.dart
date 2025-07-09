@@ -5,6 +5,7 @@ import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/services/api_service.dart';
+import 'package:seeyoo_app/services/storage_service.dart';
 
 class TvScreen extends StatefulWidget {
   const TvScreen({super.key});
@@ -14,6 +15,7 @@ class TvScreen extends StatefulWidget {
 }
 
 class _TvScreenState extends State<TvScreen> {
+  final StorageService _storageService = StorageService();
   int _selectedTabIndex = -1; // -1 bedeutet kein Tab ist ausgewählt
   int _selectedChannelIndex = 0; // Index des ausgewählten Kanals
   final List<String> _tabTitles = ['Programm', 'Mediathek', 'Kategorien', 'Favoriten'];
@@ -258,7 +260,23 @@ class _TvScreenState extends State<TvScreen> {
   // Lädt und selektiert den zuletzt gesehenen Kanal
   Future<void> _loadLastWatchedChannel() async {
     try {
-      // Hole die ID des zuletzt gesehenen Kanals vom Server
+      // Zuerst versuchen, den lokal gespeicherten TV-Kanal zu laden
+      final lastTvChannelId = await _storageService.getLastTvChannel();
+      
+      // Prüfen ob der lokal gespeicherte TV-Kanal vorhanden ist
+      if (lastTvChannelId != null && _channels.isNotEmpty) {
+        // Suche den Kanal mit dieser ID
+        final index = _channels.indexWhere((channel) => channel.id == lastTvChannelId);
+        
+        if (index >= 0) {
+          // Lokal gespeicherter Kanal gefunden, wähle ihn aus
+          print('Wähle lokal gespeicherten TV-Kanal mit ID $lastTvChannelId aus');
+          _selectChannel(index);
+          return;
+        }
+      }
+      
+      // Fallback: Wenn kein lokaler TV-Kanal gefunden wurde, versuche den vom Server
       final lastChannelId = await _apiService.getLastWatchedChannel();
       
       if (lastChannelId != null && _channels.isNotEmpty) {
@@ -324,8 +342,10 @@ class _TvScreenState extends State<TvScreen> {
         
         // Aktualisiere Media-Info für den ausgewählten Kanal
         await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
-        // Speichere diesen Kanal als zuletzt gesehenen
+        // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
         await _apiService.saveLastWatchedChannel(channel.id);
+        // Speichere diesen Kanal auch lokal als zuletzt gesehenen TV-Kanal
+        await _storageService.saveLastTvChannel(channel.id);
         print('Media-Info aktualisiert für Kanal ${channel.id}');
       } else {
         try {
@@ -337,8 +357,10 @@ class _TvScreenState extends State<TvScreen> {
             
             // Aktualisiere Media-Info für den ausgewählten Kanal
             await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
-            // Speichere diesen Kanal als zuletzt gesehenen
+            // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
             await _apiService.saveLastWatchedChannel(channel.id);
+            // Speichere diesen Kanal auch lokal als zuletzt gesehenen TV-Kanal
+            await _storageService.saveLastTvChannel(channel.id);
             print('Media-Info aktualisiert für Kanal ${channel.id}');
           } else {
             setState(() {
