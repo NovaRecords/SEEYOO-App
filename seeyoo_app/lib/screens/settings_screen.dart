@@ -29,6 +29,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // TV-Favoriten-Start-Option
   bool _startWithFavorites = false;
   
+  // Kindersicherung
+  bool _parentalControlEnabled = false;
+  
   // App-Version
   String _appVersion = '1.0.0';
   
@@ -78,11 +81,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           // TV-Favoriten-Start-Option laden (nur lokale Einstellung)
           _startWithFavorites = _settings!['start_with_favorites'] ?? false;
+          
+          // Kindersicherungsstatus laden
+          _parentalControlEnabled = _settings!['parental_control_enabled'] ?? false;
         });
       }
       
       // Speichere die aktuellen lokalen Werte, damit sie nicht überschrieben werden
       final bool currentStartWithFavorites = _startWithFavorites;
+      final bool currentParentalControlEnabled = _parentalControlEnabled;
       final String currentMobileQuality = _mobileQuality;
       final String currentWifiQuality = _wifiQuality;
       
@@ -92,6 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (apiSettings != null) {
         // Stelle sicher, dass wir bereits gespeicherte lokale Einstellungen nicht verlieren
         apiSettings['start_with_favorites'] = currentStartWithFavorites;
+        apiSettings['parental_control_enabled'] = currentParentalControlEnabled;
         apiSettings['mobile_quality'] = currentMobileQuality;
         apiSettings['wifi_quality'] = currentWifiQuality;
         
@@ -105,8 +113,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _mobileQuality = currentMobileQuality;
           _wifiQuality = currentWifiQuality;
           
-          // TV-Favoriten-Start-Option beibehalten
+          // TV-Favoriten-Start-Option und Kindersicherung beibehalten
           _startWithFavorites = currentStartWithFavorites;
+          _parentalControlEnabled = currentParentalControlEnabled;
         });
       }
     } catch (e) {
@@ -123,6 +132,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // Diese Methode speichert die Kindersicherungseinstellungen (nur lokal - Sandbox Modus)
+  Future<void> _saveParentalControlSettings() async {
+    if (_settings == null) return;
+    
+    setState(() {
+      _saveInProgress = true;
+    });
+
+    try {
+      // Lokale Einstellungen mit allen Werten aktualisieren
+      Map<String, dynamic> localSettings = Map<String, dynamic>.from(_settings!);
+      localSettings['parent_password'] = _parentPasswordController.text;
+      localSettings['parental_control_enabled'] = _parentalControlEnabled; // Als Boolean speichern
+      localSettings['start_with_favorites'] = _startWithFavorites;
+      localSettings['mobile_quality'] = _mobileQuality;
+      localSettings['wifi_quality'] = _wifiQuality;
+      
+      // Nur lokal speichern, keine Server-Anfrage
+      await _storageService.saveUserSettings(localSettings);
+      
+      setState(() {
+        _settings = localSettings;
+      });
+      
+      // Hinweis in der Konsole (für Entwickler)
+      print('Kindersicherungseinstellungen nur lokal gespeichert (Sandbox-Modus)');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Speichern der Kindersicherungseinstellungen: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saveInProgress = false;
+        });
+      }
+    }
+  }
+  
   // Diese Methode speichert nur Bitrate-Einstellungen lokal
   Future<void> _saveBitrateSettings() async {
     if (_settings == null) return;
@@ -167,8 +216,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     try {
-      // Aktualisiere die Einstellungen mit den aktuellen Werten (ohne Bitrate)
-      _settings!['parent_password'] = _parentPasswordController.text;
+      // Für andere Servereinstellungen außer Kindersicherung und Bitrate
+      // Aktuell keine weiteren Server-Einstellungen zu speichern
       
       // Start with favorites Einstellung separat behandeln (nur lokal)
       Map<String, dynamic> localSettings = Map<String, dynamic>.from(_settings!);
@@ -279,6 +328,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           // KINDERSICHERUNG Sektion
           _buildSectionHeader('KINDERSICHERUNG'),
+          _buildSwitchOption(
+            'Kindersicherung aktivieren', 
+            _parentalControlEnabled, 
+            (value) async {
+              setState(() {
+                _parentalControlEnabled = value;
+              });
+              // Einstellung speichern
+              await _saveParentalControlSettings();
+            }
+          ),
+          _buildDivider(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
@@ -299,6 +360,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               keyboardType: TextInputType.number,
               maxLength: 4,
+              onChanged: (value) {
+                // PIN-Code sofort speichern, wenn 4 Ziffern eingegeben wurden
+                if (value.length == 4) {
+                  _saveParentalControlSettings();
+                }
+              },
             ),
           ),
           

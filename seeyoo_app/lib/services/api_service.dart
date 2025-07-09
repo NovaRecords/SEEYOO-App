@@ -534,7 +534,34 @@ class ApiService {
       if (data['status'] == 'OK' && data['results'] != null) {
         final settingsData = data['results'];
         
-        // Einstellungen im Speicher aktualisieren
+        // Lokale Einstellungen abrufen, um sie zu bewahren
+        final localSettings = await _storageService.getUserSettings();
+        
+        // Lokale Sandbox-Einstellungen beibehalten
+        if (localSettings != null) {
+          // Bitrate-Einstellungen aus lokalen Daten beibehalten
+          if (localSettings.containsKey('mobile_quality')) {
+            settingsData['mobile_quality'] = localSettings['mobile_quality'];
+          }
+          if (localSettings.containsKey('wifi_quality')) {
+            settingsData['wifi_quality'] = localSettings['wifi_quality'];
+          }
+          
+          // Starteinstellung TV-Favoriten bewahren
+          if (localSettings.containsKey('start_with_favorites')) {
+            settingsData['start_with_favorites'] = localSettings['start_with_favorites'];
+          }
+          
+          // Kindersicherung beibehalten
+          if (localSettings.containsKey('parental_control_enabled')) {
+            settingsData['parental_control_enabled'] = localSettings['parental_control_enabled'];
+          }
+          if (localSettings.containsKey('parent_password')) {
+            settingsData['parent_password'] = localSettings['parent_password'];
+          }
+        }
+        
+        // Aktualisierte Einstellungen im Speicher aktualisieren
         await _storageService.saveUserSettings(settingsData);
         
         return settingsData;
