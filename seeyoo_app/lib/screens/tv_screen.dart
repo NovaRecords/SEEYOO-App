@@ -117,6 +117,7 @@ class _TvScreenState extends State<TvScreen> {
   
   // Lädt EPG-Daten für alle Kanäle auf einmal
   Future<void> _loadAllChannelsEpgData() async {
+    if (!mounted) return;
     // Zeige einen Ladeindikator an
     setState(() {
       _isLoadingEpg = true;
@@ -134,14 +135,18 @@ class _TvScreenState extends State<TvScreen> {
         // Ein Future erstellen, das EPG-Daten für diesen Kanal lädt
         final future = _apiService.getEpgForChannel(channel.id, next: 10).then((epgData) {
           // EPG-Daten im Map speichern
-          setState(() {
-            _epgDataMap[channel.id] = epgData;
-            _epgLoadingStatus[channel.id] = false;
-          });
+          if (mounted) {
+            setState(() {
+              _epgDataMap[channel.id] = epgData;
+              _epgLoadingStatus[channel.id] = false;
+            });
+          }
         }).catchError((e) {
-          setState(() {
-            _epgLoadingStatus[channel.id] = false;
-          });
+          if (mounted) {
+            setState(() {
+              _epgLoadingStatus[channel.id] = false;
+            });
+          }
           print('Fehler beim Laden der EPG-Daten für Kanal ${channel.id}: $e');
         });
         
@@ -151,10 +156,12 @@ class _TvScreenState extends State<TvScreen> {
       // Auf alle API-Anfragen warten
       await Future.wait(futures);
       
+      if (!mounted) return;
       setState(() {
         _isLoadingEpg = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoadingEpg = false;
       });
@@ -191,17 +198,20 @@ class _TvScreenState extends State<TvScreen> {
 
   // Lädt TV-Kategorien/Genres aus der API
   Future<void> _loadGenres() async {
+    if (!mounted) return;
     setState(() {
       _isLoadingGenres = true;
     });
     
     try {
       final genres = await _apiService.getTvGenres();
+      if (!mounted) return;
       setState(() {
         _genres = genres;
         _isLoadingGenres = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoadingGenres = false;
         _errorMessage = 'Fehler beim Laden der Kategorien: $e';
@@ -225,6 +235,7 @@ class _TvScreenState extends State<TvScreen> {
   
   // Lädt TV-Kanäle aus der API
   Future<void> _loadChannels() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -235,6 +246,7 @@ class _TvScreenState extends State<TvScreen> {
       final channels = await _apiService.getTvChannels();
       final favoriteChannels = await _apiService.getFavoriteTvChannels();
       
+      if (!mounted) return;
       setState(() {
         _channels = channels;
         _favoriteChannels = favoriteChannels;
@@ -243,13 +255,16 @@ class _TvScreenState extends State<TvScreen> {
       });
       
       // Versuche den zuletzt gesehenen Kanal zu laden, ansonsten den ersten
-      if (_channels.isNotEmpty) {
+      if (_channels.isNotEmpty && mounted) {
         await _loadLastWatchedChannel();
         
         // Lade EPG-Daten für alle Kanäle auf einmal
-        await _loadAllChannelsEpgData();
+        if (mounted) {
+          await _loadAllChannelsEpgData();
+        }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = 'Fehler beim Laden der Kanäle: $e';
@@ -259,16 +274,21 @@ class _TvScreenState extends State<TvScreen> {
 
   // Lädt und selektiert den zuletzt gesehenen Kanal
   Future<void> _loadLastWatchedChannel() async {
+    if (!mounted) return;
+  
     try {
       // Zuerst versuchen, den lokal gespeicherten TV-Kanal zu laden
       final lastTvChannelId = await _storageService.getLastTvChannel();
+      
+      // Prüfen, ob das Widget noch mounted ist nach dem asynchronen Aufruf
+      if (!mounted) return;
       
       // Prüfen ob der lokal gespeicherte TV-Kanal vorhanden ist
       if (lastTvChannelId != null && _channels.isNotEmpty) {
         // Suche den Kanal mit dieser ID
         final index = _channels.indexWhere((channel) => channel.id == lastTvChannelId);
         
-        if (index >= 0) {
+        if (index >= 0 && mounted) {
           // Lokal gespeicherter Kanal gefunden, wähle ihn aus
           print('Wähle lokal gespeicherten TV-Kanal mit ID $lastTvChannelId aus');
           _selectChannel(index);
@@ -279,11 +299,14 @@ class _TvScreenState extends State<TvScreen> {
       // Fallback: Wenn kein lokaler TV-Kanal gefunden wurde, versuche den vom Server
       final lastChannelId = await _apiService.getLastWatchedChannel();
       
+      // Erneut prüfen nach einem asynchronen Aufruf
+      if (!mounted) return;
+      
       if (lastChannelId != null && _channels.isNotEmpty) {
         // Suche den Kanal mit dieser ID
         final index = _channels.indexWhere((channel) => channel.id == lastChannelId);
         
-        if (index >= 0) {
+        if (index >= 0 && mounted) {
           // Zuletzt gesehener Kanal gefunden, wähle ihn aus
           print('Wähle zuletzt gesehenen Kanal mit ID $lastChannelId aus');
           _selectChannel(index);
@@ -292,14 +315,14 @@ class _TvScreenState extends State<TvScreen> {
       }
       
       // Fallback: Wenn kein zuletzt gesehener Kanal gefunden wurde, wähle den ersten
-      if (_channels.isNotEmpty) {
+      if (_channels.isNotEmpty && mounted) {
         print('Kein zuletzt gesehener Kanal gefunden, wähle ersten Kanal');
         _selectChannel(0);
       }
     } catch (e) {
       print('Fehler beim Laden des zuletzt gesehenen Kanals: $e');
       // Fallback im Fehlerfall: Ersten Kanal wählen
-      if (_channels.isNotEmpty) {
+      if (_channels.isNotEmpty && mounted) {
         _selectChannel(0);
       }
     }

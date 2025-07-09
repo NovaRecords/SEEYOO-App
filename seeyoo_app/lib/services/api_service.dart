@@ -456,7 +456,6 @@ class ApiService {
     }
   }
   
-  // Weitere HTTP-Methoden (POST, PUT, DELETE) können nach Bedarf hinzugefügt werden
 
   // Holt die Benutzerinformationen von der API
   Future<User?> getUserInfo() async {
@@ -468,7 +467,6 @@ class ApiService {
         return null;
       }
       
-      // Endpunkt aus der Doku: /users/<user_id>
     // Füge einen Zeitstempel hinzu, um Caching zu verhindern
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final endpoint = '/api/v2/users/$userId?_ts=$timestamp';
@@ -516,7 +514,6 @@ class ApiService {
         return null;
       }
       
-      // Endpunkt aus der Doku: /users/<user_id>/settings
       final endpoint = '/api/v2/users/$userId/settings';
       
       final response = await get(endpoint);
@@ -561,7 +558,6 @@ class ApiService {
         return false;
       }
       
-      // Endpunkt aus der Doku: /users/<user_id>/settings
       final endpoint = '/api/v2/users/$userId/settings';
       
       final uri = Uri.parse('$baseUrl$endpoint');
@@ -610,7 +606,6 @@ class ApiService {
         return false;
       }
       
-      // Endpunkt aus der Doku: /users/<user_id>/ping
       final endpoint = '/api/v2/users/$userId/ping';
       
       final response = await get(endpoint);
@@ -690,7 +685,6 @@ class ApiService {
         return false;
       }
       
-      // Endpunkt aus der Doku: /users/<user_id>/media-info
       final endpoint = '/api/v2/users/$userId/media-info';
       print('Entferne Media-Info: $baseUrl$endpoint');
       
@@ -807,7 +801,6 @@ class ApiService {
         return [];
       }
       
-      // Endpunkt aus der Doku: /users/<user_id>/modules
       final endpoint = '/api/v2/users/$userId/modules';
       
       final response = await get(endpoint);

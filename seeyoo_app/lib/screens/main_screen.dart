@@ -9,6 +9,7 @@ import 'package:seeyoo_app/screens/radio_screen.dart';
 import 'package:seeyoo_app/screens/settings_screen.dart';
 import 'package:seeyoo_app/screens/tv_favorite_screen.dart';
 import 'package:seeyoo_app/screens/tv_screen.dart';
+import 'package:seeyoo_app/services/storage_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
+  final StorageService _storageService = StorageService();
   int _selectedIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -96,15 +98,24 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       }
     });
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Prüfe auf TV-Favoriten-Start-Einstellung
+      final settings = await _storageService.getUserSettings();
+      final startWithFavorites = settings?['start_with_favorites'] ?? false;
+      
       // Prüfe die anfängliche Route
       final route = ModalRoute.of(context)?.settings.name;
       if (route != null) {
         setState(() {
           _selectedIndex = _getScreenIndex(route);
         });
+      } else if (startWithFavorites) {
+        // Wenn die Einstellung aktiviert ist, starte mit TV-Favoriten (Index 1)
+        setState(() {
+          _selectedIndex = 1; // Index 1 entspricht TvFavoriteScreen
+        });
       } else {
-        // Standardmäßig zur Hauptseite navigieren, wenn keine Route gesetzt ist
+        // Standardmäßig zur Hauptseite (TV-Screen) navigieren
         setState(() {
           _selectedIndex = 0;
         });
