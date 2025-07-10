@@ -107,17 +107,36 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 Ein Paar Bilder zum Fortschritt:
 
-![Screenshot Startscreen](pics/start-screens.png) ![Screenshot Login](pics/login-screens.png)
+<div style="display: flex; justify-content: space-between;">
+  <img src="pics/Start-screens.png" alt="Screenshot Startscreen" width="300">
+  <img src="pics/login-screens.png" alt="Screenshot Login" width="300">
+</div>
 
-![Screenshot Menü TV](pics/menu-screen-tv.png) ![Screenshot TV](pics/tv-screen06.png)
+<div style="display: flex; justify-content: space-between;">
+  <img src="pics/menu-screen-tv.png" alt="Screenshot Menü TV" width="300">
+  <img src="pics/tv-screen06.png" alt="Screenshot TV" width="300">
+</div>
 
-![Screenshot EPG](pics/EPG-screen04.png) ![Screenshot Kategorien](pics/kat-screen04.png)
+<div style="display: flex; justify-content: space-between;">
+  <img src="pics/EPG-screen04.png" alt="Screenshot EPG" width="300">
+  <img src="pics/kat-screen04.png" alt="Screenshot Kategorien" width="300">
+</div>
 
-![Screenshot Menü Favoriten](pics/menu-screen-fav.png) ![Screenshot Favoriten1](pics/fav-screen01.png) ![Screenshot Favoriten2](pics/fav-screen02.png)
+<div style="display: flex; justify-content: space-between;">
+  <img src="pics/menu-screen-fav.png" alt="Screenshot Menü Favoriten" width="300">
+  <img src="pics/fav-screen01.png" alt="Screenshot Favoriten1" width="300">
+  <img src="pics/fav-screen02.png" alt="Screenshot Favoriten2" width="300">
+</div>
 
-![Screenshot Menü Einstellungen](pics/menu-screen-settings.png) ![Screenshot Einstellungen1](pics/settings-screen01.png)
+<div style="display: flex; justify-content: space-between;">
+  <img src="pics/menu-screen-settings.png" alt="Screenshot Menü Einstellungen" width="300">
+  <img src="pics/settings-screen01.png" alt="Screenshot Einstellungen1" width="300">
+</div>
 
-![Screenshot Menü Mein Konto](pics/menu-screen-account.png) ![Screenshot Mein Konto1](pics/konto-screen01.png) 
+<div style="display: flex; justify-content: space-between;">
+  <img src="pics/menu-screen-account.png" alt="Screenshot Menü Mein Konto" width="300">
+  <img src="pics/konto-screen01.png" alt="Screenshot Mein Konto1" width="300">
+</div>
 
 ## Tag 11 (11.07.2025)
 
