@@ -119,7 +119,7 @@ Ein Paar Bilder zum Fortschritt:
 
 <div style="display: flex; justify-content: center; gap: 20px;">
   <img src="pics/EPG-screen04.png" alt="Screenshot EPG" width="300">
-  <img src="pics/kat-screen04.png" alt="Screenshot Kategorien" width="300">
+  <img src="pics/Kat-screen04.png" alt="Screenshot Kategorien" width="300">
 </div>
 
 <div style="display: flex; justify-content: center; gap: 20px;">
