@@ -95,11 +95,29 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 ## Tag 10 (10.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 **Heutige Hauptaufgaben:** Benutzerkontodetails korrekt darstellen und Datenfluss zwischen Stalker Portal und Billing API verbessern; Aktivierungsstatus des Kontos anzeigen; Sicherheitsverbesserungen für API-Zugangsdaten implementieren.
+
+- 🟢 **Fortschritt & Ergebnisse:** Erfolgreich implementiert: Anzeige des Konto-Aktivierungsstatus im Profil-Header mit farbkodierten Icons (grün für aktiv, rot für inaktiv); korrektes Laden und Anzeigen der MAC-Adresse aus dem Stalker Portal; Umbenennung von "Version" zu "Gerät" für bessere Klarheit; verbesserte Extraktion von Benutzerdaten aus dem Stalker Portal und Billing API; robuste Fallback-Mechanismen bei fehlenden Daten.
+
+- 🟢 **Herausforderungen & Blockaden:** Versuch, die Billing API-Zugangsdaten in Flutter Secure Storage zu speichern, führte zu MissingPluginException beim Ausloggen; mussten zur hartcodierten Credential-Lösung zurückkehren, um die Funktionalität zu gewährleisten; iOS-spezifische Konfigurationen für Secure Storage waren herausfordernd.
+
+- 🟢 **Was ich heute gelernt habe:** Die Komplexität bei der Integration von nativen Sicherheitsfeatures wie Secure Storage in Flutter-Apps; Wichtigkeit von robusten Fallback-Mechanismen; besseres Verständnis des Datenflusses zwischen den verschiedenen APIs und wie sie zusammenwirken, um ein vollständiges Benutzerprofil zu erstellen.
+
+- 🟢 **Plan für morgen:** Player-Implementation für TV-Kanäle beginnen; verbleibende UI-Verbesserungen in den Einstellungen umsetzen; potenzielle sicherere Lösung für API-Credentials recherchieren, die mit allen Plattformen kompatibel ist.
+
+Ein Paar Bilder zum Fortschritt:
+
+![Screenshot Startscreen](pics/start-screens.png) ![Screenshot Login](pics/login-screens.png)
+
+![Screenshot Menü TV](pics/menu-screen-tv.png) ![Screenshot TV](pics/tv-screen06.png)
+
+![Screenshot EPG](pics/EPG-screen04.png) ![Screenshot Kategorien](pics/kat-screen04.png)
+
+![Screenshot Menü Favoriten](pics/menu-screen-fav.png) ![Screenshot Favoriten1](pics/fav-screen01.png) ![Screenshot Favoriten2](pics/fav-screen02.png)
+
+![Screenshot Menü Einstellungen](pics/menu-screen-settings.png) ![Screenshot Einstellungen1](pics/settings-screen01.png)
+
+![Screenshot Menü Mein Konto](pics/menu-screen-account.png) ![Screenshot Mein Konto1](pics/konto-screen01.png) 
 
 ## Tag 11 (11.07.2025)
 
