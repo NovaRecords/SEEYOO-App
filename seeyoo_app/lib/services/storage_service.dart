@@ -2,8 +2,15 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seeyoo_app/models/auth_response.dart';
 import 'package:seeyoo_app/models/user.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StorageService {
+  // Secure Storage für sensible Daten
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  
+  // Keys für Secure Storage
+  static const String _billingAuthKey = 'billing_auth';
+  
   // Keys für SharedPreferences
   static const String _tokenKey = 'auth_token_data';
   static const String _accessTokenKey = 'access_token';
@@ -13,6 +20,7 @@ class StorageService {
   static const String _billingUserIdKey = 'billing_user_id'; // Separate ID für Billing-API
   static const String _userDataKey = 'user_data';
   static const String _userSettingsKey = 'user_settings';
+  static const String _userEmailKey = 'user_email'; // E-Mail-Adresse des Benutzers
 
   // Token speichern
   Future<void> saveToken(AuthResponse authResponse) async {
@@ -75,6 +83,18 @@ class StorageService {
   Future<void> setBillingUserId(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_billingUserIdKey, userId);
+  }
+  
+  // Benutzer-E-Mail speichern
+  Future<void> setUserEmail(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userEmailKey, email);
+  }
+  
+  // Benutzer-E-Mail abrufen
+  Future<String?> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userEmailKey);
   }
 
   // Prüfen, ob der Token abgelaufen ist
@@ -192,8 +212,48 @@ class StorageService {
     return prefs.getInt('last_favorite_channel');
   }
   
-  // Alle Benutzerdaten löschen (zusätzlich zu Auth-Daten)
-  @override
+  // Speichert die Billing-API-Zugangsdaten sicher
+  Future<void> saveBillingAuth(String username, String password) async {
+    try {
+      // Erstelle einen Base64-kodierten Basic Auth Header
+      final credentials = base64Encode(utf8.encode('$username:$password'));
+      await _secureStorage.write(key: _billingAuthKey, value: credentials);
+      
+      // Als Backup auch in SharedPreferences speichern
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('billing_auth_backup', credentials);
+    } catch (e) {
+      print('Fehler beim Speichern der Billing-Auth-Daten: $e');
+      // Sicherstellen, dass zumindest SharedPreferences funktioniert
+      final prefs = await SharedPreferences.getInstance();
+      final credentials = base64Encode(utf8.encode('$username:$password'));
+      await prefs.setString('billing_auth_backup', credentials);
+    }
+  }
+
+  // Holt die Billing-API-Zugangsdaten
+  Future<String?> getBillingAuth() async {
+    try {
+      // Versuche zuerst aus Secure Storage zu lesen
+      final secureAuth = await _secureStorage.read(key: _billingAuthKey);
+      if (secureAuth != null) {
+        return secureAuth;
+      }
+    } catch (e) {
+      print('Fehler beim Lesen der Billing-Auth-Daten aus Secure Storage: $e');
+    }
+    
+    // Fallback auf SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('billing_auth_backup');
+    } catch (e) {
+      print('Fehler beim Lesen der Billing-Auth-Backup-Daten: $e');
+      return null;
+    }
+  }
+
+  /// Alle Benutzerdaten löschen (zusätzlich zu Auth-Daten)
   Future<void> clearAuthData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
@@ -201,8 +261,18 @@ class StorageService {
     await prefs.remove(_refreshTokenKey);
     await prefs.remove(_tokenExpiryKey);
     await prefs.remove(_userIdKey);
+    await prefs.remove(_userEmailKey);
+    await prefs.remove(_billingUserIdKey);
     await prefs.remove(_userDataKey);
     await prefs.remove(_userSettingsKey);
+    
+    // Auch sensible Daten aus Secure Storage löschen
+    try {
+      await _secureStorage.delete(key: _billingAuthKey);
+    } catch (e) {
+      print('Fehler beim Löschen von Secure Storage Daten: $e');
+      // Fehler ignorieren, da dies den Logout nicht blockieren sollte
+    }
     await prefs.remove('favorites_order'); // Lösche auch die gespeicherte Favoriten-Reihenfolge
     await prefs.remove('last_tv_channel'); // Lösche den gespeicherten letzten TV-Kanal
     await prefs.remove('last_favorite_channel'); // Lösche den gespeicherten letzten Favoriten-Kanal

@@ -16,21 +16,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final StorageService _storageService = StorageService();
   final ApiService _apiService = ApiService();
   
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _saveInProgress = false;
   Map<String, dynamic>? _settings;
-  final TextEditingController _parentPasswordController = TextEditingController();
+  bool _startWithFavorites = false;
+  String _mobileQuality = 'Hoch';
+  String _wifiQuality = 'Hoch';
   
   // Bitrate-Optionen
   final List<String> _bitrateOptions = ['Automatisch', 'Hoch', 'Klein'];
-  String _mobileQuality = 'Automatisch';
-  String _wifiQuality = 'Automatisch';
-  
-  // TV-Favoriten-Start-Option
-  bool _startWithFavorites = false;
-  
-  // Kindersicherung
-  bool _parentalControlEnabled = false;
   
   // App-Version
   String _appVersion = '1.0.0';
@@ -55,7 +49,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   
   @override
   void dispose() {
-    _parentPasswordController.dispose();
     super.dispose();
   }
 
@@ -65,59 +58,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     try {
-      // Versuche zuerst, die Einstellungen aus dem lokalen Speicher zu laden
-      final storedSettings = await _storageService.getUserSettings();
+      // Einstellungen vom Server laden
+      _settings = await _apiService.getUserSettings();
       
-      if (storedSettings != null) {
-        setState(() {
-          _settings = storedSettings;
-          if (_settings!.containsKey('parent_password')) {
-            _parentPasswordController.text = _settings!['parent_password'] ?? '';
-          }
-          
-          // Bitrate-Einstellungen laden
-          _mobileQuality = _settings!['mobile_quality'] ?? 'Hoch';
-          _wifiQuality = _settings!['wifi_quality'] ?? 'Hoch';
-          
-          // TV-Favoriten-Start-Option laden (nur lokale Einstellung)
-          _startWithFavorites = _settings!['start_with_favorites'] ?? false;
-          
-          // Kindersicherungsstatus laden
-          _parentalControlEnabled = _settings!['parental_control_enabled'] ?? false;
-        });
+      // Falls keine Einstellungen vom Server verfügbar sind, lokale Einstellungen laden
+      if (_settings == null) {
+        _settings = await _storageService.getUserSettings();
       }
       
-      // Speichere die aktuellen lokalen Werte, damit sie nicht überschrieben werden
-      final bool currentStartWithFavorites = _startWithFavorites;
-      final bool currentParentalControlEnabled = _parentalControlEnabled;
-      final String currentMobileQuality = _mobileQuality;
-      final String currentWifiQuality = _wifiQuality;
-      
-      // Unabhängig davon, ob lokale Einstellungen gefunden wurden, aktualisieren von API
-      final apiSettings = await _apiService.getUserSettings();
-      
-      if (apiSettings != null) {
-        // Stelle sicher, dass wir bereits gespeicherte lokale Einstellungen nicht verlieren
-        apiSettings['start_with_favorites'] = currentStartWithFavorites;
-        apiSettings['parental_control_enabled'] = currentParentalControlEnabled;
-        apiSettings['mobile_quality'] = currentMobileQuality;
-        apiSettings['wifi_quality'] = currentWifiQuality;
-        
-        setState(() {
-          _settings = apiSettings;
-          if (_settings!.containsKey('parent_password')) {
-            _parentPasswordController.text = _settings!['parent_password'] ?? '';
-          }
-          
-          // Behalte die lokalen Bitrate-Einstellungen bei
-          _mobileQuality = currentMobileQuality;
-          _wifiQuality = currentWifiQuality;
-          
-          // TV-Favoriten-Start-Option und Kindersicherung beibehalten
-          _startWithFavorites = currentStartWithFavorites;
-          _parentalControlEnabled = currentParentalControlEnabled;
-        });
+      // Falls noch immer keine Einstellungen vorhanden sind, Standardwerte verwenden
+      if (_settings == null) {
+        _settings = {
+          'start_with_favorites': false,
+          'mobile_quality': 'Hoch',
+          'wifi_quality': 'Hoch',
+        };
       }
+      
+      setState(() {
+        _startWithFavorites = _settings!['start_with_favorites'] == true || _settings!['start_with_favorites'] == 'true';
+        _mobileQuality = _settings!['mobile_quality']?.toString() ?? 'Hoch';
+        _wifiQuality = _settings!['wifi_quality']?.toString() ?? 'Hoch';
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -132,46 +94,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Diese Methode speichert die Kindersicherungseinstellungen (nur lokal - Sandbox Modus)
-  Future<void> _saveParentalControlSettings() async {
-    if (_settings == null) return;
-    
-    setState(() {
-      _saveInProgress = true;
-    });
-
-    try {
-      // Lokale Einstellungen mit allen Werten aktualisieren
-      Map<String, dynamic> localSettings = Map<String, dynamic>.from(_settings!);
-      localSettings['parent_password'] = _parentPasswordController.text;
-      localSettings['parental_control_enabled'] = _parentalControlEnabled; // Als Boolean speichern
-      localSettings['start_with_favorites'] = _startWithFavorites;
-      localSettings['mobile_quality'] = _mobileQuality;
-      localSettings['wifi_quality'] = _wifiQuality;
-      
-      // Nur lokal speichern, keine Server-Anfrage
-      await _storageService.saveUserSettings(localSettings);
-      
-      setState(() {
-        _settings = localSettings;
-      });
-      
-      // Hinweis in der Konsole (für Entwickler)
-      print('Kindersicherungseinstellungen nur lokal gespeichert (Sandbox-Modus)');
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler beim Speichern der Kindersicherungseinstellungen: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _saveInProgress = false;
-        });
-      }
-    }
-  }
-  
   // Diese Methode speichert nur Bitrate-Einstellungen lokal
   Future<void> _saveBitrateSettings() async {
     if (_settings == null) return;
@@ -324,49 +246,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await _storageService.saveUserSettings(localSettings);
               }
             }
-          ),
-          
-          // KINDERSICHERUNG Sektion
-          _buildSectionHeader('KINDERSICHERUNG'),
-          _buildSwitchOption(
-            'Kindersicherung aktivieren', 
-            _parentalControlEnabled, 
-            (value) async {
-              setState(() {
-                _parentalControlEnabled = value;
-              });
-              // Einstellung speichern
-              await _saveParentalControlSettings();
-            }
-          ),
-          _buildDivider(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(
-              controller: _parentPasswordController,
-              style: const TextStyle(color: Colors.white),
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'PIN-Code',
-                labelStyle: TextStyle(color: Color(0xFF8D9296)),
-                hintText: 'Vierstellige PIN eingeben',
-                hintStyle: TextStyle(color: Color(0xFF8D9296)),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFF3B4248)),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFA1273B)),
-                ),
-              ),
-              keyboardType: TextInputType.number,
-              maxLength: 4,
-              onChanged: (value) {
-                // PIN-Code sofort speichern, wenn 4 Ziffern eingegeben wurden
-                if (value.length == 4) {
-                  _saveParentalControlSettings();
-                }
-              },
-            ),
           ),
           
           // INFORMATION Sektion
@@ -531,4 +410,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+
+
 }

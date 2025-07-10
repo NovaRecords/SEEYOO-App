@@ -155,7 +155,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Login Button statt Testbenutzer
+                    // Login Button
                     ElevatedButton.icon(
                       onPressed: () {
                         Navigator.of(context).pushReplacement(
@@ -260,7 +260,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
           ),
           const Divider(color: Color(0xFF3B4248)),
           _buildInfoItem('E-Mail', _user?.email ?? 'Nicht angegeben'),
-          _buildInfoItem('Version', _user?.mac ?? 'Nicht angegeben'),
+          _buildInfoItem('Gerät', _user?.mac ?? 'Nicht angegeben'),
           _buildInfoItem('Tarif', _user?.tariffPlan ?? 'Standard'),
           if (_user?.endDate != null)
             _buildInfoItem('Ablaufdatum', _formatDate(_user?.endDate)),
@@ -369,5 +369,5 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
     }
   }
 
-  // Logo-Funktionalität entfernt, da nicht mehr benötigt
+
 }

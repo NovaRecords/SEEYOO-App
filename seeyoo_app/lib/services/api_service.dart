@@ -684,114 +684,103 @@ class ApiService {
 
   Future<User?> getUserInfo() async {
     try {
-      // Versuchen, die Billing-API User-ID aus dem Speicher zu holen
-      final userId = await _storageService.getBillingUserId();
+      int? accountNumber;
+      String? macAddress;
+      int? userStatus;
       
-      if (userId == null) {
-        print('### getUserInfo: No billing user ID found in storage');
-        // Versuchen, stattdessen die gespeicherten Benutzerdaten zurückzugeben
-        print('### getUserInfo: Falling back to stored user data');
-        final storedUser = await _storageService.getUser();
-        if (storedUser != null) {
-          print('### getUserInfo: Found stored user data');
-          return storedUser;
+      // 1. Versuchen, das Benutzerprofil vom Stalker Portal zu bekommen
+      final profileData = await getUserProfileFromStalker();
+      
+      if (profileData != null) {
+        // Kontonummer aus dem Profil extrahieren
+        if (profileData['account'] != null) {
+          accountNumber = int.tryParse(profileData['account'].toString());
+          print("### getUserInfo: Found account number in profile: $accountNumber");
         }
-        return null;
-      }
-      
-      print('### getUserInfo: Attempting to fetch user data with ID: $userId');
-      
-      // Billing-API URL und Endpunkt
-      const String billingBaseUrl = 'http://bill.seeyoo.tv';
-      final endpoint = '/api/users/$userId';
-      final url = Uri.parse('$billingBaseUrl$endpoint');
-      
-      print('### getUserInfo: Calling API URL: $url');
-      
-      // Basic Auth für die Billing-API
-      const String authHeader = 'Basic YmlsbGluZzpMam5iR0NGdHlyZCY2dDk4IyQ5XzBpMFk4N3RlNXJ0ODY3dDd5';
-      
-      print('### getUserInfo: Making HTTP request...');
-      
-      // GET-Anfrage durchführen
-      final response = await http.get(
-        url,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': authHeader,
-        },
-      ).timeout(const Duration(seconds: 15), onTimeout: () {
-        print('### getUserInfo: Request timed out after 15 seconds');
-        throw TimeoutException('Request timed out');
-      });
-      
-      print('### getUserInfo: Response status code: ${response.statusCode}');
-      
-      if (response.statusCode != 200) {
-        print('### getUserInfo: Failed to get user info from billing API: ${response.statusCode}');
-        print('### getUserInfo: Response body: ${response.body}');
         
-        // Versuchen, stattdessen die gespeicherten Benutzerdaten zurückzugeben
-        print('### getUserInfo: Falling back to stored user data');
-        final storedUser = await _storageService.getUser();
-        if (storedUser != null) {
-          print('### getUserInfo: Found stored user data');
-          return storedUser;
+        // MAC-Adresse aus dem Profil extrahieren, falls vorhanden
+        if (profileData['mac'] != null) {
+          macAddress = profileData['mac'].toString();
+          print("### getUserInfo: Found MAC address in profile: $macAddress");
         }
-        return null;
-      }
-      
-      print('### getUserInfo: Decoding response JSON...');
-      final data = json.decode(response.body);
-      print('### getUserInfo: Response data status: ${data['status']}');
-      
-      if (data['status'] == 'OK' && data['results'] != null) {
-        final userData = data['results'];
-        print('### getUserInfo: User data received');
         
-        try {
-          // Mapping der Billing-API-Daten in unser User-Modell
-          final user = User(
-            id: int.tryParse(userData['id']?.toString() ?? '0') ?? 0,
-            account: int.tryParse(userData['account_number']?.toString() ?? '0'),
-            mac: await _getDeviceInfo().then((info) => info['mac']),
-            fname: userData['name']?.toString() ?? '',
-            phone: userData['phone']?.toString() ?? '',
-            email: userData['email']?.toString() ?? '',
-            tariffPlan: userData['tariff']?.toString() ?? '',
-            endDate: userData['end_time']?.toString() ?? '',
-            // Accountsaldo ist in der neuen API möglicherweise nicht vorhanden
-            accountBalance: null,
-          );
-          
-          print('### getUserInfo: User object created: $user');
-          
-          // Benutzerinformationen im Speicher aktualisieren
-          await _storageService.saveUser(user);
-          print('### getUserInfo: User data saved to storage');
-          
-          return user;
-        } catch (e) {
-          print('### getUserInfo: Error mapping user data: $e');
-          
-          // Bei Mapping-Fehlern versuchen, gespeicherte Daten zu verwenden
-          final storedUser = await _storageService.getUser();
-          if (storedUser != null) {
-            print('### getUserInfo: Returning stored user data after mapping error');
-            return storedUser;
-          }
+        // Status aus dem Profil extrahieren, falls vorhanden
+        if (profileData['status'] != null) {
+          userStatus = int.tryParse(profileData['status'].toString());
+          print("### getUserInfo: Found user status in profile: $userStatus");
         }
       } else {
-        print('### getUserInfo: Billing API error: ${data["error"] ?? "Unknown error"}');
+        // 2. Wenn kein Profil verfügbar, versuchen, die gespeicherten Daten zu verwenden
+        final authUser = await _storageService.getUser();
+        accountNumber = authUser?.account;
+        print("### getUserInfo: Using stored account number: $accountNumber");
+      }
+      
+      // Wenn wir eine Kontonummer haben, verwenden wir diese für die Billing-API
+      if (accountNumber != null) {
+        print("### getUserInfo: Querying billing API with account number: $accountNumber");
+        // Direkte Abfrage des Benutzers mit seiner Kontonummer (= Billing-ID)
+        final userData = await _getBillingUserById(accountNumber);
         
-        // Bei API-Fehler versuchen, gespeicherte Daten zu verwenden
-        final storedUser = await _storageService.getUser();
-        if (storedUser != null) {
-          print('### getUserInfo: Returning stored user data after API error');
-          return storedUser;
+        if (userData != null) {
+          // Mapping der Daten auf unser User-Modell
+          final user = User(
+            id: int.tryParse(userData['id']?.toString() ?? '') ?? 0,
+            fname: userData['name']?.toString() ?? '',
+            email: userData['email']?.toString() ?? '',
+            phone: userData['phone']?.toString() ?? '',
+            tariffPlan: userData['tariff']?.toString() ?? '',
+            endDate: userData['end_time']?.toString() ?? '',
+            accountBalance: double.tryParse(userData['account_balance']?.toString() ?? '0'),
+            status: userStatus ?? 1, // Status aus Stalker Portal, Standard: aktiv
+            account: int.tryParse(userData['account_number']?.toString() ?? '0'),
+            mac: macAddress ?? userData['mac']?.toString() ?? '' // MAC aus Stalker Portal
+          );
+          
+          print("### getUserInfo: User found, saving to storage");
+          // Speichern wir den Benutzer lokal
+          await _storageService.saveUser(user);
+          return user;
+        } else {
+          print("### getUserInfo: No user found with account number: $accountNumber");
+        }
+      } else {
+        print("### getUserInfo: No user ID found in storage");
+      }
+      
+      // Wenn wir hier ankommen, konnten wir keinen Benutzer finden oder laden
+      // Versuchen wir, gespeicherte Benutzerdaten zurückzugeben
+      print("### getUserInfo: Falling back to stored user data");
+      final storedUser = await _storageService.getUser();
+      
+      // Wenn es keine gespeicherten Benutzerdaten gibt, erstellen wir einen minimalen Benutzer
+      if (storedUser == null) {
+        print("### getUserInfo: No stored user data, creating minimal user");
+        final email = await _storageService.getUserEmail();
+        if (email != null && email.isNotEmpty) {
+          final username = email.split('@').first;
+          final user = User(
+            id: await _storageService.getUserId() ?? 0,
+            email: email,
+            fname: username,
+            status: userStatus ?? 1, // Status aus Stalker Portal verwenden, falls vorhanden
+            phone: '',
+            tariffPlan: 'Standard',
+            endDate: DateTime.now().add(const Duration(days: 30)).toString(),
+            accountBalance: null,
+            account: null,
+            mac: macAddress ?? '', // MAC aus Stalker Portal verwenden, falls vorhanden
+          );
+          
+          // Speichern des minimalen Benutzers
+          print("### getUserInfo: Saving minimal user data");
+          await _storageService.saveUser(user);
+          return user;
         }
       }
-      return null;
+      
+      return storedUser;
+      
     } catch (e, stackTrace) {
       print('### getUserInfo: Error fetching user info from billing API: $e');
       print('### getUserInfo: Stack trace: $stackTrace');
@@ -807,6 +796,91 @@ class ApiService {
         print('### getUserInfo: Error retrieving stored user data: $e');
       }
       
+      return null;
+    }
+  }
+  
+  /// Holt Benutzerinformationen direkt aus dem Billing-System anhand der Benutzer-ID
+  Future<Map<String, dynamic>?> _getBillingUserById(int userId) async {
+    try {
+      final uri = Uri.parse('http://bill.seeyoo.tv/api/users/$userId');
+      print("### _getBillingUserById: Calling API URL: ${uri.toString()}");
+      
+      // Direkte Verwendung der harkodierten Credentials, um den ursprünglichen Zustand wiederherzustellen
+      final String basicAuth = 'Basic YmlsbGluZzpMam5iR0NGdHlyZCY2dDk4IyQ5XzBpMFk4N3RlNXJ0ODY3dDd5';
+      
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'Authorization': basicAuth,
+        },
+      );
+      
+      print("### _getBillingUserById: Response status code: ${response.statusCode}");
+      
+      // Log den gesamten Antwort-Body
+      print("### _getBillingUserById: Response body: ${response.body}");
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK' && data['results'] != null) {
+          print("### _getBillingUserById: User data found");
+          return data['results'];
+        } else {
+          print("### _getBillingUserById: No user data in results. Status: ${data['status']}");
+        }
+      } else {
+        print("### _getBillingUserById: Failed to get user: ${response.statusCode}");
+        print("### _getBillingUserById: Response body: ${response.body}");
+      }
+      return null;
+    } catch (e) {
+      print('### _getBillingUserById: Error getting user: $e');
+      return null;
+    }
+  }
+  
+  // Holt das Benutzerprofil vom Stalker Portal
+  Future<Map<String, dynamic>?> getUserProfileFromStalker() async {
+    try {
+      // Benutzer-ID und Token abrufen
+      final userId = await _storageService.getUserId();
+      final token = await _storageService.getAccessToken();
+      
+      if (userId == null || token == null) {
+        print('### getUserProfileFromStalker: Missing userId or token');
+        return null;
+      }
+      
+      // Anfrage an den Stalker Portal API-Endpunkt für Benutzerinformationen
+      final uri = Uri.parse('$baseUrl/api/v2/users/$userId');
+      print('### getUserProfileFromStalker: Request to $uri');
+      
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      
+      print('### getUserProfileFromStalker: Status ${response.statusCode}');
+      print('### getUserProfileFromStalker: Body ${response.body}');
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK' && data['results'] != null) {
+          print('### getUserProfileFromStalker: Account number: ${data['results']['account']}');
+          return data['results'];
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('### getUserProfileFromStalker: Error $e');
       return null;
     }
   }

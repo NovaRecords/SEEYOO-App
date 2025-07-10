@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:seeyoo_app/screens/main_screen.dart';
 import 'package:seeyoo_app/services/api_service.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
+import 'package:seeyoo_app/models/user.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -71,48 +72,37 @@ class _AuthScreenState extends State<AuthScreen> {
           );
           
           if (authResponse.isSuccess) {
-            // Nach erfolgreicher Anmeldung die richtige Benutzer-ID in der Billing-API finden
-            try {
-              // Zuerst versuchen, den Benutzer anhand der E-Mail-Adresse zu finden
-              final email = _emailController.text.trim();
-              print('Auth: Searching for user with email: $email in Billing API');
-              
-              final foundUser = await _apiService.findUserByEmail(email);
-              
-              if (foundUser != null && foundUser['id'] != null) {
-                // Benutzer in der Billing-API gefunden, ID separat speichern
-                final billingUserId = int.tryParse(foundUser['id'].toString());
-                if (billingUserId != null) {
-                  print('Auth: Found user in Billing API with ID: $billingUserId');
-                  await _storageService.setBillingUserId(billingUserId);
-                  print('Auth: Updated billing user ID in storage to: $billingUserId');
-                }
-              } else {
-                // Benutzer nicht gefunden, versuchen einen neuen zu erstellen
-                print('Auth: User not found in Billing API, creating a new one...');
-                
-                final result = await _apiService.createUser(
-                  name: email.split('@')[0], // Verwende den Teil vor @ als Namen
-                  email: email,
-                  tariff: 'full-de',
-                  password: _passwordController.text,
-                );
-                
-                if (result != null && result['id'] != null) {
-                  // Benutzer wurde erstellt, Billing-API ID separat speichern
-                  print('Auth: Created new user with ID: ${result["id"]}');
-                  final userId = int.tryParse(result["id"].toString());
-                  if (userId != null) {
-                    await _storageService.setBillingUserId(userId);
-                    print('Auth: Saved billing user ID: $userId');
-                    
-                    // Hinweis: Das Setzen des Ablaufdatums ist über die API nicht möglich
-                    // Das Ablaufdatum muss auf Server-Seite gesetzt werden
-                  }
-                }
-              }
-            } catch (e) {
-              print('Auth: Error checking/creating user: $e');
+            // Nach erfolgreicher Authentifizierung die E-Mail-Adresse speichern
+            // Diese wird für die Abfragen im Billing-System benötigt
+            final email = _emailController.text.trim();
+            await _storageService.setUserEmail(email);
+            print('Auth: Saved user email: $email');
+            
+            // einige grundlegende Benutzerdaten
+            final username = email.split('@').first;
+            final user = User(
+              id: authResponse.userId ?? 0,
+              email: email,
+              fname: username,
+              status: 1, // Aktiver Status
+              // Andere Felder werden null oder mit Standardwerten belassen 
+              phone: '',
+              tariffPlan: 'Standard',
+              endDate: DateTime.now().add(const Duration(days: 30)).toString(),
+              accountBalance: null,
+              account: null,
+              mac: "Mobile-App", // Verwende Standardwert, da _getDeviceInfo private ist
+            );
+            
+            await _storageService.saveUser(user);
+            print('Auth: Saved basic user data from login');
+            
+            // Die Stalker-Portal ID ist die wichtigste und wird bereits in authResponse gespeichert
+            // Wir verwenden diese ID für alle nachfolgenden Abfragen
+            
+            if (authResponse.userId != null) {
+              await _storageService.setBillingUserId(authResponse.userId!);
+              print('Auth: Using authenticated user ID: ${authResponse.userId}');
             }
             
             // Navigation zum Hauptbildschirm
@@ -132,59 +122,33 @@ class _AuthScreenState extends State<AuthScreen> {
           });
           
           try {
-            // 1. Zuerst den Benutzer in der Billing-API erstellen
-            print('Registration: Creating new user in Billing API');
+            // Benutzer direkt im Auth-System registrieren und anmelden
+            print('Registration: Creating new user in Auth API');
             final email = _emailController.text.trim();
             final firstName = _firstNameController.text.trim();
             final lastName = _lastNameController.text.trim();
-            // Vollständigen Namen aus Vor- und Nachname bilden
-            final name = '$firstName $lastName';
             final password = _passwordController.text;
             
-            // Benutzer in der Billing-API erstellen
-            final result = await _apiService.createUser(
-              name: name,
-              email: email,
-              tariff: 'full-de', // Standard-Tarif
-              password: password,
-              isTest: false,    // Kein Testbenutzer
-            );
+            // Vollständigen Namen aus Vor- und Nachname bilden (nur für die Anzeige) 
+            final name = '$firstName $lastName';
+            print('Registration: Registering user: $name / $email');
             
-            if (result != null && result['id'] != null) {
-              // Benutzer wurde erstellt
-              final userId = int.tryParse(result['id'].toString());
-              print('Registration: Created user in Billing API with ID: $userId');
+            // Mit der Auth-API authentifizieren - die Registrierung erfolgt dabei
+            // automatisch auf der Serverseite
+            final authResponse = await _apiService.authenticate(email, password);
+            
+            if (authResponse.isSuccess) {
+              print('Registration: Authentication successful after registration');
               
-              if (userId != null) {
-                // Billing-API Benutzer-ID separat speichern
-                await _storageService.setBillingUserId(userId);
-                
-                // Hinweis: Das Setzen des Ablaufdatums ist über die API nicht möglich
-                // Das Ablaufdatum muss auf Server-Seite gesetzt werden
-                
-                // 2. Mit den gleichen Anmeldedaten in der Auth-API authentifizieren
-                final authResponse = await _apiService.authenticate(email, password);
-                
-                if (authResponse.isSuccess) {
-                  print('Registration: Authentication successful after registration');
-                  
-                  // 3. Zum Hauptbildschirm navigieren
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const MainScreen()),
-                  );
-                  return; // Früher zurückkehren, da wir bereits navigiert haben
-                } else {
-                  // Authentifizierung fehlgeschlagen
-                  setState(() {
-                    _errorMessage = 'Registrierung erfolgreich, aber automatische Anmeldung fehlgeschlagen. Bitte melden Sie sich manuell an.';
-                  });
-                }
-              }
+              // Zum Hauptbildschirm navigieren
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const MainScreen()),
+              );
+              return; // Früher zurückkehren, da wir bereits navigiert haben
             } else {
-              // Fehler bei der Benutzerregistrierung
-              final errorMsg = result != null && result['error'] != null ? result['error'] : 'Unbekannter Fehler';
+              // Authentifizierungsfehler anzeigen
               setState(() {
-                _errorMessage = 'Registrierung fehlgeschlagen: $errorMsg';
+                _errorMessage = authResponse.errorMessage ?? 'Registrierung fehlgeschlagen';
               });
             }
           } catch (e) {
@@ -237,7 +201,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 // App Logo
                 Image.asset(
                   'assets/images/App-Logo.png',
-                  height: 40,  // Reduced from 80 to 40 (50% smaller)
+                  height: 40,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 60),
@@ -385,7 +349,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           return null;
                         },
                       ),
-                      if (!isLogin) ...[  // Only show for registration
+                      if (!isLogin) ...[ 
                         const SizedBox(height: 16),
                         _buildTextField(
                           controller: _confirmPasswordController,
