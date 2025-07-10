@@ -107,34 +107,34 @@ Dies vorraussetzt allerdings die USERID implementation. Muss zuerst USERID imple
 
 Ein Paar Bilder zum Fortschritt:
 
-<div style="display: flex; justify-content: space-between;">
+<div style="display: flex; justify-content: center; gap: 20px;">
   <img src="pics/Start-screens.png" alt="Screenshot Startscreen" width="300">
   <img src="pics/login-screens.png" alt="Screenshot Login" width="300">
 </div>
 
-<div style="display: flex; justify-content: space-between;">
+<div style="display: flex; justify-content: center; gap: 20px;">
   <img src="pics/menu-screen-tv.png" alt="Screenshot Menü TV" width="300">
   <img src="pics/tv-screen06.png" alt="Screenshot TV" width="300">
 </div>
 
-<div style="display: flex; justify-content: space-between;">
+<div style="display: flex; justify-content: center; gap: 20px;">
   <img src="pics/EPG-screen04.png" alt="Screenshot EPG" width="300">
   <img src="pics/kat-screen04.png" alt="Screenshot Kategorien" width="300">
 </div>
 
-<div style="display: flex; justify-content: space-between;">
+<div style="display: flex; justify-content: center; gap: 20px;">
   <img src="pics/menu-screen-fav.png" alt="Screenshot Menü Favoriten" width="300">
   <img src="pics/fav-screen01.png" alt="Screenshot Favoriten1" width="300">
   <img src="pics/fav-screen02.png" alt="Screenshot Favoriten2" width="300">
 </div>
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="pics/menu-screen-settings.png" alt="Screenshot Menü Einstellungen" width="300">
-  <img src="pics/settings-screen01.png" alt="Screenshot Einstellungen1" width="300">
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <img src="pics/menu-screen-setting.png" alt="Screenshot Menü Einstellungen" width="300">
+  <img src="pics/setting-screen01.png" alt="Screenshot Einstellungen1" width="300">
 </div>
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="pics/menu-screen-account.png" alt="Screenshot Menü Mein Konto" width="300">
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <img src="pics/menu-screen-konto.png" alt="Screenshot Menü Mein Konto" width="300">
   <img src="pics/konto-screen01.png" alt="Screenshot Mein Konto1" width="300">
 </div>
 
