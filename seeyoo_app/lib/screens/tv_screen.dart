@@ -92,6 +92,7 @@ class _TvScreenState extends State<TvScreen> {
     super.initState();
     _loadChannels();
     _loadGenres();
+    _loadSavedCategory(); // Lade die gespeicherte Kategorie
     
     // Sende sofort einen initialen Ping beim Start
     _pingServer();
@@ -205,17 +206,36 @@ class _TvScreenState extends State<TvScreen> {
     
     try {
       final genres = await _apiService.getTvGenres();
-      if (!mounted) return;
-      setState(() {
-        _genres = genres;
-        _isLoadingGenres = false;
-      });
+      if (mounted) {
+        setState(() {
+          _genres = genres;
+          _isLoadingGenres = false;
+        });
+      }
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoadingGenres = false;
-        _errorMessage = 'Fehler beim Laden der Kategorien: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingGenres = false;
+          // Hier könnte man eine Fehlermeldung setzen, falls gewünscht
+        });
+      }
+    }
+  }
+  
+  // Lädt die gespeicherte Kategorie-Auswahl
+  Future<void> _loadSavedCategory() async {
+    final savedGenreId = await _storageService.getSelectedTvGenre();
+    
+    // Nur fortfahren, wenn ein Genre gespeichert war und das Widget noch gemountet ist
+    if (savedGenreId != null && mounted) {
+      // Überprüfe, ob die Kanäle bereits geladen sind
+      if (_channels.isNotEmpty) {
+        // Filtere die Kanäle nach der gespeicherten Genre-ID
+        _filterChannelsByGenre(savedGenreId);
+      } else {
+        // Setze nur die Genre-ID, die tatsächliche Filterung erfolgt später in _loadChannels
+        _selectedGenreId = savedGenreId;
+      }
     }
   }
 
@@ -230,6 +250,9 @@ class _TvScreenState extends State<TvScreen> {
         _filteredChannels = _channels.where((channel) => 
           channel.genreId == genreId).toList();
       }
+      
+      // Speichere die ausgewählte Kategorie lokal
+      _storageService.saveSelectedTvGenre(genreId);
     });
   }
   
@@ -1307,14 +1330,32 @@ class _TvScreenState extends State<TvScreen> {
                             ),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Center(
-                            child: index == 3 
-                              ? _getFavoriteIcon() // Für Favoriten-Tab das Widget verwenden
-                              : Icon(
-                                  _tabIcons[index],
-                                  color: index == 3 ? const Color(0xFF8D9296) : (_selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296)),
-                                  size: 26,
+                          child: Stack(
+                            children: [
+                              Center(
+                                child: index == 3 
+                                  ? _getFavoriteIcon() // Für Favoriten-Tab das Widget verwenden
+                                  : Icon(
+                                      _tabIcons[index],
+                                      color: index == 3 ? const Color(0xFF8D9296) : (_selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296)),
+                                      size: 26,
+                                    ),
+                              ),
+                              // Roter Punkt für Kategorien-Tab, wenn eine Kategorie ausgewählt ist
+                              if (index == 2 && _selectedGenreId != null && _selectedGenreId != 'all')
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFE53A56), // Rote Farbe für den Punkt
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
                                 ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 4),

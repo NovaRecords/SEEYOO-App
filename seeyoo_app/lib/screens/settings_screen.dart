@@ -129,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Diese Methode speichert andere Einstellungen wie Passwort an den Server
+  // Diese Methode speichert andere Einstellungen an den Server
   Future<void> _saveSettings() async {
     if (_settings == null) return;
     
@@ -138,14 +138,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     try {
-      // Für andere Servereinstellungen außer Kindersicherung und Bitrate
-      // Aktuell keine weiteren Server-Einstellungen zu speichern
       
       // Start with favorites Einstellung separat behandeln (nur lokal)
       Map<String, dynamic> localSettings = Map<String, dynamic>.from(_settings!);
       localSettings['start_with_favorites'] = _startWithFavorites;
       
-      // Speichern an API (nur Passwort)
+      // Speichern Einstellungen an API
       final success = await _apiService.updateUserSettings(_settings!);
       
       if (success) {

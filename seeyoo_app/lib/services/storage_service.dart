@@ -212,6 +212,38 @@ class StorageService {
     return prefs.getInt('last_favorite_channel');
   }
   
+  // Speichern der ausgewählten Genre-ID für den TV-Screen
+  Future<void> saveSelectedTvGenre(String? genreId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (genreId == null) {
+      await prefs.remove('selected_tv_genre');
+    } else {
+      await prefs.setString('selected_tv_genre', genreId);
+    }
+  }
+  
+  // Abrufen der ausgewählten Genre-ID für den TV-Screen
+  Future<String?> getSelectedTvGenre() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('selected_tv_genre');
+  }
+  
+  // Speichern der ausgewählten Genre-ID für den TV-Favoriten-Screen
+  Future<void> saveSelectedFavoriteTvGenre(String? genreId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (genreId == null) {
+      await prefs.remove('selected_favorite_tv_genre');
+    } else {
+      await prefs.setString('selected_favorite_tv_genre', genreId);
+    }
+  }
+  
+  // Abrufen der ausgewählten Genre-ID für den TV-Favoriten-Screen
+  Future<String?> getSelectedFavoriteTvGenre() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('selected_favorite_tv_genre');
+  }
+  
   // Speichert die Billing-API-Zugangsdaten sicher
   Future<void> saveBillingAuth(String username, String password) async {
     try {
@@ -276,5 +308,7 @@ class StorageService {
     await prefs.remove('favorites_order'); // Lösche auch die gespeicherte Favoriten-Reihenfolge
     await prefs.remove('last_tv_channel'); // Lösche den gespeicherten letzten TV-Kanal
     await prefs.remove('last_favorite_channel'); // Lösche den gespeicherten letzten Favoriten-Kanal
+    await prefs.remove('selected_tv_genre'); // Lösche die gespeicherte Genre-ID für den TV-Screen
+    await prefs.remove('selected_favorite_tv_genre'); // Lösche die gespeicherte Genre-ID für den TV-Favoriten-Screen
   }
 }

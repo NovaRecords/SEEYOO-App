@@ -59,9 +59,40 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   // ID des aktuell ausgewählten Kanals (für Media-Info)
   int? _currentChannelId;
   
+  // Gibt das Kategorien-Icon mit einem roten Indikator zurück, wenn eine spezifische Kategorie ausgewählt ist
+  Widget _getCategoryIconWithIndicator() {
+    final bool isCategorySelected = _selectedGenreId != null && _selectedGenreId != 'all';
+    final iconColor = _selectedTabIndex == 2 ? Colors.white : const Color(0xFF8D9296);
+    
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(
+          _tabIcons[2],  // Kategorien-Icon
+          color: _isInReorderMode ? const Color(0xFF8D9296).withOpacity(0.5) : iconColor,
+          size: 26,
+        ),
+        if (isCategorySelected) // Zeige roten Punkt nur an, wenn eine Kategorie ausgewählt ist
+          Positioned(
+            top: -5, // 1px nach oben verschoben
+            right: -15, // 1px nach rechts verschoben
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE53A56),  // Rote Farbe für den Indikator
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   // Gibt das Bearbeiten-Icon zurück mit optionalem roten Punkt
   Widget _getReorderIcon() {
     return Stack(
+      clipBehavior: Clip.none, // Verhindert Abschneiden von Kindelementen außerhalb des Stacks
       children: [
         Icon(
           Icons.sync,
@@ -70,11 +101,11 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         ),
         if (_isInReorderMode)
           Positioned(
-            top: 0,
-            right: 0,
+            top: -5,
+            right: -15,
             child: Container(
-              width: 10,
-              height: 10,
+              width: 8,
+              height: 8,
               decoration: const BoxDecoration(
                 color: Color(0xFFE53A56), // Rot für den Punkt
                 shape: BoxShape.circle,
@@ -115,6 +146,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     // Favoriten mit sortierter Reihenfolge laden
     _loadFavoriteChannels();
     _loadGenres();
+    _loadSavedCategory(); // Lade die gespeicherte Kategorie
     
     // Sende sofort einen initialen Ping beim Start
     _pingServer();
@@ -238,21 +270,44 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
 
   // Lädt TV-Kategorien/Genres aus der API
   Future<void> _loadGenres() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoadingGenres = true;
     });
     
     try {
       final genres = await _apiService.getTvGenres();
-      setState(() {
-        _genres = genres;
-        _isLoadingGenres = false;
-      });
+      if (mounted) {
+        setState(() {
+          _genres = genres;
+          _isLoadingGenres = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoadingGenres = false;
-        _errorMessage = 'Fehler beim Laden der Kategorien: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingGenres = false;
+          // Optional: Fehlermeldung setzen
+        });
+      }
+    }
+  }
+  
+  // Lädt die gespeicherte Kategorie-Auswahl
+  Future<void> _loadSavedCategory() async {
+    final savedGenreId = await _storageService.getSelectedFavoriteTvGenre();
+    
+    // Nur fortfahren, wenn ein Genre gespeichert war und das Widget noch gemountet ist
+    if (savedGenreId != null && mounted) {
+      // Überprüfe, ob die Favoriten bereits geladen sind
+      if (_favoriteChannels.isNotEmpty) {
+        // Filtere die Kanäle nach der gespeicherten Genre-ID
+        _filterChannelsByGenre(savedGenreId);
+      } else {
+        // Setze nur die Genre-ID, die tatsächliche Filterung erfolgt später in _loadFavoriteChannels
+        _selectedGenreId = savedGenreId;
+      }
     }
   }
 
@@ -268,6 +323,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         _filteredChannels = _favoriteChannels.where((channel) => 
           channel.genreId == genreId).toList();
       }
+      
+      // Speichere die ausgewählte Kategorie lokal
+      _storageService.saveSelectedFavoriteTvGenre(genreId);
     });
   }
   
@@ -1636,14 +1694,16 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                           child: Center(
                             child: index == 3 
                               ? _getReorderIcon() // Für Bearbeiten-Tab das spezielle Widget mit Dot verwenden
-                              : Icon(
-                                  _tabIcons[index],
-                                  // Tab-Farbe: Wenn im Bearbeiten-Modus und nicht der Bearbeiten-Tab, dann Grau mit geringerer Deckkraft
-                                  color: _isInReorderMode && index != 3 
-                                    ? const Color(0xFF8D9296).withOpacity(0.5) 
-                                    : (_selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296)),
-                                  size: 26,
-                                ),
+                              : index == 2
+                                ? _getCategoryIconWithIndicator() // Für Kategorien-Tab mit rotem Punkt
+                                : Icon(
+                                    _tabIcons[index],
+                                    // Tab-Farbe: Wenn im Bearbeiten-Modus und nicht der Bearbeiten-Tab, dann Grau mit geringerer Deckkraft
+                                    color: _isInReorderMode && index != 3 
+                                      ? const Color(0xFF8D9296).withOpacity(0.5) 
+                                      : (_selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296)),
+                                    size: 26,
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 4),
