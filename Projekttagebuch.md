@@ -140,11 +140,11 @@ Ein Paar Bilder zum Fortschritt:
 
 ## Tag 11 (11.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+- 🟢 **Heutige Hauptaufgaben:** Player-Implementation für TV-Kanäle
+- 🟢 **Fortschritt & Ergebnisse:** Kategorienauswahl markierung hinzugefügt. Ausgewählten Kategorien-status speichern und laden hinzugefügt. Favoriten Sortierung hinzugefügt. Mit dem Player Integration begonnen.
+- 🟢 **Herausforderungen & Blockaden:** Habe den ganzen Tag damit verbracht den richtigen Ansatz zu finden um Player Implementation zu ermöglichen. Ich habe mir die Dokumentation gelesen und versucht es mit verschiedenen Ansätzen. Aber es ging noch nicht. Das wird schon... bin mir ziemlich sicher.
+- 🟢 **Was ich heute gelernt habe:** Wenn du denkst, dass du schon kurz vom Ziel bist - bist du gerade noch am Anfang....
+- 🟢 **Plan für morgen:** Player Integration für TV-Kanäle.
 
 ## Tag 12 (12.07.2025)
 
