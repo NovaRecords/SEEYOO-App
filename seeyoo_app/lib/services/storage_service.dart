@@ -164,17 +164,42 @@ class StorageService {
     }
   }
   
-  // Speichern der Favoriten-Reihenfolge (als Liste von Kanal-IDs)
+  /// Speichert die Reihenfolge der Favoriten-Kanäle pro Benutzer
   Future<void> saveFavoritesOrder(List<int> channelIds) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('favorites_order', jsonEncode(channelIds));
+    final userId = await getUserId();
+    if (userId != null) {
+      final orderString = jsonEncode(channelIds);
+      // Speichere mit Benutzer-ID als Teil des Keys
+      await prefs.setString('favorites_order_$userId', orderString);
+    } else {
+      // Fallback, wenn kein Benutzer eingeloggt ist
+      final orderString = jsonEncode(channelIds);
+      await prefs.setString('favorites_order', orderString);
+    }
   }
   
-  // Abrufen der Favoriten-Reihenfolge
+  /// Abrufen der Favoriten-Reihenfolge pro Benutzer
   Future<List<int>?> getFavoritesOrder() async {
     final prefs = await SharedPreferences.getInstance();
-    final orderString = prefs.getString('favorites_order');
+    final userId = await getUserId();
+    String? orderString;
     
+    if (userId != null) {
+      // Versuche zuerst, die benutzerspezifische Reihenfolge zu laden
+      orderString = prefs.getString('favorites_order_$userId');
+      if (orderString != null && orderString.isNotEmpty) {
+        try {
+          final List<dynamic> orderList = jsonDecode(orderString);
+          return orderList.cast<int>();
+        } catch (e) {
+          print('Error parsing user-specific favorites order: $e');
+        }
+      }
+    }
+    
+    // Fallback: Versuche die alte allgemeine Reihenfolge zu laden
+    orderString = prefs.getString('favorites_order');
     if (orderString == null || orderString.isEmpty) {
       return null;
     }
@@ -305,7 +330,8 @@ class StorageService {
       print('Fehler beim Löschen von Secure Storage Daten: $e');
       // Fehler ignorieren, da dies den Logout nicht blockieren sollte
     }
-    await prefs.remove('favorites_order'); // Lösche auch die gespeicherte Favoriten-Reihenfolge
+    // Die benutzerspezifischen Favoriten-Reihenfolgen werden NICHT gelöscht
+  // await prefs.remove('favorites_order'); // Alte nicht-benutzerspezifische Sortierung kann gelöscht werden
     await prefs.remove('last_tv_channel'); // Lösche den gespeicherten letzten TV-Kanal
     await prefs.remove('last_favorite_channel'); // Lösche den gespeicherten letzten Favoriten-Kanal
     await prefs.remove('selected_tv_genre'); // Lösche die gespeicherte Genre-ID für den TV-Screen

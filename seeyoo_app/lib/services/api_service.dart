@@ -1339,16 +1339,19 @@ class ApiService {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
         },
-        body: {
-          'ch_id': channelIdsParam,
-        },
+        body: 'ch_id=$channelIdsParam',  // Korrekt formatierter URL-encoded String
       );
       
       if (response.statusCode == 200 || response.statusCode == 204) {
         print('Successfully updated favorites order');
+        print('Request sent with ch_id=$channelIdsParam');
+        print('Response headers: ${response.headers}');
+        print('Response body: ${response.body}');
         return true;
       } else {
         print('Failed to update favorites order: ${response.statusCode}');
+        print('Request sent with ch_id=$channelIdsParam');
+        print('Response headers: ${response.headers}');
         print('Response body: ${response.body}');
         return false;
       }
