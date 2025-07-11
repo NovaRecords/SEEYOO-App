@@ -273,7 +273,13 @@ class _TvScreenState extends State<TvScreen> {
       setState(() {
         _channels = channels;
         _favoriteChannels = favoriteChannels;
-        _filteredChannels = List.from(channels); // Initialisiere gefilterte Liste mit allen Kanälen
+        // Nur alle Kanäle anzeigen, wenn keine Kategorie ausgewählt ist
+        if (_selectedGenreId == null || _selectedGenreId == 'all') {
+          _filteredChannels = List.from(channels);
+        } else {
+          // Wende den Kategoriefilter an
+          _filteredChannels = channels.where((channel) => channel.genreId == _selectedGenreId).toList();
+        }
         _isLoading = false;
       });
       

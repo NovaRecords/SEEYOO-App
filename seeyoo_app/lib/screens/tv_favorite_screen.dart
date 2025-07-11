@@ -586,7 +586,14 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         setState(() {
           _favoriteChannels = sortedFavorites;
           _channels = allChannels;
-          _filteredChannels = sortedFavorites;
+          
+          // Nur alle Favoriten anzeigen, wenn keine Kategorie ausgewählt ist
+          if (_selectedGenreId == null || _selectedGenreId == 'all') {
+            _filteredChannels = sortedFavorites;
+          } else {
+            // Wende den Kategoriefilter an
+            _filteredChannels = sortedFavorites.where((channel) => channel.genreId == _selectedGenreId).toList();
+          }
           _isLoading = false;
         });
       } else {
@@ -594,7 +601,14 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         setState(() {
           _favoriteChannels = favoriteChannels;
           _channels = allChannels;
-          _filteredChannels = favoriteChannels;
+          
+          // Nur alle Favoriten anzeigen, wenn keine Kategorie ausgewählt ist
+          if (_selectedGenreId == null || _selectedGenreId == 'all') {
+            _filteredChannels = favoriteChannels;
+          } else {
+            // Wende den Kategoriefilter an
+            _filteredChannels = favoriteChannels.where((channel) => channel.genreId == _selectedGenreId).toList();
+          }
           _isLoading = false;
         });
       }
