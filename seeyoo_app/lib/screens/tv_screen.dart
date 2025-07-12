@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
@@ -94,6 +95,17 @@ class _TvScreenState extends State<TvScreen> {
   @override
   void initState() {
     super.initState();
+    // Systemstatusleiste anzeigen lassen (transparent)
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // Transparent status bar
+      statusBarIconBrightness: Brightness.light, // Status bar icons' color
+    ));
+    
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual, 
+      overlays: [SystemUiOverlay.top] // Nur obere Statusleiste anzeigen
+    );
+    
     _loadChannels();
     _loadGenres();
     _loadSavedCategory(); // Lade die gespeicherte Kategorie
@@ -1156,23 +1168,52 @@ class _TvScreenState extends State<TvScreen> {
   
   // Initialisiert oder aktualisiert den VideoPlayer
   Future<void> _initializeOrUpdatePlayer(String url) async {
-    if (_videoPlayerController != null) {
-      // Wenn der Controller bereits existiert, freigeben und neu erstellen
-      await _videoPlayerController!.dispose();
+    try {
+      if (_videoPlayerController != null) {
+        // Wenn der Controller bereits existiert, freigeben und neu erstellen
+        await _videoPlayerController!.dispose();
+        _videoPlayerController = null;
+      }
+      
+      // Http-Header für die Stream-Anfrage
+      final Map<String, String> httpHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Origin': 'http://app.seeyoo.tv',
+        'Referer': 'http://app.seeyoo.tv/'
+      };
+      
+      // Korrigierte URL und optimierte Optionen für Android
+      final playerUrl = url.trim();
+      
+      // Neuen Controller erstellen mit erweiterten Optionen
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(playerUrl),
+        formatHint: VideoFormat.hls,  // Explizit HLS-Format angeben
+        httpHeaders: httpHeaders,     // Custom Headers
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: false,       // Andere Audio-Quellen stummschalten
+          allowBackgroundPlayback: false, // Kein Hintergrund-Playback
+        )
+      );
+      
+      // Player initialisieren und abspielen
+      await _videoPlayerController!.initialize();
+      _videoPlayerController!.play();
+      
+      // Wiederholung aktivieren
+      _videoPlayerController!.setLooping(true);
+      
+      // UI aktualisieren, damit der neue Player angezeigt wird
+      setState(() {
+        _errorMessage = null; // Fehler zurücksetzen, falls vorhanden
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Fehler beim Laden des Kanal-Streams: $e';
+        print('VideoPlayer-Fehler: $e'); // Für Debug-Zwecke
+      });
     }
-    
-    // Neuen Controller erstellen
-    _videoPlayerController = VideoPlayerController.network(url);
-    
-    // Player initialisieren und abspielen
-    await _videoPlayerController!.initialize();
-    _videoPlayerController!.play();
-    
-    // Wiederholung aktivieren
-    _videoPlayerController!.setLooping(true);
-    
-    // UI aktualisieren, damit der neue Player angezeigt wird
-    setState(() {});
   }
   
   // Scrollt zum ausgewählten Kanal in der Liste
@@ -1304,9 +1345,15 @@ class _TvScreenState extends State<TvScreen> {
                 // Video Player
                 if (_currentStreamUrl != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
                   Center(
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: VideoPlayer(_videoPlayerController!),
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width,
+                        maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis
+                        child: VideoPlayer(_videoPlayerController!),
+                      ),
                     ),
                   ),
               ],

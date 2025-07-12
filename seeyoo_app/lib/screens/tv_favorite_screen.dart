@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:async'; // Für Timer hinzugefügt
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
@@ -147,6 +148,17 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   @override
   void initState() {
     super.initState();
+    // Systemstatusleiste anzeigen lassen (transparent)
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // Transparent status bar
+      statusBarIconBrightness: Brightness.light, // Status bar icons' color
+    ));
+    
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual, 
+      overlays: [SystemUiOverlay.top] // Nur obere Statusleiste anzeigen
+    );
+    
     // Favoriten mit sortierter Reihenfolge laden
     _loadFavoriteChannels();
     _loadGenres();
@@ -1612,9 +1624,15 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                 if (_currentStreamUrl != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
                   // VideoPlayer anzeigen, wenn ein Stream-URL vorhanden ist und der Controller initialisiert wurde
                   Center(
-                    child: AspectRatio(
-                      aspectRatio: _videoPlayerController!.value.aspectRatio,
-                      child: VideoPlayer(_videoPlayerController!),
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width,
+                        maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis statt dynamischem
+                        child: VideoPlayer(_videoPlayerController!),
+                      ),
                     ),
                   )
                 // Kanallogo anzeigen, wenn Stream verfügbar aber Player noch nicht initialisiert

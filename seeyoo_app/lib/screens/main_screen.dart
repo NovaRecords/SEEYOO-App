@@ -86,11 +86,21 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     
     // Listener für den Status der Animation hinzufügen, um die Statusleiste zu steuern
     _animationController.addStatusListener((status) {
-      if (status == AnimationStatus.forward || status == AnimationStatus.completed) {
-        // Menü wird geöffnet oder ist geöffnet -> Statusleiste ausblenden
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
-      } else if (status == AnimationStatus.reverse || status == AnimationStatus.dismissed) {
-        // Menü wird geschlossen oder ist geschlossen -> Statusleiste anzeigen
+      // Plattformspezifische Behandlung für die Statusleiste
+      if (Theme.of(context).platform == TargetPlatform.iOS) {
+        // iOS: Originales Verhalten (Statusleiste beim Menü ausblenden)
+        if (status == AnimationStatus.forward || status == AnimationStatus.completed) {
+          // Menü wird geöffnet oder ist geöffnet -> Statusleiste ausblenden
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+        } else if (status == AnimationStatus.reverse || status == AnimationStatus.dismissed) {
+          // Menü wird geschlossen oder ist geschlossen -> Statusleiste anzeigen
+          SystemChrome.setEnabledSystemUIMode(
+            SystemUiMode.manual, 
+            overlays: [SystemUiOverlay.top]
+          );
+        }
+      } else {
+        // Android: Statusleiste immer sichtbar lassen
         SystemChrome.setEnabledSystemUIMode(
           SystemUiMode.manual, 
           overlays: [SystemUiOverlay.top]

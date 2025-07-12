@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Erlaube unverschlüsselten Traffic für alle Domains -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- Besonders für den SEEYOO-Server -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">app.seeyoo.tv</domain>
+        <domain includeSubdomains="true">194.26.203.25</domain>
+    </domain-config>
+</network-security-config>

@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.seeyoo.seeyoo_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973" // Explizit die erforderliche NDK-Version setzen
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
