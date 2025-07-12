@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
@@ -55,6 +56,9 @@ class _TvScreenState extends State<TvScreen> {
   // Für Ping und Media-Info
   Timer? _pingTimer;
   int? _currentChannelId; // Speichert die ID des aktuell angesehenen Kanals
+  
+  // Video Player
+  VideoPlayerController? _videoPlayerController;
   
   // Gibt das passende Stern-Icon zurück (gefüllt oder leer)
   Widget _getFavoriteIcon() {
@@ -112,6 +116,9 @@ class _TvScreenState extends State<TvScreen> {
     // Timer beenden und Media-Info entfernen
     _pingTimer?.cancel();
     _apiService.removeMediaInfo(); // Media-Info beim Verlassen des Screens entfernen
+    
+    // VideoPlayer freigeben
+    _videoPlayerController?.dispose();
     
     super.dispose();
   }
@@ -392,6 +399,9 @@ class _TvScreenState extends State<TvScreen> {
           _currentStreamUrl = channel.url!;
         });
         
+        // Initialisiere oder aktualisiere den Player
+        await _initializeOrUpdatePlayer(channel.url!);
+        
         // Aktualisiere Media-Info für den ausgewählten Kanal
         await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
         // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
@@ -406,6 +416,9 @@ class _TvScreenState extends State<TvScreen> {
             setState(() {
               _currentStreamUrl = streamUrl;
             });
+            
+            // Initialisiere oder aktualisiere den Player
+            await _initializeOrUpdatePlayer(streamUrl);
             
             // Aktualisiere Media-Info für den ausgewählten Kanal
             await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
@@ -1140,7 +1153,28 @@ class _TvScreenState extends State<TvScreen> {
     // Debug-Ausgabe
     print('Ping gesendet: ${DateTime.now()}');
   }
-
+  
+  // Initialisiert oder aktualisiert den VideoPlayer
+  Future<void> _initializeOrUpdatePlayer(String url) async {
+    if (_videoPlayerController != null) {
+      // Wenn der Controller bereits existiert, freigeben und neu erstellen
+      await _videoPlayerController!.dispose();
+    }
+    
+    // Neuen Controller erstellen
+    _videoPlayerController = VideoPlayerController.network(url);
+    
+    // Player initialisieren und abspielen
+    await _videoPlayerController!.initialize();
+    _videoPlayerController!.play();
+    
+    // Wiederholung aktivieren
+    _videoPlayerController!.setLooping(true);
+    
+    // UI aktualisieren, damit der neue Player angezeigt wird
+    setState(() {});
+  }
+  
   // Scrollt zum ausgewählten Kanal in der Liste
   void _scrollToSelectedChannel() {
     // Prüfe, ob der Controller an eine ScrollView angebunden ist
@@ -1241,7 +1275,12 @@ class _TvScreenState extends State<TvScreen> {
                       ],
                     ),
                   ),
-                // Später wird hier der Video-Player hinzugefügt.
+                // Video Player
+                if (_currentStreamUrl != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: VideoPlayer(_videoPlayerController!),
+                  ),
               ],
             ),
           ),
