@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:async'; // Für Timer hinzugefügt
+import 'package:video_player/video_player.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
 import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
@@ -58,6 +59,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   
   // ID des aktuell ausgewählten Kanals (für Media-Info)
   int? _currentChannelId;
+  
+  // Video Player
+  VideoPlayerController? _videoPlayerController;
   
   // Gibt das Kategorien-Icon mit einem roten Indikator zurück, wenn eine spezifische Kategorie ausgewählt ist
   Widget _getCategoryIconWithIndicator() {
@@ -182,6 +186,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
       _apiService.removeMediaInfo();
     }
     
+    // VideoPlayer freigeben
+    _videoPlayerController?.dispose();
+    
     super.dispose();
   }
   
@@ -192,6 +199,27 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     } catch (e) {
       print('Fehler beim Senden des Pings: $e');
     }
+  }
+  
+  // Initialisiert oder aktualisiert den VideoPlayer
+  Future<void> _initializeOrUpdatePlayer(String url) async {
+    if (_videoPlayerController != null) {
+      // Wenn der Controller bereits existiert, freigeben und neu erstellen
+      await _videoPlayerController!.dispose();
+    }
+    
+    // Neuen Controller erstellen
+    _videoPlayerController = VideoPlayerController.network(url);
+    
+    // Player initialisieren und abspielen
+    await _videoPlayerController!.initialize();
+    _videoPlayerController!.play();
+    
+    // Wiederholung aktivieren
+    _videoPlayerController!.setLooping(true);
+    
+    // UI aktualisieren, damit der neue Player angezeigt wird
+    setState(() {});
   }
   
   // Lädt EPG-Daten für alle Kanäle auf einmal
@@ -458,6 +486,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
           _currentStreamUrl = channel.url!;
         });
         
+        // Initialisiere oder aktualisiere den Player
+        await _initializeOrUpdatePlayer(channel.url!);
+        
         // Aktualisiere Media-Info für den ausgewählten Kanal
         await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
         // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
@@ -472,6 +503,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
             setState(() {
               _currentStreamUrl = streamUrl;
             });
+            
+            // Initialisiere oder aktualisiere den Player
+            await _initializeOrUpdatePlayer(streamUrl);
             
             // Aktualisiere Media-Info für den ausgewählten Kanal
             await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
@@ -1575,12 +1609,12 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
             color: Colors.black54,
             child: Stack(
               children: [
-                if (_currentStreamUrl != null)
+                if (_currentStreamUrl != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
+                  // VideoPlayer anzeigen, wenn ein Stream-URL vorhanden ist und der Controller initialisiert wurde
                   Center(
-                    child: Text(
-                      'Stream URL: $_currentStreamUrl',
-                      style: const TextStyle(color: Colors.white),
-                      textAlign: TextAlign.center,
+                    child: AspectRatio(
+                      aspectRatio: _videoPlayerController!.value.aspectRatio,
+                      child: VideoPlayer(_videoPlayerController!),
                     ),
                   )
                 else if (_isLoading)
@@ -1601,7 +1635,6 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                       ],
                     ),
                   ),
-                // Später wird hier der Video-Player hinzugefügt.
               ],
             ),
           ),
