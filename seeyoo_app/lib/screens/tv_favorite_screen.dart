@@ -1617,6 +1617,43 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                       child: VideoPlayer(_videoPlayerController!),
                     ),
                   )
+                // Kanallogo anzeigen, wenn Stream verfügbar aber Player noch nicht initialisiert
+                else if (_currentStreamUrl != null && _selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length)
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (_channels[_selectedChannelIndex].logo != null && _channels[_selectedChannelIndex].logo!.isNotEmpty)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(5),
+                            child: Image.network(
+                              _channels[_selectedChannelIndex].logo!.startsWith('http') 
+                                ? _channels[_selectedChannelIndex].logo! 
+                                : 'http://app.seeyoo.tv${_channels[_selectedChannelIndex].logo!}',
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => const Icon(
+                                Icons.tv,
+                                color: Colors.white54,
+                                size: 50,
+                              ),
+                            ),
+                          )
+                        else
+                          const Icon(
+                            Icons.tv,
+                            color: Colors.white54,
+                            size: 50,
+                          ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _channels[_selectedChannelIndex].name,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  )
                 else if (_isLoading)
                   const Center(child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
