@@ -1630,8 +1630,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                               _channels[_selectedChannelIndex].logo!.startsWith('http') 
                                 ? _channels[_selectedChannelIndex].logo! 
                                 : 'http://app.seeyoo.tv${_channels[_selectedChannelIndex].logo!}',
-                              width: 100,
-                              height: 100,
+                              width: 60,
+                              height: 60,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) => const Icon(
                                 Icons.tv,
@@ -1659,19 +1659,15 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
                     valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
                   ))
                 else
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.tv_off, color: Colors.white54, size: 50),
-                        const SizedBox(height: 8),
-                        Text(
-                          _errorMessage ?? 'Kein Kanal ausgewählt',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      ],
+                  // Nur Fehlermeldungen anzeigen, kein Icon oder "Kein Kanal ausgewählt"-Nachricht
+                  if (_errorMessage != null)
+                    Center(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.white70),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
               ],
             ),
           ),
