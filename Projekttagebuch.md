@@ -157,10 +157,30 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 14 (14.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - Integration eines HLS Video-Players in TV-Screen und TV-Favoriten-Screen
+  - Optimierung des Querformat-Verhaltens und der Darstellung auf verschiedenen Geräten
+  - Plattformspezifische Anpassungen der Statusleiste
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - Erfolgreiche Implementierung eines steuerungsfreien Video-Players mit video_player-Bibliothek
+  - Konsistentes 16:9 Seitenverhältnis für den VideoPlayer durch AspectRatio-Widget
+  - Plattformspezifische Statusleistensteuerung: Android-Statusleiste bleibt immer sichtbar, iOS behält immersives Verhalten
+  - Player mit automatischem Looping und ohne zusätzliche Steuerelemente umgesetzt
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Unterschiedliches Verhalten der Statusleiste zwischen iOS und Android Geräten
+  - Verhältnis des Video-Players musste für verschiedene Bildschirmgrößen angepasst werden
+  - Sicherstellen der korrekten Ressourcenfreigabe bei Player-Wechsel oder Bildschirmwechsel
+
 - 🟢 **Was ich heute gelernt habe:**
+  - Die video_player-Bibliothek ist besser mit neueren Flutter-Versionen kompatibel als better_player
+  - Plattformspezifische Implementierungsunterschiede erfordern explizite Behandlung in der App
+  - Durch feste Constraints und AspectRatio-Widget kann ein konsistentes Videobild auf allen Geräten sichergestellt werden
+
 - 🟢 **Plan für morgen:**
+  - Weitere Optimierungen am Video-Player vornehmen
+  - Player-Steuerungen (z.B. Play/Pause) als optionale Elemente implementieren
+  - Behandlung von Orientierungswechseln verbessern
 
 ## Tag 15 (15.07.2025)
 
