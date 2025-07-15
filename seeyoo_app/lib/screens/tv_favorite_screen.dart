@@ -8,6 +8,7 @@ import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/services/api_service.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
+import 'package:seeyoo_app/services/player_service.dart';
 
 class TvFavoriteScreen extends StatefulWidget {
   const TvFavoriteScreen({super.key});
@@ -16,7 +17,13 @@ class TvFavoriteScreen extends StatefulWidget {
   State<TvFavoriteScreen> createState() => _TvFavoriteScreenState();
 }
 
-class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
+class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+  // Zur Unterscheidung zwischen ersten Laden, Orientation-Change und Navigation-Change
+  bool _firstDependencyChange = true;
+  DateTime _lastDependencyChangeTime = DateTime.now();
+  
+  // Video Player Controller direkt im State verwalten, wie im TV-Screen
+  VideoPlayerController? _videoPlayerController;
   int _selectedTabIndex = -1; // -1 bedeutet kein Tab ist ausgewählt
   int _selectedChannelIndex = 0; // Index des ausgewählten Kanals
   final List<String> _tabTitles = ['Programm', 'Mediathek', 'Kategorien', 'Bearbeiten'];
@@ -62,7 +69,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   int? _currentChannelId;
   
   // Video Player
-  VideoPlayerController? _videoPlayerController;
+  // Kein VideoPlayerController mehr benötigt, da wir PersistentVideoPlayer verwenden
   
   // Gibt das Kategorien-Icon mit einem roten Indikator zurück, wenn eine spezifische Kategorie ausgewählt ist
   Widget _getCategoryIconWithIndicator() {
@@ -159,10 +166,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
       overlays: [SystemUiOverlay.top] // Nur obere Statusleiste anzeigen
     );
     
-    // Favoriten mit sortierter Reihenfolge laden
     _loadFavoriteChannels();
     _loadGenres();
     _loadSavedCategory(); // Lade die gespeicherte Kategorie
+    _loadLastWatchedChannel(); // Versuche, den letzten gesehenen Favoriten-Kanal zu laden
     
     // Sende sofort einen initialen Ping beim Start
     _pingServer();
@@ -173,35 +180,110 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     });
   }
   
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Bei App-Pause/Hintergrund Video pausieren, bei Wiederaufnahme fortsetzen
+    if (state == AppLifecycleState.paused) {
+      _videoPlayerController?.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      _videoPlayerController?.play();
+    }
+  }
+  
   // Wird aufgerufen, wenn der Screen in den Vordergrund kommt
-  bool _firstLoad = true;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    
     // Überspringe beim ersten Laden, da initState() bereits _loadFavoriteChannels() aufruft
-    if (!_firstLoad) {
-      // Favoriten jedes Mal neu laden, wenn der Screen angezeigt wird
-      _loadFavoriteChannels();
+    if (_firstDependencyChange) {
+      _firstDependencyChange = false;
+      _lastDependencyChangeTime = DateTime.now();
+      return;
     }
-    _firstLoad = false;
+    
+    // Prüfe, ob es sich um eine Bildschirmrotation handelt
+    // Rotation ereignet sich normalerweise sehr schnell nach dem letzten Aufruf
+    final now = DateTime.now();
+    final timeDifference = now.difference(_lastDependencyChangeTime).inMilliseconds;
+    _lastDependencyChangeTime = now;
+    
+    // Wenn weniger als 300ms vergangen sind, handelt es sich wahrscheinlich
+    // um eine Bildschirmrotation oder Größenänderung, nicht um eine Navigation
+    if (timeDifference < 300) {
+      // Keine Aktion notwendig, einfach die bestehende Stream-Wiedergabe fortsetzen
+      return;
+    }
+    
   }
   
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // Observer entfernen
+    
     // ScrollController freigeben, wenn das Widget entsorgt wird
     _genresScrollController.dispose();
     _channelListController.dispose();
     
     // Timer beenden und Media-Info entfernen
     _pingTimer?.cancel();
-    if (_currentChannelId != null) {
-      _apiService.removeMediaInfo();
-    }
+    _apiService.removeMediaInfo(); // Media-Info beim Verlassen des Screens entfernen
     
-    // VideoPlayer freigeben
+    // VideoPlayerController freigeben
     _videoPlayerController?.dispose();
     
     super.dispose();
+  }
+  
+  // Player-Initialisierung ähnlich wie im TV-Screen
+  Future<void> _initializeOrUpdatePlayer(String url) async {
+    try {
+      if (_videoPlayerController != null) {
+        // Wenn der Controller bereits existiert, freigeben und neu erstellen
+        await _videoPlayerController!.dispose();
+        _videoPlayerController = null;
+      }
+      
+      // Http-Header für die Stream-Anfrage
+      final Map<String, String> httpHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Origin': 'http://app.seeyoo.tv',
+        'Referer': 'http://app.seeyoo.tv/'
+      };
+      
+      // Korrigierte URL und optimierte Optionen für Android
+      final playerUrl = url.trim();
+      
+      // Neuen Controller erstellen mit erweiterten Optionen
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(playerUrl),
+        formatHint: VideoFormat.hls,  // Explizit HLS-Format angeben
+        httpHeaders: httpHeaders,     // Custom Headers
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: false,       // Andere Audio-Quellen stummschalten
+          allowBackgroundPlayback: false, // Kein Hintergrund-Playback
+        )
+      );
+      
+      // Player initialisieren und abspielen
+      await _videoPlayerController!.initialize();
+      _videoPlayerController!.play();
+      
+      // Wiederholung aktivieren
+      _videoPlayerController!.setLooping(true);
+      
+      // UI aktualisieren, damit der neue Player angezeigt wird
+      setState(() {
+        _errorMessage = null; // Fehler zurücksetzen, falls vorhanden
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Fehler beim Laden des Kanal-Streams: $e';
+        print('VideoPlayer-Fehler: $e'); // Für Debug-Zwecke
+      });
+    }
   }
   
   // Sendet einen Ping an den Server
@@ -211,27 +293,6 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
     } catch (e) {
       print('Fehler beim Senden des Pings: $e');
     }
-  }
-  
-  // Initialisiert oder aktualisiert den VideoPlayer
-  Future<void> _initializeOrUpdatePlayer(String url) async {
-    if (_videoPlayerController != null) {
-      // Wenn der Controller bereits existiert, freigeben und neu erstellen
-      await _videoPlayerController!.dispose();
-    }
-    
-    // Neuen Controller erstellen
-    _videoPlayerController = VideoPlayerController.network(url);
-    
-    // Player initialisieren und abspielen
-    await _videoPlayerController!.initialize();
-    _videoPlayerController!.play();
-    
-    // Wiederholung aktivieren
-    _videoPlayerController!.setLooping(true);
-    
-    // UI aktualisieren, damit der neue Player angezeigt wird
-    setState(() {});
   }
   
   // Lädt EPG-Daten für alle Kanäle auf einmal
@@ -471,18 +532,17 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         await _apiService.removeMediaInfo();
       }
       
+      final TvChannel channel = _channels[index];
+      _currentChannelId = channel.id;
+      
       setState(() {
         _selectedChannelIndex = index;
-        _currentStreamUrl = null; // Zurücksetzen, während wir laden
-        _currentEpgData = []; // EPG-Daten zurücksetzen
-        _showEpgView = false; // EPG-Ansicht ausblenden
+        _currentEpgData = []; 
+        _showEpgView = false;
+        _showMediaLibraryMessage = false;
+        // _currentStreamUrl zurücksetzen bis der neue Stream geladen ist
+        _currentStreamUrl = null;
       });
-      
-      // Lade den Stream-Link für diesen Kanal
-      final channel = _channels[index];
-      
-      // Aktualisiere _currentChannelId
-      _currentChannelId = channel.id;
       
       // Scroll-Verhalten nur für größere Listen aktivieren
       if (_filteredChannels.length > 7) {
@@ -491,101 +551,50 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
         });
       }
       
-      // Wenn die URL bereits im Kanal-Objekt vorhanden ist, verwende diese
-      // Ansonsten hole sie über die API
+      // Lade Stream-URL, entweder aus dem Cache oder vom Server
+      String? streamUrl;
+      
       if (channel.url != null && channel.url!.isNotEmpty) {
-        setState(() {
-          _currentStreamUrl = channel.url!;
-        });
-        
-        // Initialisiere oder aktualisiere den Player
-        await _initializeOrUpdatePlayer(channel.url!);
-        
-        // Aktualisiere Media-Info für den ausgewählten Kanal
-        await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
-        // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
-        await _apiService.saveLastWatchedChannel(channel.id);
-        // Speichere diesen Kanal auch lokal als zuletzt gesehenen Favoriten-Kanal
-        await _storageService.saveLastFavoriteChannel(channel.id);
-        print('Media-Info aktualisiert für Kanal ${channel.id}');
+        streamUrl = channel.url!;
       } else {
         try {
-          final streamUrl = await _apiService.getTvChannelLink(channel.id);
-          if (streamUrl != null) {
-            setState(() {
-              _currentStreamUrl = streamUrl;
-            });
-            
-            // Initialisiere oder aktualisiere den Player
-            await _initializeOrUpdatePlayer(streamUrl);
-            
-            // Aktualisiere Media-Info für den ausgewählten Kanal
-            await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
-            // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
-            await _apiService.saveLastWatchedChannel(channel.id);
-            // Speichere diesen Kanal auch lokal als zuletzt gesehenen Favoriten-Kanal
-            await _storageService.saveLastFavoriteChannel(channel.id);
-            print('Media-Info aktualisiert für Kanal ${channel.id}');
-          } else {
+          streamUrl = await _apiService.getTvChannelLink(channel.id);
+          if (streamUrl == null || streamUrl.isEmpty) {
             setState(() {
               _errorMessage = 'Kanal-Stream nicht verfügbar';
             });
+            return;
           }
         } catch (e) {
           setState(() {
             _errorMessage = 'Fehler beim Laden des Kanal-Streams: $e';
           });
+          return;
         }
       }
-    }
-  }
-
-  // Funktion zum Umschalten des Favoriten-Status des ausgewählten Kanals
-  void _toggleFavorite() async {
-    if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length) {
-      final channel = _channels[_selectedChannelIndex];
-      bool success;
       
-      if (channel.favorite) {
-        // Entferne von Favoriten
-        success = await _apiService.removeChannelFromFavorites(channel.id);
-      } else {
-        // Füge zu Favoriten hinzu
-        success = await _apiService.addChannelToFavorites(channel.id);
-      }
-      
-      if (success) {
-        // Aktualisiere lokalen Status
-        setState(() {
-          // Erstelle eine neue Liste mit allen Kanälen
-          List<TvChannel> updatedChannels = List.from(_channels);
-          // Aktualisiere den Favoriten-Status des ausgewählten Kanals
-          updatedChannels[_selectedChannelIndex] = TvChannel(
-            id: channel.id,
-            name: channel.name,
-            genreId: channel.genreId,
-            number: channel.number,
-            url: channel.url,
-            archive: channel.archive,
-            archiveRange: channel.archiveRange,
-            pvr: channel.pvr,
-            censored: channel.censored,
-            favorite: !channel.favorite,
-            logo: channel.logo,
-            monitoringStatus: channel.monitoringStatus,
-            currentShow: channel.currentShow,
-            currentShowTime: channel.currentShowTime,
-            nextShow: channel.nextShow,
-            isLive: channel.isLive,
-          );
+      if (streamUrl != null && streamUrl.isNotEmpty) {
+        try {
+          // Initialisiere oder aktualisiere den Player mit der Stream-URL
+          await _initializeOrUpdatePlayer(streamUrl);
           
-          _channels = updatedChannels;
+          // Nach erfolgreicher Initialisierung UI aktualisieren
+          setState(() {
+            _currentStreamUrl = streamUrl;
+          });
           
-          // Aktualisiere Favoriten-Liste, wenn nötig
-          if (_selectedTabIndex == 3) { // Favoriten-Tab
-            _loadFavoriteChannels();
-          }
-        });
+          // Aktualisiere Media-Info für den ausgewählten Kanal
+          await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+          // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
+          await _apiService.saveLastWatchedChannel(channel.id);
+          // Speichere diesen Kanal auch lokal als zuletzt gesehenen Favoriten-Kanal
+          await _storageService.saveLastFavoriteChannel(channel.id);
+          print('Media-Info aktualisiert für Kanal ${channel.id}');
+        } catch (e) {
+          setState(() {
+            _errorMessage = 'Fehler beim Initialisieren des Players: $e';
+          });
+        }
       }
     }
   }
@@ -1600,7 +1609,11 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
   // Diese Methode wurde entfernt, da wir die ursprüngliche Tab-Logik im build-Methode verwenden
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Wichtig für AutomaticKeepAliveClientMixin
     // Bildschirmdimensionen abrufen, um die UI responsiv zu gestalten
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -1621,20 +1634,27 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> {
             color: Colors.black54,
             child: Stack(
               children: [
-                if (_currentStreamUrl != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
-                  // VideoPlayer anzeigen, wenn ein Stream-URL vorhanden ist und der Controller initialisiert wurde
-                  Center(
-                    child: Container(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width,
-                        maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
-                      ),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis statt dynamischem
-                        child: VideoPlayer(_videoPlayerController!),
-                      ),
-                    ),
-                  )
+              if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized)
+              // Direkt den lokalen VideoPlayerController verwenden (wie im TV-Screen)
+              Center(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width,
+                    maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
+                  ),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis
+                    child: VideoPlayer(_videoPlayerController!),
+                  ),
+                ),
+              )
+              // Wenn der Controller existiert aber noch initialisiert wird
+              else if (_videoPlayerController != null)
+              Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+                ),
+              )  
                 // Kanallogo anzeigen, wenn Stream verfügbar aber Player noch nicht initialisiert
                 else if (_currentStreamUrl != null && _selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length)
                   Center(
