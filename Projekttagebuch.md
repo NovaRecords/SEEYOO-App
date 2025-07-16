@@ -184,11 +184,15 @@ Ein Paar Bilder zum Fortschritt:
 
 ## Tag 15 (15.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
+- 🟢 **Heutige Hauptaufgaben:** Verbesserung der Behandlung von Orientierungswechseln in der App.
+- 🟢 **Fortschritt & Ergebnisse:** Ich habe verschiedene Ansätze zur Behandlung von Orientierungswechseln ausprobiert und Recherchen durchgeführt, bin jedoch noch nicht zu einer vollständigen Lösung gekommen. Erste Grundlagen für eine responsive Anpassung wurden gelegt.
 - 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
+  - Die Komplexität des Video-Players bei Orientierungswechseln
+  - Unterschiedliches Verhalten auf verschiedenen Geräten (besonders iOS vs. Android)
+  - Anpassung des UI-Layouts im Querformat mit begrenztem Platz
+  - Integration mit bestehendem Code ohne größere Umstrukturierungen
+- 🟢 **Was ich heute gelernt habe:** Orientierungswechsel in Flutter erfordern eine sorgfältige Planung und Berücksichtigung verschiedener Faktoren wie Device-Größen, AspectRatio und SystemUI-Einstellungen. Eine universelle Lösung ist aufgrund der Verschiedenheit der Zielgeräte schwierig zu implementieren.
+- 🟢 **Plan für morgen:** Fortsetzung der Arbeit an der Orientierungswechsel-Behandlung. Implementierung einer stabilen Lösung für den Video-Player und die Navigation im Querformat. 
 
 ## Tag 16 (16.07.2025)
 
