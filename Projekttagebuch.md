@@ -196,11 +196,34 @@ Ein Paar Bilder zum Fortschritt:
 
 ## Tag 16 (16.07.2025)
 
-- 🟢 **Heutige Hauptaufgaben:**
+- 🟢 **Heutige Hauptaufgaben:** 
+  - Behebung des EPG-Anzeige-Problems in der Favoriten-Ansicht
+  - Debugging der falschen Programminformationen bei Favoriten-Kanälen
+  - Sicherstellung korrekter EPG-Datenzuordnung zwischen Favoriten-Liste und Detail-Ansicht
+  
 - 🟢 **Fortschritt & Ergebnisse:**
+  - ✅ **Kritischer Bug gefunden und behoben:** `_loadEpgForSelectedChannel()` verwendete `_channels[_selectedChannelIndex]` statt `_favoriteChannels[_selectedChannelIndex]`
+  - ✅ **EPG-Anzeige korrekt implementiert:** Favoriten-Liste zeigt jetzt die richtigen Programminformationen aus `_epgDataMap`
+  - ✅ **Debug-System aufgebaut:** Temporäre Debug-Ausgaben implementiert um Kanal-IDs und EPG-Daten zu verfolgen
+  - ✅ **Fallback-Logik implementiert:** Bevorzugt aktuelle EPG-Daten, fällt zurück auf `channel.currentShow` wenn nötig
+  - ✅ **Vollständige Funktionalität:** "Programm"-Button zeigt jetzt das korrekte EPG für den ausgewählten Favoriten-Kanal
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Index-Mapping-Probleme zwischen verschiedenen Kanal-Listen (`_channels` vs `_favoriteChannels`)
+  - Verwirrung über Datenquellen für EPG-Informationen (statische vs. dynamische Daten)
+  - Debugging komplexer asynchroner Datenladevorgänge
+  - Balance zwischen einfacher und robuster Implementierung
+
 - 🟢 **Was ich heute gelernt habe:**
+  - Index-Mapping-Fehler können subtile aber kritische Bugs verursachen - verschiedene Listen mit gleichem Index führen zu falschen Datenzuordnungen
+  - Debug-Ausgaben sind essentiell um Datenflüsse in komplexen UI-Zuständen zu verstehen
+  - EPG-Daten werden kanalbasiert über IDs zugeordnet und in `_epgDataMap` gespeichert
+  - Fallback-Strategien sind wichtig für robuste EPG-Anzeige bei verschiedenen Datenquellen
+
 - 🟢 **Plan für morgen:**
+  - Weitere Tests der EPG-Funktionalität in verschiedenen Szenarien
+  - Mögliche Optimierungen der EPG-Datenladung
+  - Fortsetzung anderer UI/UX-Verbesserungen falls keine weiteren EPG-Probleme auftreten
 
 ## Tag 17 (17.07.2025)
 
