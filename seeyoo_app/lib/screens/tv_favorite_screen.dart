@@ -328,8 +328,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       // Erstellung einer Liste von Futures für alle API-Anfragen
       final List<Future> futures = [];
       
-      // Für jeden Kanal EPG-Daten laden
-      for (final channel in _channels) {
+      // Für jeden Favoriten-Kanal EPG-Daten laden
+      for (final channel in _favoriteChannels) {
         // Status auf "wird geladen" setzen
         _epgLoadingStatus[channel.id] = true;
         
@@ -506,11 +506,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       
       // Wähle den ersten Kanal aus, wenn vorhanden
       if (_favoriteChannels.isNotEmpty) {
-        // Finde den Index des ersten Favoriten-Kanals in der Gesamtliste
-        final mainIndex = _channels.indexWhere((c) => c.id == _favoriteChannels[0].id);
-        if (mainIndex != -1) {
-          _selectChannel(mainIndex);
-        }
+        // Wähle den ersten Favoriten-Kanal aus (Index 0 in der Favoriten-Liste)
+        _selectChannel(0);
         
         // Lade EPG-Daten für alle Kanäle auf einmal
         await _loadAllChannelsEpgData();
@@ -715,19 +712,14 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       
       // Prüfen ob der lokal gespeicherte Favoriten-Kanal vorhanden ist
       if (lastFavoriteChannelId != null && _channels.isNotEmpty) {
-        // Prüfe, ob der Kanal in den Favoriten ist
+        // Prüfe, ob der Kanal in den Favoriten ist  
         final favoriteIndex = _favoriteChannels.indexWhere((channel) => channel.id == lastFavoriteChannelId);
         
         if (favoriteIndex >= 0) {
-          // Lokal gespeicherter Kanal ist ein Favorit, finde seinen Index in der Hauptliste
-          final mainIndex = _channels.indexWhere((channel) => channel.id == lastFavoriteChannelId);
-          
-          if (mainIndex >= 0) {
-            // Lokal gespeicherter Kanal gefunden, wähle ihn aus
-            print('Wähle lokal gespeicherten Favoriten-Kanal mit ID $lastFavoriteChannelId aus');
-            _selectChannel(mainIndex);
-            return;
-          }
+          // Lokal gespeicherter Favoriten-Kanal gefunden, wähle ihn aus
+          print('Wähle lokal gespeicherten Favoriten-Kanal mit ID $lastFavoriteChannelId aus');
+          _selectChannel(favoriteIndex);
+          return;
         }
       }
       
@@ -739,15 +731,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
         final favoriteIndex = _favoriteChannels.indexWhere((channel) => channel.id == lastChannelId);
         
         if (favoriteIndex >= 0) {
-          // Zuletzt gesehener Kanal ist ein Favorit, finde seinen Index in der Hauptliste
-          final mainIndex = _channels.indexWhere((channel) => channel.id == lastChannelId);
-          
-          if (mainIndex >= 0) {
-            // Zuletzt gesehener Kanal gefunden, wähle ihn aus
-            print('Wähle zuletzt gesehenen Kanal mit ID $lastChannelId aus');
-            _selectChannel(mainIndex);
-            return;
-          }
+          // Zuletzt gesehener Kanal ist ein Favorit, wähle ihn aus
+          print('Wähle zuletzt gesehenen Kanal mit ID $lastChannelId aus');
+          _selectChannel(favoriteIndex);
+          return;
         } else {
           print('Zuletzt gesehener Kanal mit ID $lastChannelId ist kein Favorit');
         }
@@ -756,22 +743,14 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       // Fallback: Wenn kein zuletzt gesehener Kanal gefunden wurde oder er kein Favorit ist,
       // wähle den ersten Favoriten
       if (_favoriteChannels.isNotEmpty) {
-        // Finde den Index des ersten Favoriten-Kanals in der Hauptliste
-        final mainIndex = _channels.indexWhere((c) => c.id == _favoriteChannels[0].id);
-        if (mainIndex != -1) {
-          print('Wähle ersten Favoriten als Fallback');
-          _selectChannel(mainIndex);
-        }
+        print('Wähle ersten Favoriten als Fallback');
+        _selectChannel(0);
       }
     } catch (e) {
       print('Fehler beim Laden des zuletzt gesehenen Kanals: $e');
       // Fallback im Fehlerfall: Ersten Favoriten wählen
       if (_favoriteChannels.isNotEmpty) {
-        // Finde den Index des ersten Favoriten-Kanals in der Hauptliste
-        final mainIndex = _channels.indexWhere((c) => c.id == _favoriteChannels[0].id);
-        if (mainIndex != -1) {
-          _selectChannel(mainIndex);
-        }
+        _selectChannel(0);
       }
     }
   }
@@ -851,11 +830,11 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
   
   // Lädt EPG-Daten für den aktuell ausgewählten Kanal
   Future<void> _loadEpgForSelectedChannel() async {
-    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _channels.length) {
+    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _favoriteChannels.length) {
       return;
     }
     
-    final channelId = _channels[_selectedChannelIndex].id;
+    final channelId = _favoriteChannels[_selectedChannelIndex].id;
     // Für die Programmansicht immer 20 Sendungen laden
     await _loadEpgForChannel(channelId, epgCount: 20);
   }
@@ -1312,46 +1291,99 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                           style: const TextStyle(color: Colors.white, fontSize: 16),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        // Aktuelle Sendung
-                        if (channel.currentShow != null)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              // JETZT-Label
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                margin: const EdgeInsets.only(right: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE53A56),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'JETZT',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                        // Zeige aktuelle Sendung - bevorzuge EPG-Daten, sonst Fallback
+                        Builder(
+                          builder: (context) {
+                            // Prüfe zuerst EPG-Daten aus der Map
+                            final epgData = _epgDataMap[channel.id];
+                            
+                            if (epgData != null && epgData.isNotEmpty) {
+                              // Verwende aktuelle EPG-Daten
+                              final currentProgram = epgData.first;
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE53A56),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Text(
+                                          'JETZT',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          currentProgram.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                channel.currentShow!,
-                                style: const TextStyle(color: Colors.white, fontSize: 16),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (channel.currentShowTime != null)
-                                Text(
-                                  channel.currentShowTime!,
-                                  style: const TextStyle(color: Color(0xFF8D9296)),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
-                          ),
+                                ],
+                              );
+                            } else if (channel.currentShow != null) {
+                              // Fallback auf channel.currentShow
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    margin: const EdgeInsets.only(right: 8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE53A56),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'JETZT',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    channel.currentShow!,
+                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (channel.currentShowTime != null)
+                                    Text(
+                                      channel.currentShowTime!,
+                                      style: const TextStyle(color: Color(0xFF8D9296)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              );
+                            } else {
+                              // Gar keine EPG-Daten
+                              return const SizedBox.shrink();
+                            }
+                          },
+                        ),
                       ],
                     ),
                   ),
