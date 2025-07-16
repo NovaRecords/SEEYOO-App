@@ -471,7 +471,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         child: Scaffold(
                           backgroundColor: const Color(0xFF1B1E22), // Undurchsichtiger Hintergrund
                           extendBodyBehindAppBar: false, // Verhindert, dass der Body hinter den AppBar reicht
-                          appBar: AppBar(
+                          appBar: _shouldHideAppBar() ? null : AppBar(
                             backgroundColor: const Color(0xFF1B1E22), // Feste Farbe statt transparent
                             elevation: 0,
                             scrolledUnderElevation: 0, // Deaktiviert Elevation-Änderung beim Scrollen
@@ -527,5 +527,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       default:
         return 'SEEYOO';
     }
+  }
+  
+  bool _shouldHideAppBar() {
+    // AppBar verstecken im Landscape-Modus für TV-Screens (Index 0 und 1)
+    if (_selectedIndex == 0 || _selectedIndex == 1) {
+      final screenWidth = MediaQuery.of(context).size.width;
+      final screenHeight = MediaQuery.of(context).size.height;
+      return screenWidth > screenHeight; // Landscape-Modus
+    }
+    return false;
   }
 }

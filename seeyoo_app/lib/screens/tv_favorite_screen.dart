@@ -10,6 +10,7 @@ import 'package:seeyoo_app/services/api_service.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
 import 'package:seeyoo_app/services/player_service.dart';
 
+
 class TvFavoriteScreen extends StatefulWidget {
   const TvFavoriteScreen({super.key});
 
@@ -61,6 +62,12 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
   bool _showGenresView = false;
   bool _showMediaLibraryMessage = false;
   bool _isInReorderMode = false; // Status für den Bearbeiten-Modus
+  bool _showChannelInfo = false; // Für Landscape-Mode Overlay
+  // Speichert Scroll-Position speziell für Landscape-Modus
+  double _landscapeScrollPosition = 0.0;
+  bool _isInLandscapeFullscreen = false;
+  // Speichert ursprünglichen Sender-Index beim Landscape-Eintritt
+  int _originalChannelIndexForLandscape = -1;
   
   // Timer für regelmäßige Server-Pings
   Timer? _pingTimer;
@@ -166,6 +173,14 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       overlays: [SystemUiOverlay.top] // Nur obere Statusleiste anzeigen
     );
     
+    // TV-Favoriten-Screen darf auch Landscape verwenden
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    
     _loadFavoriteChannels();
     _loadGenres();
     _loadSavedCategory(); // Lade die gespeicherte Kategorie
@@ -233,8 +248,15 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     // VideoPlayerController freigeben
     _videoPlayerController?.dispose();
     
+    // Orientierung zurücksetzen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    
     super.dispose();
   }
+
   
   // Player-Initialisierung ähnlich wie im TV-Screen
   Future<void> _initializeOrUpdatePlayer(String url) async {
@@ -524,77 +546,78 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     }
   }
 
-  // Wähle einen Kanal aus und lade den Stream
-  void _selectChannel(int index) async {
-    if (index >= 0 && index < _channels.length) {
-      // Wenn bereits ein Kanal ausgewählt war, entferne die Media-Info
-      if (_currentChannelId != null) {
-        await _apiService.removeMediaInfo();
-      }
-      
-      final TvChannel channel = _channels[index];
-      _currentChannelId = channel.id;
-      
-      setState(() {
-        _selectedChannelIndex = index;
-        _currentEpgData = []; 
-        _showEpgView = false;
-        _showMediaLibraryMessage = false;
-        // _currentStreamUrl zurücksetzen bis der neue Stream geladen ist
-        _currentStreamUrl = null;
+  // Wähle einen Kanal aus und lade den Stream (erwartet Favoriten-Index)
+  void _selectChannel(int favoriteIndex) async {
+    if (favoriteIndex < 0 || favoriteIndex >= _favoriteChannels.length) return;
+    
+    // Wenn bereits ein Kanal ausgewählt war, entferne die Media-Info
+    if (_currentChannelId != null) {
+      await _apiService.removeMediaInfo();
+    }
+    
+    final TvChannel channel = _favoriteChannels[favoriteIndex];
+    _currentChannelId = channel.id;
+    
+    setState(() {
+      _selectedChannelIndex = favoriteIndex;
+      _currentEpgData = []; 
+      _showEpgView = false;
+      _showMediaLibraryMessage = false;
+      // _currentStreamUrl zurücksetzen bis der neue Stream geladen ist
+      _currentStreamUrl = null;
+    });
+    
+    // Scroll-Verhalten nur für größere Listen aktivieren
+    final currentDisplayedList = _getCurrentChannelList();
+    if (currentDisplayedList.length > 7) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToSelectedChannel();
       });
-      
-      // Scroll-Verhalten nur für größere Listen aktivieren
-      if (_filteredChannels.length > 7) {
-        Future.delayed(const Duration(milliseconds: 100), () {
-          _scrollToSelectedChannel();
-        });
-      }
-      
-      // Lade Stream-URL, entweder aus dem Cache oder vom Server
-      String? streamUrl;
-      
-      if (channel.url != null && channel.url!.isNotEmpty) {
-        streamUrl = channel.url!;
-      } else {
-        try {
-          streamUrl = await _apiService.getTvChannelLink(channel.id);
-          if (streamUrl == null || streamUrl.isEmpty) {
-            setState(() {
-              _errorMessage = 'Kanal-Stream nicht verfügbar';
-            });
-            return;
-          }
-        } catch (e) {
+    }
+    
+    // Lade Stream-URL, entweder aus dem Cache oder vom Server
+    String? streamUrl;
+    
+    if (channel.url != null && channel.url!.isNotEmpty) {
+      streamUrl = channel.url!;
+    } else {
+      try {
+        streamUrl = await _apiService.getTvChannelLink(channel.id);
+        if (streamUrl == null || streamUrl.isEmpty) {
           setState(() {
-            _errorMessage = 'Fehler beim Laden des Kanal-Streams: $e';
+            _errorMessage = 'Kanal-Stream nicht verfügbar';
           });
           return;
         }
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'Fehler beim Laden des Kanal-Streams: $e';
+        });
+        return;
       }
-      
-      if (streamUrl != null && streamUrl.isNotEmpty) {
-        try {
-          // Initialisiere oder aktualisiere den Player mit der Stream-URL
-          await _initializeOrUpdatePlayer(streamUrl);
-          
-          // Nach erfolgreicher Initialisierung UI aktualisieren
-          setState(() {
-            _currentStreamUrl = streamUrl;
-          });
-          
-          // Aktualisiere Media-Info für den ausgewählten Kanal
-          await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
-          // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
-          await _apiService.saveLastWatchedChannel(channel.id);
-          // Speichere diesen Kanal auch lokal als zuletzt gesehenen Favoriten-Kanal
-          await _storageService.saveLastFavoriteChannel(channel.id);
-          print('Media-Info aktualisiert für Kanal ${channel.id}');
-        } catch (e) {
-          setState(() {
-            _errorMessage = 'Fehler beim Initialisieren des Players: $e';
-          });
-        }
+    }
+    
+    if (streamUrl != null && streamUrl.isNotEmpty) {
+      try {
+        // Initialisiere oder aktualisiere den Player mit der Stream-URL
+        await _initializeOrUpdatePlayer(streamUrl);
+        
+        // Nach erfolgreicher Initialisierung UI aktualisieren
+        setState(() {
+          _currentStreamUrl = streamUrl;
+        });
+        
+        // Aktualisiere Media-Info für den ausgewählten Kanal
+        await _apiService.updateMediaInfo(type: 'tv-channel', mediaId: channel.id);
+        // Speichere diesen Kanal als zuletzt gesehenen (global auf dem Server)
+        await _apiService.saveLastWatchedChannel(channel.id);
+        // Speichere diesen Kanal auch lokal als zuletzt gesehenen Favoriten-Kanal
+        await _storageService.saveLastFavoriteChannel(channel.id);
+        print('Media-Info aktualisiert für Kanal ${channel.id}');
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'Fehler beim Initialisieren des Players: $e';
+        });
       }
     }
   }
@@ -1371,22 +1394,14 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       padding: const EdgeInsets.symmetric(vertical: 4),
       itemBuilder: (context, index) {
         final channel = channels[index];
-        final isSelected = _selectedTabIndex != 3 ?
-            channels[index].id == _channels[_selectedChannelIndex].id :
-            index == _selectedChannelIndex;
+        // Konsistente Markierungs-Logik: Immer basierend auf der aktuell ausgewählten Kanal-ID
+        final isSelected = (_selectedChannelIndex >= 0 && _selectedChannelIndex < _favoriteChannels.length) ? 
+          channels[index].id == _favoriteChannels[_selectedChannelIndex].id : false;
         
         return GestureDetector(
           onTap: () {
-            // Index im aktuellen channels-Array finden
-            if (_selectedTabIndex == 3) { // Favoriten-Tab
-              _selectChannel(index);
-            } else {
-              // Finde den Index des Kanals in der Hauptliste
-              final mainIndex = _channels.indexWhere((c) => c.id == channel.id);
-              if (mainIndex != -1) {
-                _selectChannel(mainIndex);
-              }
-            }
+            // Immer die angezeigte Liste verwenden - das ist konsistent
+            _selectChannelFromDisplayedList(index);
           },
           child: Stack(
             children: [
@@ -1561,35 +1576,26 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     // Prüfe, ob der Controller an eine ScrollView angebunden ist
     if (!_channelListController.hasClients) return;
     
-    // In dieser Ansicht arbeiten wir immer mit Favoriten, daher entsprechend anpassen
-    int channelIndexToShow;
+    // Verwende die aktuell angezeigte Liste
+    final currentList = _getCurrentChannelList();
+    if (currentList.isEmpty) return;
     
-    // Suche den ausgewählten Kanal in der gefilterten Liste
-    // In der Favoriten-Ansicht ist das etwas anders als in der normalen TV-Ansicht
-    channelIndexToShow = _filteredChannels.indexWhere((channel) => 
-        _channels.isNotEmpty && _selectedChannelIndex < _channels.length &&
-        channel.id == _channels[_selectedChannelIndex].id);
+    // Finde den Index des ausgewählten Kanals in der angezeigten Liste
+    int channelIndexToShow = _getFilteredChannelIndex();
     
-    // Wenn der Kanal nicht in der aktuellen Liste gefunden wurde
+    // Wenn der Index ungültig ist
     if (channelIndexToShow < 0) return;
     
     // Für kleine Listen kein Scrollen durchführen
-    if (_filteredChannels.length <= 7) return;
+    if (currentList.length <= 7) return;
     
     // Höhe eines Kanaleintrags (inkl. Margin)
     final double itemHeight = 92.0;
     
     // Gesamtanzahl der Sender in der aktuellen Liste
-    final int totalChannels = _filteredChannels.length;
+    final int totalChannels = currentList.length;
     
-    // Berechne die sichtbare Höhe des Containers (ungefähr)
-    final double viewportHeight = MediaQuery.of(context).size.height - 300; // Abzug von Header, Tabs etc.
-    
-    // Anzahl der sichtbaren Sender im Viewport
-    final int visibleItemCount = (viewportHeight / itemHeight).floor();
-    
-    // Spezielle Scroll-Logik für Favoriten
-    // Die letzten 4 Sender werden nicht automatisch gescrollt
+    // Spezielle Scroll-Logik: Die letzten 4 Sender werden nicht automatisch gescrollt
     if (channelIndexToShow >= totalChannels - 4) {
       // Nichts tun - aktuelle Position beibehalten
       return;
@@ -1606,7 +1612,296 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     );
   }
   
-  // Diese Methode wurde entfernt, da wir die ursprüngliche Tab-Logik im build-Methode verwenden
+
+  // Helper Methoden für Landscape-Mode
+  void _switchToPreviousChannel() {
+    final currentList = _getCurrentChannelList();
+    if (currentList.isNotEmpty) {
+      final currentIndex = _getFilteredChannelIndex();
+      
+      if (currentIndex > 0) {
+        _selectChannelFromDisplayedList(currentIndex - 1);
+      } else {
+        _selectChannelFromDisplayedList(currentList.length - 1); // Zum letzten Kanal springen
+      }
+    }
+  }
+  
+  void _switchToNextChannel() {
+    final currentList = _getCurrentChannelList();
+    if (currentList.isNotEmpty) {
+      final currentIndex = _getFilteredChannelIndex();
+      
+      if (currentIndex < currentList.length - 1) {
+        _selectChannelFromDisplayedList(currentIndex + 1);
+      } else {
+        _selectChannelFromDisplayedList(0); // Zum ersten Kanal springen
+      }
+    }
+  }
+
+  // Gibt die aktuell angezeigte Senderliste zurück (gefiltert oder alle Favoriten)
+  List<TvChannel> _getCurrentChannelList() {
+    // Im Favoriten-Screen verwenden wir IMMER die Favoriten als Basis
+    return _filteredChannels.isNotEmpty ? _filteredChannels : _favoriteChannels;
+  }
+
+  // Gibt den Index des aktuellen Kanals in der angezeigten Liste zurück
+  int _getFilteredChannelIndex() {
+    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _favoriteChannels.length) {
+      return 0;
+    }
+    
+    final currentChannel = _favoriteChannels[_selectedChannelIndex];
+    final currentList = _getCurrentChannelList();
+    
+    // Finde den Kanal in der aktuell angezeigten Liste
+    final index = currentList.indexWhere((channel) => channel.id == currentChannel.id);
+    return index >= 0 ? index : 0;
+  }
+
+  // Fullscreen-Navigation - arbeitet mit angezeigter Liste
+  void _switchToNextChannelInFullscreen() {
+    final currentList = _getCurrentChannelList();
+    final currentIndex = _getFilteredChannelIndex();
+    
+    if (currentIndex < currentList.length - 1) {
+      _selectChannelFromDisplayedList(currentIndex + 1);
+    } else {
+      // Zum ersten Kanal springen
+      _selectChannelFromDisplayedList(0);
+    }
+  }
+
+  void _switchToPreviousChannelInFullscreen() {
+    final currentList = _getCurrentChannelList();
+    final currentIndex = _getFilteredChannelIndex();
+    
+    if (currentIndex > 0) {
+      _selectChannelFromDisplayedList(currentIndex - 1);
+    } else {
+      // Zum letzten Kanal springen
+      _selectChannelFromDisplayedList(currentList.length - 1);
+    }
+  }
+  
+  // Hilfsmethode für Fullscreen-Navigation: Wählt Kanal aus angezeigter Liste
+  void _selectChannelFromDisplayedList(int displayedIndex) async {
+    final displayedChannels = _getCurrentChannelList();
+    if (displayedIndex < 0 || displayedIndex >= displayedChannels.length) return;
+    
+    final channel = displayedChannels[displayedIndex];
+    
+    // Finde den Index dieses Kanals in der Favoriten-Liste
+    final favoriteIndex = _favoriteChannels.indexWhere((favChannel) => favChannel.id == channel.id);
+    
+    if (favoriteIndex >= 0) {
+      // Benutze die normale _selectChannel Methode mit dem Favoriten-Index
+      _selectChannel(favoriteIndex);
+    } else {
+      // Debug: Kanal nicht in Favoriten gefunden
+      print('DEBUG: Kanal ${channel.name} (ID: ${channel.id}) nicht in Favoriten gefunden!');
+      print('DEBUG: Favoriten-IDs: ${_favoriteChannels.map((c) => c.id).toList()}');
+    }
+  }
+  
+  void _showChannelInfoOverlay() {
+    setState(() {
+      _showChannelInfo = true;
+    });
+    
+    // Info nach 3 Sekunden automatisch ausblenden
+    Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showChannelInfo = false;
+        });
+      }
+    });
+  }
+  
+  // Landscape Fullscreen View - nutzt bestehenden Player
+  Widget _buildLandscapeFullscreenView() {
+    // System UI komplett verstecken - immersive Vollbild
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    });
+    
+    return Material(
+      color: Colors.black,
+      child: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity! > 300) {
+            // Swipe nach rechts - vorheriger Kanal
+            _switchToPreviousChannelInFullscreen();
+          } else if (details.primaryVelocity! < -300) {
+            // Swipe nach links - nächster Kanal
+            _switchToNextChannelInFullscreen();
+          }
+        },
+        onTap: () {
+          // Kanal-Info anzeigen beim Tippen
+          _showChannelInfoOverlay();
+        },
+        onDoubleTap: () {
+          // Zu Portrait zurückkehren
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+        },
+        child: Stack(
+          children: [
+            // Video Player - gleicher wie im Portrait
+            Center(
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: _videoPlayerController != null && 
+                       _videoPlayerController!.value.isInitialized
+                    ? VideoPlayer(_videoPlayerController!)
+                    : _errorMessage != null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Colors.white,
+                                size: 48,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _favoriteChannels.length) {
+                                    _selectChannel(_selectedChannelIndex);
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFA1273B),
+                                ),
+                                child: const Text(
+                                  'Erneut versuchen',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Container(
+                            color: Colors.black54,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+                              ),
+                            ),
+                          ),
+              ),
+            ),
+            
+            // Kanal-Info Overlay (wird bei Bedarf angezeigt)
+            if (_showChannelInfo && _selectedChannelIndex >= 0 && _selectedChannelIndex < _favoriteChannels.length)
+              Positioned(
+                top: 50,
+                left: 20,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _favoriteChannels[_selectedChannelIndex].name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Kanal ${(_getFilteredChannelIndex() + 1)} von ${_getCurrentChannelList().length}',
+                        style: const TextStyle(
+                          color: Color(0xFF8D9296),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+            // Swipe-Hinweis unten
+            if (_showChannelInfo)
+              Positioned(
+                bottom: 40,
+                left: 20,
+                right: 20,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.swipe, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Wischen zum Kanalwechsel',
+                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () {
+                          SystemChrome.setPreferredOrientations([
+                            DeviceOrientation.portraitUp,
+                            DeviceOrientation.portraitDown,
+                          ]);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFA1273B),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'Beenden',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -1614,10 +1909,49 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
   @override
   Widget build(BuildContext context) {
     super.build(context); // Wichtig für AutomaticKeepAliveClientMixin
+
+    // Sicherstellen, dass Orientierung immer korrekt gesetzt ist (nach Menü-Wechsel)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    });
+
     // Bildschirmdimensionen abrufen, um die UI responsiv zu gestalten
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final isLandscape = screenWidth > screenHeight;
+    
+    // Bei Landscape-Orientierung wird der Player fullscreen angezeigt
+    if (isLandscape && _favoriteChannels.isNotEmpty) {
+      // Scroll-Position und ursprünglichen Sender-Index speichern beim ersten Wechsel ins Landscape
+      if (!_isInLandscapeFullscreen && _channelListController.hasClients) {
+        _landscapeScrollPosition = _channelListController.offset;
+        _originalChannelIndexForLandscape = _selectedChannelIndex;
+        _isInLandscapeFullscreen = true;
+      }
+      return _buildLandscapeFullscreenView();
+    } else if (_isInLandscapeFullscreen) {
+      // Zurück aus Landscape - intelligente Scroll-Position wiederherstellen
+      _isInLandscapeFullscreen = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_channelListController.hasClients) {
+          // Prüfen, ob sich der Sender geändert hat
+          if (_selectedChannelIndex != _originalChannelIndexForLandscape) {
+            // Sender hat sich geändert - zum neuen Sender scrollen
+            _scrollToSelectedChannel();
+          } else if (_landscapeScrollPosition > 0) {
+            // Sender unverändert - ursprüngliche Position wiederherstellen
+            _channelListController.jumpTo(_landscapeScrollPosition);
+          }
+        }
+      });
+      // System UI wiederherstellen
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    }
     
     // Größenanpassung für Tesla-Bildschirme im Querformat
     // Im Bearbeiten-Modus wird der Player ausgeblendet

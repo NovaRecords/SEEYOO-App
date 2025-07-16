@@ -9,6 +9,7 @@ import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/services/api_service.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
 
+
 class TvScreen extends StatefulWidget {
   const TvScreen({super.key});
 
@@ -34,6 +35,11 @@ class _TvScreenState extends State<TvScreen> {
   final ScrollController _channelListController = ScrollController();
   // Speichert die letzte Scroll-Position der Kanalliste
   double _lastChannelListScrollPosition = 0.0;
+  // Speichert Scroll-Position speziell für Landscape-Modus
+  double _landscapeScrollPosition = 0.0;
+  bool _isInLandscapeFullscreen = false;
+  // Speichert ursprünglichen Sender-Index beim Landscape-Eintritt
+  int _originalChannelIndexForLandscape = -1;
   
   final ApiService _apiService = ApiService();
   List<TvChannel> _channels = [];
@@ -53,6 +59,8 @@ class _TvScreenState extends State<TvScreen> {
   bool _showEpgView = false;
   bool _showGenresView = false;
   bool _showMediaLibraryMessage = false;
+  bool _showChannelInfo = false; // Für Landscape-Mode Overlay
+  double _savedScrollPosition = 0.0; // Speichert Scroll-Position für Orientierungswechsel
   
   // Für Ping und Media-Info
   Timer? _pingTimer;
@@ -106,6 +114,14 @@ class _TvScreenState extends State<TvScreen> {
       overlays: [SystemUiOverlay.top] // Nur obere Statusleiste anzeigen
     );
     
+    // TV-Screen darf auch Landscape verwenden
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    
     _loadChannels();
     _loadGenres();
     _loadSavedCategory(); // Lade die gespeicherte Kategorie
@@ -132,8 +148,15 @@ class _TvScreenState extends State<TvScreen> {
     // VideoPlayer freigeben
     _videoPlayerController?.dispose();
     
+    // Orientierung zurücksetzen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    
     super.dispose();
   }
+
   
   // Lädt EPG-Daten für alle Kanäle auf einmal
   Future<void> _loadAllChannelsEpgData() async {
@@ -1269,12 +1292,326 @@ class _TvScreenState extends State<TvScreen> {
     );
   }
   
+  // Helper Methoden für Landscape-Mode
+  void _switchToPreviousChannel() {
+    final currentIndex = _selectedChannelIndex;
+    if (currentIndex > 0) {
+      _selectChannel(currentIndex - 1);
+    } else {
+      _selectChannel(_filteredChannels.length - 1); // Zum letzten Kanal springen
+    }
+  }
+  
+  void _switchToNextChannel() {
+    final currentIndex = _selectedChannelIndex;
+    if (currentIndex < _filteredChannels.length - 1) {
+      _selectChannel(currentIndex + 1);
+    } else {
+      _selectChannel(0); // Zum ersten Kanal springen
+    }
+  }
+
+  // Gibt die aktuelle Kanalliste zurück (gefiltert oder alle)
+  List<TvChannel> _getCurrentChannelList() {
+    return _filteredChannels.isNotEmpty ? _filteredChannels : _channels;
+  }
+
+  // Gibt den Index des aktuellen Kanals in der gefilterten Liste zurück
+  int _getFilteredChannelIndex() {
+    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _channels.length) {
+      return 0;
+    }
+    
+    final currentChannel = _channels[_selectedChannelIndex];
+    final currentList = _getCurrentChannelList();
+    
+    final index = currentList.indexWhere((channel) => channel.id == currentChannel.id);
+    return index >= 0 ? index : 0;
+  }
+
+  // Fullscreen-spezifische Navigation - arbeitet mit der aktuellen gefilterten Liste
+  void _switchToNextChannelInFullscreen() {
+    final currentList = _getCurrentChannelList();
+    final currentFilteredIndex = _getFilteredChannelIndex();
+    
+    if (currentFilteredIndex < currentList.length - 1) {
+      final nextChannel = currentList[currentFilteredIndex + 1];
+      final nextChannelIndex = _channels.indexWhere((channel) => channel.id == nextChannel.id);
+      if (nextChannelIndex >= 0) {
+        _selectChannel(nextChannelIndex);
+      }
+    } else {
+      // Zum ersten Kanal der aktuellen Liste springen
+      final firstChannel = currentList.first;
+      final firstChannelIndex = _channels.indexWhere((channel) => channel.id == firstChannel.id);
+      if (firstChannelIndex >= 0) {
+        _selectChannel(firstChannelIndex);
+      }
+    }
+  }
+
+  void _switchToPreviousChannelInFullscreen() {
+    final currentList = _getCurrentChannelList();
+    final currentFilteredIndex = _getFilteredChannelIndex();
+    
+    if (currentFilteredIndex > 0) {
+      final prevChannel = currentList[currentFilteredIndex - 1];
+      final prevChannelIndex = _channels.indexWhere((channel) => channel.id == prevChannel.id);
+      if (prevChannelIndex >= 0) {
+        _selectChannel(prevChannelIndex);
+      }
+    } else {
+      // Zum letzten Kanal der aktuellen Liste springen
+      final lastChannel = currentList.last;
+      final lastChannelIndex = _channels.indexWhere((channel) => channel.id == lastChannel.id);
+      if (lastChannelIndex >= 0) {
+        _selectChannel(lastChannelIndex);
+      }
+    }
+  }
+  
+  void _showChannelInfoOverlay() {
+    setState(() {
+      _showChannelInfo = true;
+    });
+    
+    // Info nach 3 Sekunden automatisch ausblenden
+    Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showChannelInfo = false;
+        });
+      }
+    });
+  }
+  
+  // Landscape Fullscreen View - nutzt bestehenden Player
+  Widget _buildLandscapeFullscreenView() {
+    // System UI komplett verstecken - immersive Vollbild
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    });
+    
+    return Material(
+      color: Colors.black,
+      child: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity! > 300) {
+            // Swipe nach rechts - vorheriger Kanal
+            _switchToPreviousChannelInFullscreen();
+          } else if (details.primaryVelocity! < -300) {
+            // Swipe nach links - nächster Kanal
+            _switchToNextChannelInFullscreen();
+          }
+        },
+        onTap: () {
+          // Kanal-Info anzeigen beim Tippen
+          _showChannelInfoOverlay();
+        },
+        onDoubleTap: () {
+          // Zu Portrait zurückkehren
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+        },
+        child: Stack(
+          children: [
+            // Video Player - gleicher wie im Portrait
+            Center(
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: _videoPlayerController != null && 
+                       _videoPlayerController!.value.isInitialized
+                    ? VideoPlayer(_videoPlayerController!)
+                    : _errorMessage != null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Colors.white,
+                                size: 48,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length) {
+                                    _selectChannel(_selectedChannelIndex);
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFA1273B),
+                                ),
+                                child: const Text(
+                                  'Erneut versuchen',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Container(
+                            color: Colors.black54,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+                              ),
+                            ),
+                          ),
+              ),
+            ),
+            
+            // Kanal-Info Overlay (wird bei Bedarf angezeigt)
+            if (_showChannelInfo && _selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length)
+              Positioned(
+                top: 50,
+                left: 20,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _channels[_selectedChannelIndex].name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Kanal ${(_getFilteredChannelIndex() + 1)} von ${_getCurrentChannelList().length}',
+                        style: const TextStyle(
+                          color: Color(0xFF8D9296),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+            // Swipe-Hinweis unten
+            if (_showChannelInfo)
+              Positioned(
+                bottom: 40,
+                left: 20,
+                right: 20,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.swipe, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Wischen zum Kanalwechsel',
+                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () {
+                          SystemChrome.setPreferredOrientations([
+                            DeviceOrientation.portraitUp,
+                            DeviceOrientation.portraitDown,
+                          ]);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFA1273B),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'Beenden',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
+    // Sicherstellen, dass Orientierung immer korrekt gesetzt ist (nach Menü-Wechsel)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    });
+    
     // Bildschirmdimensionen abrufen, um die UI responsiv zu gestalten
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final isLandscape = screenWidth > screenHeight;
+    
+    // Bei Landscape-Orientierung wird der Player fullscreen angezeigt
+    if (isLandscape && _channels.isNotEmpty) {
+      // Scroll-Position und ursprünglichen Sender-Index speichern beim ersten Wechsel ins Landscape
+      if (!_isInLandscapeFullscreen && _channelListController.hasClients) {
+        _landscapeScrollPosition = _channelListController.offset;
+        _originalChannelIndexForLandscape = _selectedChannelIndex;
+        _isInLandscapeFullscreen = true;
+      }
+      return _buildLandscapeFullscreenView();
+    } else if (_isInLandscapeFullscreen) {
+      // Zurück aus Landscape - intelligente Scroll-Position wiederherstellen
+      _isInLandscapeFullscreen = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_channelListController.hasClients) {
+          // Prüfen, ob sich der Sender geändert hat
+          if (_selectedChannelIndex != _originalChannelIndexForLandscape) {
+            // Sender hat sich geändert - zum neuen Sender scrollen
+            _scrollToSelectedChannel();
+          } else if (_landscapeScrollPosition > 0) {
+            // Sender unverändert - ursprüngliche Position wiederherstellen
+            _channelListController.jumpTo(_landscapeScrollPosition);
+          }
+        }
+      });
+      // System UI wiederherstellen
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    }
     
     // Größenanpassung für Tesla-Bildschirme im Querformat
     final playerHeight = isLandscape ? screenHeight * 0.4 : screenHeight * 0.3;
