@@ -18,7 +18,7 @@ class TvFavoriteScreen extends StatefulWidget {
   State<TvFavoriteScreen> createState() => _TvFavoriteScreenState();
 }
 
-class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver, TickerProviderStateMixin {
   // Zur Unterscheidung zwischen ersten Laden, Orientation-Change und Navigation-Change
   bool _firstDependencyChange = true;
   DateTime _lastDependencyChangeTime = DateTime.now();
@@ -68,6 +68,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
   bool _isInLandscapeFullscreen = false;
   // Speichert ursprünglichen Sender-Index beim Landscape-Eintritt
   int _originalChannelIndexForLandscape = -1;
+  
+  // Animation für Swipe-Visualisierung im Fullscreen
+  late AnimationController _swipeAnimationController;
+  late Animation<double> _swipeAnimation;
   
   // Timer für regelmäßige Server-Pings
   Timer? _pingTimer;
@@ -186,6 +190,19 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     _loadSavedCategory(); // Lade die gespeicherte Kategorie
     _loadLastWatchedChannel(); // Versuche, den letzten gesehenen Favoriten-Kanal zu laden
     
+    // Animation Controller für Swipe-Visualisierung initialisieren
+    _swipeAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _swipeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _swipeAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
+    
     // Sende sofort einen initialen Ping beim Start
     _pingServer();
     
@@ -247,6 +264,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     
     // VideoPlayerController freigeben
     _videoPlayerController?.dispose();
+    
+    // Animation Controller freigeben
+    _swipeAnimationController.dispose();
     
     // Orientierung zurücksetzen
     SystemChrome.setPreferredOrientations([
@@ -1694,6 +1714,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
 
   // Fullscreen-Navigation - arbeitet mit angezeigter Liste
   void _switchToNextChannelInFullscreen() {
+    // Animation sofort starten, um alten Stream zu überdecken
+    _performSwipeAnimation(-1.0);
+    
+    // Channel-Switch parallel ausführen
     final currentList = _getCurrentChannelList();
     final currentIndex = _getFilteredChannelIndex();
     
@@ -1706,6 +1730,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
   }
 
   void _switchToPreviousChannelInFullscreen() {
+    // Animation sofort starten, um alten Stream zu überdecken
+    _performSwipeAnimation(1.0);
+    
+    // Channel-Switch parallel ausführen
     final currentList = _getCurrentChannelList();
     final currentIndex = _getFilteredChannelIndex();
     
@@ -1752,6 +1780,115 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     });
   }
   
+  // Swipe-Animation für Fullscreen-Player - Karussell-Effekt
+  Future<void> _performSwipeAnimation(double direction) async {
+    // Animation: Aktueller Sender fährt komplett weg, neuer kommt von der anderen Seite
+    _swipeAnimation = Tween<double>(
+      begin: 0.0,
+      end: direction, // -1.0 = links raus, 1.0 = rechts raus
+    ).animate(CurvedAnimation(
+      parent: _swipeAnimationController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // Animiere komplett durch (alter Sender verschwindet, neuer erscheint)
+    await _swipeAnimationController.forward();
+    
+    // Reset für nächste Animation
+    _swipeAnimationController.reset();
+  }
+  
+  // Sender-Logo Widget für Fullscreen und Portrait
+  Widget _buildChannelLogo() {
+    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _favoriteChannels.length) {
+      return Container(
+        color: Colors.black54,
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+          ),
+        ),
+      );
+    }
+    
+    final channel = _favoriteChannels[_selectedChannelIndex];
+    
+    return Container(
+      color: Colors.black54,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Sender-Logo (60x60px)
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white24, width: 1),
+              ),
+              child: channel.logo != null && channel.logo!.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(7),
+                      child: Image.network(
+                        channel.logo!.startsWith('http') 
+                          ? channel.logo! 
+                          : 'http://app.seeyoo.tv${channel.logo!}',
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.tv,
+                              color: Colors.white54,
+                              size: 30,
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(
+                        Icons.tv,
+                        color: Colors.white54,
+                        size: 30,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 12),
+            // Sender-Name
+            Container(
+              constraints: const BoxConstraints(maxWidth: 200),
+              child: Text(
+                channel.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Loading-Indikator
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
+                strokeWidth: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
   // Landscape Fullscreen View - nutzt bestehenden Player
   Widget _buildLandscapeFullscreenView() {
     // System UI komplett verstecken - immersive Vollbild
@@ -1784,56 +1921,72 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
         },
         child: Stack(
           children: [
-            // Video Player - gleicher wie im Portrait
+            // Video Player mit Swipe-Animation
             Center(
               child: AspectRatio(
                 aspectRatio: 16 / 9,
-                child: _videoPlayerController != null && 
-                       _videoPlayerController!.value.isInitialized
-                    ? VideoPlayer(_videoPlayerController!)
-                    : _errorMessage != null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: Colors.white,
-                                size: 48,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _errorMessage!,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _favoriteChannels.length) {
-                                    _selectChannel(_selectedChannelIndex);
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFA1273B),
-                                ),
-                                child: const Text(
-                                  'Erneut versuchen',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          )
-                        : Container(
-                            color: Colors.black54,
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
-                              ),
-                            ),
+                child: AnimatedBuilder(
+                  animation: _swipeAnimation,
+                  builder: (context, child) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final currentOffset = _swipeAnimation.value * screenWidth;
+                    final nextOffset = currentOffset + screenWidth * (_swipeAnimation.value > 0 ? -1 : 1);
+                    
+                    return Stack(
+                      children: [
+                        // Aktueller Sender (fährt weg)
+                        Transform.translate(
+                          offset: Offset(currentOffset, 0),
+                          child: _currentStreamUrl != null && _videoPlayerController != null && 
+                                 _videoPlayerController!.value.isInitialized
+                              ? VideoPlayer(_videoPlayerController!)
+                              : _errorMessage != null
+                                  ? Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.error_outline,
+                                          color: Colors.white,
+                                          size: 48,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          _errorMessage!,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _favoriteChannels.length) {
+                                              _selectChannel(_selectedChannelIndex);
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFA1273B),
+                                          ),
+                                          child: const Text(
+                                            'Erneut versuchen',
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : _buildChannelLogo(),
+                        ),
+                        // Nächster Sender (fährt rein) - nur während Animation
+                        if (_swipeAnimation.value != 0.0)
+                          Transform.translate(
+                            offset: Offset(nextOffset, 0),
+                            child: _buildChannelLogo(), // Zeige Logo des nächsten Senders
                           ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
             
@@ -2000,64 +2153,33 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
             color: Colors.black54,
             child: Stack(
               children: [
-              if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized)
-              // Direkt den lokalen VideoPlayerController verwenden (wie im TV-Screen)
-              Center(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width,
-                    maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis
-                    child: VideoPlayer(_videoPlayerController!),
-                  ),
-                ),
-              )
-              // Wenn der Controller existiert aber noch initialisiert wird
-              else if (_videoPlayerController != null)
-              Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
-                ),
-              )  
-                // Kanallogo anzeigen, wenn Stream verfügbar aber Player noch nicht initialisiert
-                else if (_currentStreamUrl != null && _selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length)
+                // Video Player oder Sender-Logo
+                if (_currentStreamUrl != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
                   Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_channels[_selectedChannelIndex].logo != null && _channels[_selectedChannelIndex].logo!.isNotEmpty)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(5),
-                            child: Image.network(
-                              _channels[_selectedChannelIndex].logo!.startsWith('http') 
-                                ? _channels[_selectedChannelIndex].logo! 
-                                : 'http://app.seeyoo.tv${_channels[_selectedChannelIndex].logo!}',
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                Icons.tv,
-                                color: Colors.white54,
-                                size: 50,
-                              ),
-                            ),
-                          )
-                        else
-                          const Icon(
-                            Icons.tv,
-                            color: Colors.white54,
-                            size: 50,
-                          ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _channels[_selectedChannelIndex].name,
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      ],
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width,
+                        maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis
+                        child: VideoPlayer(_videoPlayerController!),
+                      ),
                     ),
                   )
+                else if (_selectedChannelIndex >= 0 && _selectedChannelIndex < _favoriteChannels.length)
+                  Center(
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width,
+                        maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis
+                        child: _buildChannelLogo(), // Zeige Sender-Logo anstelle des Loading-Circles
+                      ),
+                    ),
+                  )  
                 else if (_isLoading)
                   const Center(child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA1273B)),
