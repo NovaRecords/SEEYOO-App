@@ -73,6 +73,23 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
   // Timer für Channel-Info Overlay Auto-Hide
   Timer? _channelInfoTimer;
   
+  // Timer für verzögertes Anzeigen der Overlay-Info
+  Timer? _overlayDelayTimer;
+  
+  // Animation für Fade-in-Effekt
+  late AnimationController _fadeAnimationController;
+  late Animation<double> _fadeAnimation;
+  
+  // Zeigt an, ob die Overlay-Info bereit ist (nach Verzögerung)
+  bool _overlayReady = false;
+  
+  // Zeitstempel der letzten Overlay-Anzeige (um doppelte Anzeige zu verhindern)
+  DateTime? _lastOverlayShow;
+  
+  // Flag, das anzeigt, ob gerade ein Swipe stattgefunden hat
+  bool _recentSwipe = false;
+  Timer? _swipeResetTimer;
+  
   // Video Player
   VideoPlayerController? _videoPlayerController;
   
@@ -142,6 +159,19 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
       curve: Curves.easeOutCubic,
     ));
     
+    // Animation Controller für Fade-in-Effekt initialisieren
+    _fadeAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeAnimationController,
+      curve: Curves.easeInOut,
+    ));
+    
     _loadChannels();
     _loadGenres();
     _loadSavedCategory(); // Lade die gespeicherte Kategorie
@@ -164,6 +194,8 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     // Timer beenden und Media-Info entfernen
     _pingTimer?.cancel();
     _channelInfoTimer?.cancel();
+    _overlayDelayTimer?.cancel();
+    _swipeResetTimer?.cancel();
     _apiService.removeMediaInfo(); // Media-Info beim Verlassen des Screens entfernen
     
     // VideoPlayer freigeben
@@ -171,6 +203,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     
     // Animation Controller freigeben
     _swipeAnimationController.dispose();
+    _fadeAnimationController.dispose();
     
     // Orientierung zurücksetzen
     SystemChrome.setPreferredOrientations([
@@ -1383,6 +1416,13 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
 
   // Fullscreen-spezifische Navigation - arbeitet mit der aktuellen gefilterten Liste
   void _switchToNextChannelInFullscreen() async {
+    // Swipe-Flag setzen
+    _recentSwipe = true;
+    _swipeResetTimer?.cancel();
+    _swipeResetTimer = Timer(const Duration(seconds: 6), () {
+      _recentSwipe = false;
+    });
+    
     // Animation sofort starten, um alten Stream zu überdecken
     _performSwipeAnimation(-1.0);
     
@@ -1398,10 +1438,18 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     }
     
     // Show channel info overlay for 3 seconds after channel switch
-    _showChannelInfoOverlay();
+    _showChannelInfoOverlay(forceShow: true);
   }
+  
 
   void _switchToPreviousChannelInFullscreen() async {
+    // Swipe-Flag setzen
+    _recentSwipe = true;
+    _swipeResetTimer?.cancel();
+    _swipeResetTimer = Timer(const Duration(seconds: 6), () {
+      _recentSwipe = false;
+    });
+    
     // Animation sofort starten, um alten Stream zu überdecken
     _performSwipeAnimation(1.0);
     
@@ -1417,22 +1465,59 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     }
     
     // Show channel info overlay for 3 seconds after channel switch
-    _showChannelInfoOverlay();
+    _showChannelInfoOverlay(forceShow: true);
   }
   
-  void _showChannelInfoOverlay() {
-    // Cancel existing timer if running
-    _channelInfoTimer?.cancel();
+  void _showChannelInfoOverlay({bool forceShow = false}) {
+    // Prüfe, ob gerade ein Swipe stattgefunden hat und dies kein forceShow ist
+    if (!forceShow && _recentSwipe) {
+      return; // Overlay nicht anzeigen, da kürzlich ein Swipe stattgefunden hat
+    }
     
+    // Zusätzliche Zeitprüfung
+    final now = DateTime.now();
+    if (!forceShow && _lastOverlayShow != null) {
+      final timeSinceLastShow = now.difference(_lastOverlayShow!).inSeconds;
+      if (timeSinceLastShow < 5) {
+        return; // Overlay nicht anzeigen, da zu kurz nach letzter Anzeige
+      }
+    }
+    
+    // Setze Zeitstempel der aktuellen Anzeige
+    _lastOverlayShow = now;
+    
+    // Cancel existing timers if running
+    _channelInfoTimer?.cancel();
+    _overlayDelayTimer?.cancel();
+    
+    // Reset animation und overlay state
+    _fadeAnimationController.reset();
     setState(() {
       _showChannelInfo = true;
+      _overlayReady = false;
     });
     
-    // Set new timer to hide after 3 seconds
-    _channelInfoTimer = Timer(const Duration(seconds: 3), () {
+    // Start delay timer (500ms)
+    _overlayDelayTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
-          _showChannelInfo = false;
+          _overlayReady = true;
+        });
+        // Start fade-in animation
+        _fadeAnimationController.forward();
+        
+        // Set new timer to hide after 3 seconds (after fade-in)
+        _channelInfoTimer = Timer(const Duration(seconds: 3), () {
+          if (mounted) {
+            _fadeAnimationController.reverse().then((_) {
+              if (mounted) {
+                setState(() {
+                  _showChannelInfo = false;
+                  _overlayReady = false;
+                });
+              }
+            });
+          }
         });
       }
     });
@@ -1476,10 +1561,10 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     }
     
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 100, vertical: 0),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.85),
+        color: const Color(0xFF3B4248).withOpacity(0.85),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -1623,22 +1708,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
               ),
             ],
           ),
-          // Swipe hint at bottom
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.swipe, color: Colors.white54, size: 16),
-              const SizedBox(width: 8),
-              const Text(
-                'Wischen zum Kanalwechsel',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
+
         ],
       ),
     );
@@ -1774,7 +1844,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
         },
         onTap: () {
           // Kanal-Info anzeigen beim Tippen
-          _showChannelInfoOverlay();
+          _showChannelInfoOverlay(forceShow: true);
         },
         onDoubleTap: () {
           // Zu Portrait zurückkehren
@@ -1841,6 +1911,63 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
                                     )
                                   : _buildChannelLogo(),
                         ),
+                        // Swipe hint bar at top
+                        if (_showChannelInfo && _overlayReady)
+                          Positioned(
+                            top: 20,
+                            left: 0,
+                            right: 0,
+                            child: Transform.translate(
+                              offset: Offset(currentOffset, 0),
+                              child: Center(
+                                child: AnimatedBuilder(
+                                  animation: _fadeAnimation,
+                                  builder: (context, child) {
+                                    return Opacity(
+                                      opacity: _fadeAnimation.value,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF3B4248).withOpacity(0.85),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.swipe, color: Colors.white54, size: 16),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              'Wischen zum Kanalwechsel',
+                                              style: TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        // Channel Info Overlay (swipes with content)
+                        if (_showChannelInfo && _overlayReady && _selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length)
+                          Positioned(
+                            bottom: 20,
+                            left: currentOffset,
+                            right: -currentOffset,
+                            child: AnimatedBuilder(
+                              animation: _fadeAnimation,
+                              builder: (context, child) {
+                                return Opacity(
+                                  opacity: _fadeAnimation.value,
+                                  child: _buildChannelInfoOverlay(),
+                                );
+                              },
+                            ),
+                          ),
                         // Nächster Sender (fährt rein) - nur während Animation
                         if (_swipeAnimation.value != 0.0)
                           Transform.translate(
@@ -1853,15 +1980,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            
-            // New TV Channel Strip-Style Overlay (at bottom within player bounds)
-            if (_showChannelInfo && _selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length)
-              Positioned(
-                bottom: 20,
-                left: 0,
-                right: 0,
-                child: _buildChannelInfoOverlay(),
-              ),
+
 
           ],
         ),
