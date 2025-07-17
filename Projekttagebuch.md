@@ -228,10 +228,35 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 17 (17.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - Fullscreen Player Overlay im Favoriten-Screen vervollständigen
+  - Overlay-Positionierung innerhalb der Player-Grenzen korrigieren
+  - 1:1 Parität mit TV-Screen Overlay erreichen
+  - "Beenden" Button aus Fullscreen-Ansicht entfernen
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - ✅ Overlay-Methode `_buildChannelInfoOverlay()` 1:1 vom TV-Screen kopiert
+  - ✅ Channel-Logo URL-Logik vereinheitlicht (`http://app.seeyoo.tv${channel.logo!}`)
+  - ✅ EPG-Formatierung mit `nextProgram.startTimeFormatted` korrigiert
+  - ✅ Overlay-Positionierung mit `currentOffset` innerhalb AnimatedBuilder gelöst
+  - ✅ "Beenden" Button erfolgreich entfernt
+  - ✅ Overlay bewegt sich jetzt korrekt mit Swipe-Animationen
+  - ✅ Overlay bleibt innerhalb der Player-Grenzen
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Overlay war anfangs außerhalb der Player-Grenzen positioniert
+  - `currentOffset` Variable war nicht im richtigen Scope verfügbar
+  - Musste Overlay von außerhalb des AnimatedBuilder nach innen verlagern
+
 - 🟢 **Was ich heute gelernt habe:**
+  - Overlay-Positionierung mit Animation-Offsets erfordert korrekten Scope
+  - `left: currentOffset, right: -currentOffset` bewegt Overlay mit Content
+  - AnimatedBuilder-Struktur ist kritisch für Swipe-Animation-Integration
+  - Positioning-Probleme können durch falsche Widget-Hierarchie entstehen
+
 - 🟢 **Plan für morgen:**
+  - Weitere Tests der Overlay-Funktionalität in verschiedenen Szenarien
+  - Mögliche Optimierungen der Fade-Animationen
+  - Fortsetzung anderer UI/UX-Verbesserungen falls keine weiteren Overlay-Probleme auftreten
 
 ## Tag 18 (18.07.2025)
 
