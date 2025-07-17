@@ -70,6 +70,9 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
   Timer? _pingTimer;
   int? _currentChannelId; // Speichert die ID des aktuell angesehenen Kanals
   
+  // Timer für Channel-Info Overlay Auto-Hide
+  Timer? _channelInfoTimer;
+  
   // Video Player
   VideoPlayerController? _videoPlayerController;
   
@@ -160,6 +163,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     
     // Timer beenden und Media-Info entfernen
     _pingTimer?.cancel();
+    _channelInfoTimer?.cancel();
     _apiService.removeMediaInfo(); // Media-Info beim Verlassen des Screens entfernen
     
     // VideoPlayer freigeben
@@ -464,6 +468,11 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
         // Speichere diesen Kanal auch lokal als zuletzt gesehenen TV-Kanal
         await _storageService.saveLastTvChannel(channel.id);
         print('Media-Info aktualisiert für Kanal ${channel.id}');
+        
+        // Show channel info overlay in fullscreen mode when channel starts
+        if (MediaQuery.of(context).orientation == Orientation.landscape) {
+          _showChannelInfoOverlay();
+        }
       } else {
         try {
           final streamUrl = await _apiService.getTvChannelLink(channel.id);
@@ -482,6 +491,11 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
             // Speichere diesen Kanal auch lokal als zuletzt gesehenen TV-Kanal
             await _storageService.saveLastTvChannel(channel.id);
             print('Media-Info aktualisiert für Kanal ${channel.id}');
+            
+            // Show channel info overlay in fullscreen mode when channel starts
+            if (MediaQuery.of(context).orientation == Orientation.landscape) {
+              _showChannelInfoOverlay();
+            }
           } else {
             setState(() {
               _errorMessage = 'Kanal-Stream nicht verfügbar';
@@ -1368,7 +1382,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
   }
 
   // Fullscreen-spezifische Navigation - arbeitet mit der aktuellen gefilterten Liste
-  void _switchToNextChannelInFullscreen() {
+  void _switchToNextChannelInFullscreen() async {
     // Animation sofort starten, um alten Stream zu überdecken
     _performSwipeAnimation(-1.0);
     
@@ -1382,9 +1396,12 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
       // Zum ersten Kanal springen
       _selectChannelFromDisplayedList(0);
     }
+    
+    // Show channel info overlay for 3 seconds after channel switch
+    _showChannelInfoOverlay();
   }
 
-  void _switchToPreviousChannelInFullscreen() {
+  void _switchToPreviousChannelInFullscreen() async {
     // Animation sofort starten, um alten Stream zu überdecken
     _performSwipeAnimation(1.0);
     
@@ -1398,21 +1415,233 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
       // Zum letzten Kanal springen
       _selectChannelFromDisplayedList(currentList.length - 1);
     }
+    
+    // Show channel info overlay for 3 seconds after channel switch
+    _showChannelInfoOverlay();
   }
   
   void _showChannelInfoOverlay() {
+    // Cancel existing timer if running
+    _channelInfoTimer?.cancel();
+    
     setState(() {
       _showChannelInfo = true;
     });
     
-    // Info nach 3 Sekunden automatisch ausblenden
-    Timer(const Duration(seconds: 3), () {
+    // Set new timer to hide after 3 seconds
+    _channelInfoTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
           _showChannelInfo = false;
         });
       }
     });
+  }
+  
+  // Builds the new TV Channel Strip-style overlay with EPG data
+  Widget _buildChannelInfoOverlay() {
+    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _channels.length) {
+      return const SizedBox.shrink();
+    }
+    
+    final channel = _channels[_selectedChannelIndex];
+    final epgData = _epgDataMap[channel.id] ?? [];
+    
+    // Find current and next program
+    EpgProgram? currentProgram;
+    EpgProgram? nextProgram;
+    
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    
+    for (int i = 0; i < epgData.length; i++) {
+      final program = epgData[i];
+      if (now >= program.start && now < program.end) {
+        currentProgram = program;
+        // Find next program
+        if (i + 1 < epgData.length) {
+          nextProgram = epgData[i + 1];
+        }
+        break;
+      }
+    }
+    
+    // If no current program found, try to find the next upcoming one
+    if (currentProgram == null && epgData.isNotEmpty) {
+      for (final program in epgData) {
+        if (now < program.start) {
+          nextProgram = program;
+          break;
+        }
+      }
+    }
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 100, vertical: 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              // Channel Logo
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[800],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: (channel.logo != null && channel.logo!.isNotEmpty)
+                      ? Image.network(
+                          channel.logo!.startsWith('http') ? channel.logo! : 'http://app.seeyoo.tv${channel.logo!}',
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[800],
+                              child: const Icon(
+                                Icons.tv,
+                                color: Colors.white54,
+                                size: 30,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: Colors.grey[800],
+                          child: const Icon(
+                            Icons.tv,
+                            color: Colors.white54,
+                            size: 30,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // Channel Info and EPG Data
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Channel Name
+                    Text(
+                      channel.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    
+                    // Current Program
+                    if (currentProgram != null) ...[
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE53A56),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'JETZT',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              currentProgram.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      const Text(
+                        'Keine Programminformationen verfügbar',
+                        style: TextStyle(
+                          color: Color(0xFF8D9296),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                    
+                    // Next Program (if available)
+                    if (nextProgram != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            nextProgram.startTimeFormatted,
+                            style: const TextStyle(
+                              color: Color(0xFFE53A56),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              nextProgram.name,
+                              style: const TextStyle(
+                                color: Color(0xFF8D9296),
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // Swipe hint at bottom
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.swipe, color: Colors.white54, size: 16),
+              const SizedBox(width: 8),
+              const Text(
+                'Wischen zum Kanalwechsel',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
   
   // Swipe-Animation für Fullscreen-Player - Karussell-Effekt
@@ -1625,98 +1854,15 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
               ),
             ),
             
-            // Kanal-Info Overlay (wird bei Bedarf angezeigt)
+            // New TV Channel Strip-Style Overlay (at bottom within player bounds)
             if (_showChannelInfo && _selectedChannelIndex >= 0 && _selectedChannelIndex < _channels.length)
               Positioned(
-                top: 50,
-                left: 20,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _channels[_selectedChannelIndex].name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Kanal ${(_getFilteredChannelIndex() + 1)} von ${_getCurrentChannelList().length}',
-                        style: const TextStyle(
-                          color: Color(0xFF8D9296),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: _buildChannelInfoOverlay(),
               ),
-              
-            // Swipe-Hinweis unten
-            if (_showChannelInfo)
-              Positioned(
-                bottom: 40,
-                left: 20,
-                right: 20,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.swipe, color: Colors.white, size: 20),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Wischen zum Kanalwechsel',
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () {
-                          SystemChrome.setPreferredOrientations([
-                            DeviceOrientation.portraitUp,
-                            DeviceOrientation.portraitDown,
-                          ]);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFA1273B),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'Beenden',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+
           ],
         ),
       ),
