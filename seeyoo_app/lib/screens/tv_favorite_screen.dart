@@ -1937,7 +1937,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1B1E22).withOpacity(0.90),
+        color: const Color(0xFF1B1E22).withOpacity(0.85),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -2038,7 +2038,6 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
                     ] else ...[
                       const Text(
                         'Keine Programminformationen verfügbar',
@@ -2325,7 +2324,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1B1E22).withOpacity(0.90),
+                        color: const Color(0xFF1B1E22).withOpacity(0.85),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
