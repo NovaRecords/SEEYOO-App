@@ -2315,7 +2315,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
             // Swipe-Hinweis oben (nur beim ersten Mal anzeigen)
             if (_showChannelInfo && _overlayReady && !_swipeHintShown)
               Positioned(
-                top: 20,
+                top: 0,
+                bottom: 0, 
                 left: 0,
                 right: 0,
                 child: Center(
