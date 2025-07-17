@@ -73,6 +73,21 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
   late AnimationController _swipeAnimationController;
   late Animation<double> _swipeAnimation;
   
+  // Overlay Animation und Timer
+  late AnimationController _fadeAnimationController;
+  late Animation<double> _fadeAnimation;
+  Timer? _channelInfoTimer;
+  Timer? _overlayDelayTimer;
+  bool _overlayReady = false;
+  DateTime? _lastOverlayShow;
+  
+  // Flag, das anzeigt, ob gerade ein Swipe stattgefunden hat
+  bool _recentSwipe = false;
+  Timer? _swipeResetTimer;
+  
+  // Flag, das trackt, ob der Swipe-Hinweis bereits einmal gezeigt wurde
+  bool _swipeHintShown = false;
+  
   // Timer für regelmäßige Server-Pings
   Timer? _pingTimer;
   
@@ -203,6 +218,19 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       curve: Curves.easeOutCubic,
     ));
     
+    // Fade Animation Controller für Overlay initialisieren
+    _fadeAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeAnimationController,
+      curve: Curves.easeInOut,
+    ));
+    
     // Sende sofort einen initialen Ping beim Start
     _pingServer();
     
@@ -260,6 +288,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     
     // Timer beenden und Media-Info entfernen
     _pingTimer?.cancel();
+    _channelInfoTimer?.cancel();
+    _overlayDelayTimer?.cancel();
+    _swipeResetTimer?.cancel();
     _apiService.removeMediaInfo(); // Media-Info beim Verlassen des Screens entfernen
     
     // VideoPlayerController freigeben
@@ -267,6 +298,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     
     // Animation Controller freigeben
     _swipeAnimationController.dispose();
+    _fadeAnimationController.dispose();
     
     // Orientierung zurücksetzen
     SystemChrome.setPreferredOrientations([
@@ -319,6 +351,19 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       // UI aktualisieren, damit der neue Player angezeigt wird
       setState(() {
         _errorMessage = null; // Fehler zurücksetzen, falls vorhanden
+      });
+      
+      // Overlay anzeigen wenn im Landscape-Modus (aber nur wenn kein recent swipe)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final screenHeight = MediaQuery.of(context).size.height;
+          final isLandscape = screenWidth > screenHeight;
+          
+          if (isLandscape) {
+            _showChannelInfoOverlay(); // Ohne forceShow - respektiert Swipe-Flag
+          }
+        }
       });
     } catch (e) {
       setState(() {
@@ -1714,22 +1759,43 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
 
   // Fullscreen-Navigation - arbeitet mit angezeigter Liste
   void _switchToNextChannelInFullscreen() {
+    // Swipe-Flag setzen
+    _recentSwipe = true;
+    _swipeResetTimer?.cancel();
+    _swipeResetTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted) {
+        _recentSwipe = false;
+      }
+    });
+  
     // Animation sofort starten, um alten Stream zu überdecken
     _performSwipeAnimation(-1.0);
-    
+  
     // Channel-Switch parallel ausführen
     final currentList = _getCurrentChannelList();
     final currentIndex = _getFilteredChannelIndex();
-    
+  
     if (currentIndex < currentList.length - 1) {
       _selectChannelFromDisplayedList(currentIndex + 1);
     } else {
       // Zum ersten Kanal springen
       _selectChannelFromDisplayedList(0);
     }
+  
+    // Overlay mit Force-Show anzeigen
+    _showChannelInfoOverlay(forceShow: true);
   }
 
   void _switchToPreviousChannelInFullscreen() {
+    // Swipe-Flag setzen
+    _recentSwipe = true;
+    _swipeResetTimer?.cancel();
+    _swipeResetTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted) {
+        _recentSwipe = false;
+      }
+    });
+    
     // Animation sofort starten, um alten Stream zu überdecken
     _performSwipeAnimation(1.0);
     
@@ -1743,6 +1809,9 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       // Zum letzten Kanal springen
       _selectChannelFromDisplayedList(currentList.length - 1);
     }
+    
+    // Overlay mit Force-Show anzeigen
+    _showChannelInfoOverlay(forceShow: true);
   }
   
   // Hilfsmethode für Fullscreen-Navigation: Wählt Kanal aus angezeigter Liste
@@ -1765,19 +1834,262 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     }
   }
   
-  void _showChannelInfoOverlay() {
+  void _showChannelInfoOverlay({bool forceShow = false}) {
+    final now = DateTime.now();
+    
+    // Prüfe, ob ein Swipe gerade stattgefunden hat und kein forceShow
+    if (!forceShow && _recentSwipe) {
+      print('Overlay blockiert: Gerade Swipe stattgefunden');
+      return;
+    }
+    
+    // Zeitbasierte Schutzlogik: Verhindere Overlays, die zu schnell hintereinander kommen
+    if (!forceShow && _lastOverlayShow != null) {
+      final timeSinceLastShow = now.difference(_lastOverlayShow!).inSeconds;
+      if (timeSinceLastShow < 5) {
+        print('Overlay blockiert: Zu kurz nach letzter Anzeige ($timeSinceLastShow Sekunden)');
+        return; // Overlay nicht anzeigen, da zu kurz nach letzter Anzeige
+      }
+    }
+    
+    // Setze Zeitstempel der aktuellen Anzeige
+    _lastOverlayShow = now;
+    
+    // Cancel existing timers if running
+    _channelInfoTimer?.cancel();
+    _overlayDelayTimer?.cancel();
+    
+    // Reset animation und overlay state
+    _fadeAnimationController.reset();
     setState(() {
       _showChannelInfo = true;
+      _overlayReady = false;
     });
     
-    // Info nach 3 Sekunden automatisch ausblenden
-    Timer(const Duration(seconds: 3), () {
+    // Start delay timer (500ms)
+    _overlayDelayTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
-          _showChannelInfo = false;
+          _overlayReady = true;
+        });
+        // Start fade-in animation
+        _fadeAnimationController.forward();
+        
+        // Start 3-second timer for fade-out
+        _channelInfoTimer = Timer(const Duration(seconds: 3), () {
+          if (mounted) {
+            // Start fade-out animation
+            _fadeAnimationController.reverse().then((_) {
+              if (mounted) {
+                setState(() {
+                  _showChannelInfo = false;
+                  _overlayReady = false;
+                  // Swipe-Hinweis als gezeigt markieren nach dem ersten Fade-Out
+                  if (!_swipeHintShown) {
+                    _swipeHintShown = true;
+                  }
+                });
+              }
+            });
+          }
         });
       }
     });
+  }
+  
+  Widget _buildChannelInfoOverlay() {
+    if (_selectedChannelIndex < 0 || _selectedChannelIndex >= _favoriteChannels.length) {
+      return const SizedBox.shrink();
+    }
+    
+    final channel = _favoriteChannels[_selectedChannelIndex];
+    final epgData = _epgDataMap[channel.id] ?? [];
+    
+    // Find current and next program
+    EpgProgram? currentProgram;
+    EpgProgram? nextProgram;
+    
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    
+    for (int i = 0; i < epgData.length; i++) {
+      final program = epgData[i];
+      if (now >= program.start && now < program.end) {
+        currentProgram = program;
+        // Find next program
+        if (i + 1 < epgData.length) {
+          nextProgram = epgData[i + 1];
+        }
+        break;
+      }
+    }
+    
+    // If no current program found, try to find the next upcoming one
+    if (currentProgram == null && epgData.isNotEmpty) {
+      for (final program in epgData) {
+        if (now < program.start) {
+          nextProgram = program;
+          break;
+        }
+      }
+    }
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B1E22).withOpacity(0.90),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              // Channel Logo
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[800],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: (channel.logo != null && channel.logo!.isNotEmpty)
+                      ? Image.network(
+                          channel.logo!.startsWith('http') ? channel.logo! : 'http://app.seeyoo.tv${channel.logo!}',
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[800],
+                              child: const Icon(
+                                Icons.tv,
+                                color: Colors.white54,
+                                size: 30,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: Colors.grey[800],
+                          child: const Icon(
+                            Icons.tv,
+                            color: Colors.white54,
+                            size: 30,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // Channel Info and EPG Data
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Channel Name
+                    Text(
+                      channel.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    
+                    // Current Program
+                    if (currentProgram != null) ...[
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE53A56),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'JETZT',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              currentProgram.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ] else ...[
+                      const Text(
+                        'Keine Programminformationen verfügbar',
+                        style: TextStyle(
+                          color: Color(0xFF8D9296),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                    
+                    // Next Program (if available)
+                    if (nextProgram != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            nextProgram.startTimeFormatted,
+                            style: const TextStyle(
+                              color: Color(0xFFE53A56),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              nextProgram.name,
+                              style: const TextStyle(
+                                color: Color(0xFF8D9296),
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _formatTime(int timestamp) {
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
   
   // Swipe-Animation für Fullscreen-Player - Karussell-Effekt
@@ -1983,6 +2295,17 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                             offset: Offset(nextOffset, 0),
                             child: _buildChannelLogo(), // Zeige Logo des nächsten Senders
                           ),
+                        // Kanal-Info Overlay mit Fade-Animation (swipes with content)
+                        if (_showChannelInfo && _overlayReady)
+                          Positioned(
+                            bottom: 20,
+                            left: currentOffset,
+                            right: -currentOffset,
+                            child: FadeTransition(
+                              opacity: _fadeAnimationController,
+                              child: _buildChannelInfoOverlay(),
+                            ),
+                          ),
                       ],
                     );
                   },
@@ -1990,98 +2313,41 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
               ),
             ),
             
-            // Kanal-Info Overlay (wird bei Bedarf angezeigt)
-            if (_showChannelInfo && _selectedChannelIndex >= 0 && _selectedChannelIndex < _favoriteChannels.length)
+            // Swipe-Hinweis oben (nur beim ersten Mal anzeigen)
+            if (_showChannelInfo && _overlayReady && !_swipeHintShown)
               Positioned(
-                top: 50,
-                left: 20,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _favoriteChannels[_selectedChannelIndex].name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                top: 20,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: FadeTransition(
+                    opacity: _fadeAnimationController,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B1E22).withOpacity(0.90),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Kanal ${(_getFilteredChannelIndex() + 1)} von ${_getCurrentChannelList().length}',
-                        style: const TextStyle(
-                          color: Color(0xFF8D9296),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-            // Swipe-Hinweis unten
-            if (_showChannelInfo)
-              Positioned(
-                bottom: 40,
-                left: 20,
-                right: 20,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.swipe, color: Colors.white, size: 20),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Wischen zum Kanalwechsel',
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.swipe, color: Colors.white54, size: 16),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Wischen zum Kanalwechsel',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () {
-                          SystemChrome.setPreferredOrientations([
-                            DeviceOrientation.portraitUp,
-                            DeviceOrientation.portraitDown,
-                          ]);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFA1273B),
-                            borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
-                            'Beenden',
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
+
+
           ],
         ),
       ),
@@ -2116,12 +2382,23 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       if (!_isInLandscapeFullscreen && _channelListController.hasClients) {
         _landscapeScrollPosition = _channelListController.offset;
         _originalChannelIndexForLandscape = _selectedChannelIndex;
+        
+        // Overlay beim Wechsel in den Landscape-Modus anzeigen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showChannelInfoOverlay();
+          }
+        });
         _isInLandscapeFullscreen = true;
       }
       return _buildLandscapeFullscreenView();
     } else if (_isInLandscapeFullscreen) {
       // Zurück aus Landscape - intelligente Scroll-Position wiederherstellen
       _isInLandscapeFullscreen = false;
+      
+      // Swipe-Hinweis-Flag zurücksetzen für nächsten Landscape-Wechsel
+      _swipeHintShown = false;
+      
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_channelListController.hasClients) {
           // Prüfen, ob sich der Sender geändert hat
