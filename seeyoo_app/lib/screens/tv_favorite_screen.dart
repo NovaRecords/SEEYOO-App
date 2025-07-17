@@ -1934,8 +1934,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     }
     
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+      padding: const EdgeInsets.only(left: 16, right: 10, top: 10, bottom: 10),
       decoration: BoxDecoration(
         color: const Color(0xFF1B1E22).withOpacity(0.85),
         borderRadius: BorderRadius.circular(12),
@@ -2297,7 +2297,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                         // Kanal-Info Overlay mit Fade-Animation (swipes with content)
                         if (_showChannelInfo && _overlayReady)
                           Positioned(
-                            bottom: 20,
+                            bottom: 12,
                             left: currentOffset,
                             right: -currentOffset,
                             child: FadeTransition(
