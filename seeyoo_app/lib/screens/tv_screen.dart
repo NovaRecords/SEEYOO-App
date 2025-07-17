@@ -1921,8 +1921,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
                         // Swipe hint bar at top (nur beim ersten Mal anzeigen)
                         if (_showChannelInfo && _overlayReady && !_swipeHintShown)
                           Positioned(
-                            top: 0,
-                            bottom: 0,
+                            top: 20,
                             left: 0,
                             right: 0,
                             child: Transform.translate(
