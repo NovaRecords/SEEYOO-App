@@ -90,6 +90,9 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
   bool _recentSwipe = false;
   Timer? _swipeResetTimer;
   
+  // Flag, das trackt, ob der Swipe-Hinweis bereits einmal gezeigt wurde
+  bool _swipeHintShown = false;
+  
   // Video Player
   VideoPlayerController? _videoPlayerController;
   
@@ -1514,6 +1517,10 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
                 setState(() {
                   _showChannelInfo = false;
                   _overlayReady = false;
+                  // Swipe-Hinweis als gezeigt markieren nach dem ersten Fade-Out
+                  if (!_swipeHintShown) {
+                    _swipeHintShown = true;
+                  }
                 });
               }
             });
@@ -1564,7 +1571,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF3B4248).withOpacity(0.85),
+        color: const Color(0xFF1B1E22).withOpacity(0.85),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -1911,8 +1918,8 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
                                     )
                                   : _buildChannelLogo(),
                         ),
-                        // Swipe hint bar at top
-                        if (_showChannelInfo && _overlayReady)
+                        // Swipe hint bar at top (nur beim ersten Mal anzeigen)
+                        if (_showChannelInfo && _overlayReady && !_swipeHintShown)
                           Positioned(
                             top: 20,
                             left: 0,
@@ -1928,7 +1935,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF3B4248).withOpacity(0.85),
+                                          color: const Color(0xFF1B1E22).withOpacity(0.85),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Row(
@@ -2012,11 +2019,19 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
         _landscapeScrollPosition = _channelListController.offset;
         _originalChannelIndexForLandscape = _selectedChannelIndex;
         _isInLandscapeFullscreen = true;
+        
+        // Overlay-Info beim Wechsel in Fullscreen-Modus anzeigen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showChannelInfoOverlay();
+          }
+        });
       }
       return _buildLandscapeFullscreenView();
     } else if (_isInLandscapeFullscreen) {
       // Zurück aus Landscape - intelligente Scroll-Position wiederherstellen
       _isInLandscapeFullscreen = false;
+      _swipeHintShown = false; // Swipe-Hinweis wieder zurücksetzen für nächsten Landscape-Wechsel
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_channelListController.hasClients) {
           // Prüfen, ob sich der Sender geändert hat
