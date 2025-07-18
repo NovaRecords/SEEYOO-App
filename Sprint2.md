@@ -117,85 +117,85 @@
 ## App-Screenshots
 
 <!-- Erste Zeile mit zwei Bildern -->
-<div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-  <div style="width: 48%;">
-    <img src="pics/Sprint2/01.png" alt="Sprint 2 - Bild 1" style="width: 100%;">
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/01.png" alt="Sprint 2 - Bild 1" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Startbildschirm</p>
   </div>
-  <div style="width: 48%;">
-    <img src="pics/Sprint2/02.png" alt="Sprint 2 - Bild 2" style="width: 100%;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/02.png" alt="Sprint 2 - Bild 2" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Login Bildschirm</p>
   </div>
 </div>
 
 <!-- Zweite Zeile mit drei Bildern -->
-<div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/03.png" alt="Sprint 2 - Bild 3" style="width: 100%;">
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/03.png" alt="Sprint 2 - Bild 3" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Live-TV Menü</p>
   </div>
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/04.png" alt="Sprint 2 - Bild 4" style="width: 100%;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/04.png" alt="Sprint 2 - Bild 4" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Live-TV</p>
   </div>
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/05.png" alt="Sprint 2 - Bild 5" style="width: 100%;">
+  <div style="width: 600px;">
+    <img src="pics/Sprint2/05.png" alt="Sprint 2 - Bild 5" style="width: 600px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Landscape Mode TV</p>
   </div>
 </div>
 
 <!-- Dritte Zeile mit drei Bildern -->
-<div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/06.png" alt="Sprint 2 - Bild 6" style="width: 100%;">
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/06.png" alt="Sprint 2 - Bild 6" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Favoriten Menü</p>
   </div>
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/07.png" alt="Sprint 2 - Bild 7" style="width: 100%;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/07.png" alt="Sprint 2 - Bild 7" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Favoriten-TV</p>
   </div>
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/08.png" alt="Sprint 2 - Bild 8" style="width: 100%;">
+  <div style="width: 600px;">
+    <img src="pics/Sprint2/08.png" alt="Sprint 2 - Bild 8" style="width: 600px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Landscape Mode Favoriten</p>
   </div>
 </div>
 
 <!-- Vierte Zeile mit drei Bildern -->
-<div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/09.png" alt="Sprint 2 - Bild 9" style="width: 100%;">
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/09.png" alt="Sprint 2 - Bild 9" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">EPG-Programm</p>
   </div>
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/10.png" alt="Sprint 2 - Bild 10" style="width: 100%;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/10.png" alt="Sprint 2 - Bild 10" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Kategorien</p>
   </div>
-  <div style="width: 31%;">
-    <img src="pics/Sprint2/11.png" alt="Sprint 2 - Bild 11" style="width: 100%;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/11.png" alt="Sprint 2 - Bild 11" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Favoriten Bearbeitungsmodus</p>
   </div>
 </div>
 
 <!-- Fünfte Zeile mit zwei Bildern -->
-<div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-  <div style="width: 48%;">
-    <img src="pics/Sprint2/12.png" alt="Sprint 2 - Bild 12" style="width: 100%;">
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/12.png" alt="Sprint 2 - Bild 12" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Einstellungen Menü</p>
   </div>
-  <div style="width: 48%;">
-    <img src="pics/Sprint2/13.png" alt="Sprint 2 - Bild 13" style="width: 100%;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/13.png" alt="Sprint 2 - Bild 13" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Einstellungen</p>
   </div>
 </div>
 
 <!-- Sechste Zeile mit zwei Bildern -->
-<div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-  <div style="width: 48%;">
-    <img src="pics/Sprint2/14.png" alt="Sprint 2 - Bild 14" style="width: 100%;">
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/14.png" alt="Sprint 2 - Bild 14" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Mein Konto Menü</p>
   </div>
-  <div style="width: 48%;">
-    <img src="pics/Sprint2/15.png" alt="Sprint 2 - Bild 15" style="width: 100%;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/15.png" alt="Sprint 2 - Bild 15" style="width: 300px;">
     <p style="text-align: center; margin-top: 8px; font-weight: 500;">Mein Konto</p>
   </div>
 </div>
