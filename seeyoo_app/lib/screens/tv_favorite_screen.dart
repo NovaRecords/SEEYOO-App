@@ -1734,18 +1734,13 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     // Gesamtanzahl der Sender in der aktuellen Liste
     final int totalChannels = currentList.length;
     
-    // Debug-Output zur Überprüfung
-    print('DEBUG Favoriten Landscape-zu-Portrait: channelIndexToShow=$channelIndexToShow, totalChannels=$totalChannels, letzten4Grenze=${totalChannels - 4}');
-    
     // SPEZIELLE LOGIK FÜR LANDSCAPE-ZU-PORTRAIT-WECHSEL:
     // Wenn es einer der letzten 4 Sender ist, scrolle bis zum Ende der Liste
     if (channelIndexToShow >= totalChannels - 4) {
-      print('DEBUG Favoriten: Einer der letzten 4 Sender - scrolle bis Ende');
       // Direkt ausführen, da wir bereits im PostFrameCallback der build() sind
       if (_channelListController.hasClients && _channelListController.position.hasContentDimensions) {
         // Verwende den tatsächlichen maxScrollExtent für präzises Scrolling
         double maxOffset = _channelListController.position.maxScrollExtent;
-        print('DEBUG Favoriten: Scrolle zu maxOffset=$maxOffset');
         
         _channelListController.animateTo(
           maxOffset,
@@ -1753,7 +1748,6 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
           curve: Curves.easeOut,
         );
       } else {
-        print('DEBUG Favoriten: Controller noch nicht ready - versuche jumpTo');
         // Fallback: Verwende jumpTo mit berechneter Position
         double fallbackOffset = (totalChannels - 1) * itemHeight;
         _channelListController.jumpTo(fallbackOffset);
@@ -1761,7 +1755,6 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       return;
     } 
     
-    print('DEBUG Favoriten: Normaler Sender - scrolle zu Position');
     // Für alle anderen Sender: Normal zum Sender scrollen (erste Position)
     double offset = channelIndexToShow * itemHeight;
     
