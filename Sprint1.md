@@ -23,7 +23,7 @@
 - [x] Splash Screen mit App-Logo
 - [x] Ladeanimationen für Seitenübergänge
 - [x] Error-Boundaries für stabile Navigation
-- [ ] USER_ID API Request Implementation (Damit die user Einstellungen geladen und gespeichert werden. z.B. Favoriten, letzte geschaute Sender, Startlogik - z.B. direkt mit Favoriten starten, etc.) 
+- [x] USER_ID API Request Implementation (Damit die user Einstellungen geladen und gespeichert werden. z.B. Favoriten, letzte geschaute Sender, Startlogik - z.B. direkt mit Favoriten starten, etc.) 
 
 ### 2. Benutzeroberfläche für Kanalübersicht (US-5, US-6, US-7)
 **Ziel:** Eine ansprechende und benutzerfreundliche Übersicht aller verfügbaren Kanäle.
@@ -38,7 +38,7 @@
 - [x] Programm Übersicht (EPG-Daten)
 - [ ] Mediathek (Aufgenommene Sendungen) - Im nächsten Release
 - [x] Kategorien (Sortierung nach Kategorien)
-- [ ] Favoriten (Favorisierte Kanäle)
+- [x] Favoriten (Favorisierte Kanäle)
 
 ### 3. Basis-Streaming-Funktionalität (US-9, US-11, US-12)
 **Ziel:** Grundlegende Wiedergabefunktionen für Live-TV-Streams.
@@ -58,7 +58,7 @@
 - [x] Anmeldebildschirm
 - [ ] Passwort zurücksetzen Funktion (Im nächsten Release)
 - [ ] E-Mail-Verifizierung (Im nächsten Release)
-- [ ] Sichere Speicherung von Anmeldedaten
+- [x] Sichere Speicherung von Anmeldedaten
 
 ### 5. Grundlegende Einstellungen (TECH-3)
 **Ziel:** Grundlegende App-Einstellungen verwalten.
@@ -87,10 +87,10 @@
    - Minderung: Optimierung der Bildgrößen und Caching-Strategie
 
 ## Erfolgskriterien
-- [ ] App stürzt nicht ab bei normaler Nutzung
-- [ ] Ladezeiten unter 2 Sekunden
-- [ ] Mindestens 70% Testabdeckung der kritischen Pfade
-- [ ] Positive Rückmeldungen von Testnutzern zur Bedienbarkeit
+- [x] App stürzt nicht ab bei normaler Nutzung
+- [x] Ladezeiten unter 2 Sekunden
+- [x] Mindestens 70% Testabdeckung der kritischen Pfade
+- [x] Positive Rückmeldungen von Testnutzern zur Bedienbarkeit
 
 ## Offene Fragen
 - Welche Kanäle sollen in der ersten Version verfügbar sein?
