@@ -17,7 +17,8 @@ SEEYOO ist eine moderne Live-TV Streaming App für iOS und Android Smartphones, 
 - Der [Technische Plan](technical_plan.md) enthält alle Details zur Implementierung.
 - Die [Definition of Done](Definition_of_Done.md) beschreibt meine Qualitätskriterien für abgeschlossene Aufgaben.
 - Der [Product Backlog](Product_Backlog.md) enthält alle Anforderungen und User Stories für die Entwicklung.
-- [Sprint 1 Planung](Sprint1.md) - Aktueller Sprint mit Zielen und Aufgaben
+- [Sprint 1 Planung](Sprint1.md) - Abgeschlossener Sprint mit Zielen und Aufgaben
+- [Sprint 2 Planung](Sprint2.md) - Aktueller Sprint mit erweiterten Streaming-Features
 
 ## Sprint 1 (26.06.2025 - 10.07.2025)
 
@@ -31,3 +32,18 @@ SEEYOO ist eine moderne Live-TV Streaming App für iOS und Android Smartphones, 
 - Grundlegende Einstellungen
 
 [Mehr Details zur Sprintplanung](Sprint1.md)
+
+## Sprint 2 (11.07.2025 - 18.07.2025)
+
+**Sprint Goal:** Vollständige Basis-Streaming-Funktionalität und grundlegende Einstellungen implementieren, um eine professionelle Live-TV-Streaming-Erfahrung zu bieten.
+
+### Hauptziele:
+- Vollständige HLS-Stream-Integration mit Fehlerbehandlung
+- Fullscreen-Player mit Swipe-Navigation
+- Intelligente Orientierungssteuerung
+- EPG-Daten-Integration mit Overlay-Informationen
+- Favoriten-System für Kanäle
+- Kategorien-Filter für bessere Navigation
+- Perfekte Scroll-Logik und UI-Optimierungen
+
+[Mehr Details zur Sprintplanung](Sprint2.md)
