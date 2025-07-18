@@ -1361,6 +1361,68 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
       curve: Curves.easeOut,
     );
   }
+
+  // Spezielle Scroll-Methode für Landscape-zu-Portrait-Wechsel
+  // Diese Methode behandelt die letzten 4 Sender korrekt
+  void _scrollToSelectedChannelFromLandscape() {
+    // Prüfe, ob der Controller an eine ScrollView angebunden ist
+    if (!_channelListController.hasClients) return;
+    
+    // Bestimme den Index des zu scrollenden Elements je nach aktuellem Tab/Filter
+    int channelIndexToShow;
+    
+    if (_selectedTabIndex == 3) { // Favoriten-Tab
+      channelIndexToShow = _selectedChannelIndex;
+    } else {
+      // Suche den ausgewählten Kanal in der gefilterten Liste
+      channelIndexToShow = _filteredChannels.indexWhere((channel) => 
+          _channels.isNotEmpty && _selectedChannelIndex < _channels.length &&
+          channel.id == _channels[_selectedChannelIndex].id);
+    }
+    
+    // Wenn der Kanal nicht in der aktuellen Liste gefunden wurde
+    if (channelIndexToShow < 0) return;
+    
+    // Für kleine Listen kein Scrollen durchführen
+    if (_filteredChannels.length <= 7) return;
+    
+    // Höhe eines Kanaleintrags (inkl. Margin)
+    final double itemHeight = 92.0;
+    
+    // Gesamtanzahl der Sender in der aktuellen Liste
+    final int totalChannels = _filteredChannels.length;
+    
+    // SPEZIELLE LOGIK FÜR LANDSCAPE-ZU-PORTRAIT-WECHSEL:
+    // Wenn es einer der letzten 4 Sender ist, scrolle bis zum Ende der Liste
+    if (channelIndexToShow >= totalChannels - 4) {
+      // Direkt ausführen, da wir bereits im PostFrameCallback der build() sind
+      if (_channelListController.hasClients && _channelListController.position.hasContentDimensions) {
+        // Verwende den tatsächlichen maxScrollExtent für präzises Scrolling
+        double maxOffset = _channelListController.position.maxScrollExtent;
+        
+        _channelListController.animateTo(
+          maxOffset,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        // Fallback: Verwende jumpTo mit berechneter Position
+        double fallbackOffset = (totalChannels - 1) * itemHeight;
+        _channelListController.jumpTo(fallbackOffset);
+      }
+      return;
+    } 
+    
+    // Für alle anderen Sender: Normal zum Sender scrollen (erste Position)
+    double offset = channelIndexToShow * itemHeight;
+    
+    // Scrolle zur berechneten Position mit Animation
+    _channelListController.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
   
   // Helper Methoden für Landscape-Mode
   void _switchToPreviousChannel() {
@@ -2036,8 +2098,8 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
         if (_channelListController.hasClients) {
           // Prüfen, ob sich der Sender geändert hat
           if (_selectedChannelIndex != _originalChannelIndexForLandscape) {
-            // Sender hat sich geändert - zum neuen Sender scrollen
-            _scrollToSelectedChannel();
+            // Sender hat sich geändert - spezielle Landscape-zu-Portrait-Scroll-Logik verwenden
+            _scrollToSelectedChannelFromLandscape();
           } else if (_landscapeScrollPosition > 0) {
             // Sender unverändert - ursprüngliche Position wiederherstellen
             _channelListController.jumpTo(_landscapeScrollPosition);

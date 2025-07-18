@@ -1708,6 +1708,70 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       curve: Curves.easeOut,
     );
   }
+
+  // Spezielle Scroll-Methode für Landscape-zu-Portrait-Wechsel
+  // Diese Methode behandelt die letzten 4 Sender korrekt
+  void _scrollToSelectedChannelFromLandscape() {
+    // Prüfe, ob der Controller an eine ScrollView angebunden ist
+    if (!_channelListController.hasClients) return;
+    
+    // Verwende die aktuell angezeigte Liste
+    final currentList = _getCurrentChannelList();
+    if (currentList.isEmpty) return;
+    
+    // Finde den Index des ausgewählten Kanals in der angezeigten Liste
+    int channelIndexToShow = _getFilteredChannelIndex();
+    
+    // Wenn der Index ungültig ist
+    if (channelIndexToShow < 0) return;
+    
+    // Für kleine Listen kein Scrollen durchführen
+    if (currentList.length <= 7) return;
+    
+    // Höhe eines Kanaleintrags (inkl. Margin)
+    final double itemHeight = 92.0;
+    
+    // Gesamtanzahl der Sender in der aktuellen Liste
+    final int totalChannels = currentList.length;
+    
+    // Debug-Output zur Überprüfung
+    print('DEBUG Favoriten Landscape-zu-Portrait: channelIndexToShow=$channelIndexToShow, totalChannels=$totalChannels, letzten4Grenze=${totalChannels - 4}');
+    
+    // SPEZIELLE LOGIK FÜR LANDSCAPE-ZU-PORTRAIT-WECHSEL:
+    // Wenn es einer der letzten 4 Sender ist, scrolle bis zum Ende der Liste
+    if (channelIndexToShow >= totalChannels - 4) {
+      print('DEBUG Favoriten: Einer der letzten 4 Sender - scrolle bis Ende');
+      // Direkt ausführen, da wir bereits im PostFrameCallback der build() sind
+      if (_channelListController.hasClients && _channelListController.position.hasContentDimensions) {
+        // Verwende den tatsächlichen maxScrollExtent für präzises Scrolling
+        double maxOffset = _channelListController.position.maxScrollExtent;
+        print('DEBUG Favoriten: Scrolle zu maxOffset=$maxOffset');
+        
+        _channelListController.animateTo(
+          maxOffset,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        print('DEBUG Favoriten: Controller noch nicht ready - versuche jumpTo');
+        // Fallback: Verwende jumpTo mit berechneter Position
+        double fallbackOffset = (totalChannels - 1) * itemHeight;
+        _channelListController.jumpTo(fallbackOffset);
+      }
+      return;
+    } 
+    
+    print('DEBUG Favoriten: Normaler Sender - scrolle zu Position');
+    // Für alle anderen Sender: Normal zum Sender scrollen (erste Position)
+    double offset = channelIndexToShow * itemHeight;
+    
+    // Scrolle zur berechneten Position mit Animation
+    _channelListController.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
   
 
   // Helper Methoden für Landscape-Mode
@@ -2402,8 +2466,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
         if (_channelListController.hasClients) {
           // Prüfen, ob sich der Sender geändert hat
           if (_selectedChannelIndex != _originalChannelIndexForLandscape) {
-            // Sender hat sich geändert - zum neuen Sender scrollen
-            _scrollToSelectedChannel();
+            // Sender hat sich geändert - spezielle Landscape-zu-Portrait-Scroll-Logik verwenden
+            _scrollToSelectedChannelFromLandscape();
           } else if (_landscapeScrollPosition > 0) {
             // Sender unverändert - ursprüngliche Position wiederherstellen
             _channelListController.jumpTo(_landscapeScrollPosition);
