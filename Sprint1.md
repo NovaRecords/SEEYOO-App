@@ -163,6 +163,7 @@
 ![Screenshot Kategorien](pics/Kat-screen03.png)
 *Abbildung 6: Kategorien*
 
+**Sprint 1 Status:** ✅ Erfolgreich abgeschlossen
 
 *Letztes Update: 07.07.2025 - Vitali Mack*
 
