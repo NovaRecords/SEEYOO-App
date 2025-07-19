@@ -261,10 +261,121 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 18 (18.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - Abschluss aller geplanten Aufgaben von Tag 17
+  - Vorbereitung für Backend-Aufbau auf Amazon AWS
+  - Planung für Montag 21.07.25 AWS-Migration
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - ✅ Alle Overlay-Probleme aus Tag 17 vollständig gelöst
+  - ✅ Fullscreen Player Overlay funktioniert perfekt in beiden Screens
+  - ✅ Swipe-Animation und Channel-Info-Display abgeschlossen
+  - ✅ AWS-Infrastruktur-Planung erstellt
+  - ✅ Backend-Migration-Strategie entwickelt
+  - ✅ Vorbereitungen für AWS-Setup am Montag abgeschlossen
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Keine größeren technischen Blockaden heute
+  - AWS-Setup erfordert sorgfältige Planung für nahtlose Migration
+  - Koordination zwischen Frontend-Stabilität und Backend-Migration
+
 - 🟢 **Was ich heute gelernt habe:**
+  - Erfolgreiche Projektabschlüsse erfordern systematische Herangehensweise
+  - AWS-Migration-Planung ist kritisch für reibungslosen Übergang
+  - Timing zwischen Frontend-Fertigstellung und Backend-Migration ist wichtig
+  - Dokumentation aller Overlay-Fixes hilft bei zukünftigen ähnlichen Problemen
+
 - 🟢 **Plan für morgen:**
+  - Samstag: Entspannung und Vorbereitung für kommende Woche
+  - Finalisierung der AWS-Setup-Checkliste
+  - Review der Backend-Architektur-Dokumentation
+  - Vorbereitung für intensiven AWS-Aufbau ab Montag
+
+---
+## Aktueller Stand - App Screenshots
+
+<!-- Erste Zeile mit zwei Bildern -->
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/01.png" alt="Sprint 2 - Bild 1" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Startbildschirm</p>
+  </div>
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/02.png" alt="Sprint 2 - Bild 2" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Login Bildschirm</p>
+  </div>
+</div>
+
+<!-- Zweite Zeile mit drei Bildern -->
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/03.png" alt="Sprint 2 - Bild 3" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Live-TV Menü</p>
+  </div>
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/04.png" alt="Sprint 2 - Bild 4" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Live-TV</p>
+  </div>
+  <div style="width: 600px;">
+    <img src="pics/Sprint2/05.png" alt="Sprint 2 - Bild 5" style="width: 600px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Landscape Mode TV</p>
+  </div>
+</div>
+
+<!-- Dritte Zeile mit drei Bildern -->
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/06.png" alt="Sprint 2 - Bild 6" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Favoriten Menü</p>
+  </div>
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/07.png" alt="Sprint 2 - Bild 7" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Favoriten-TV</p>
+  </div>
+  <div style="width: 600px;">
+    <img src="pics/Sprint2/08.png" alt="Sprint 2 - Bild 8" style="width: 600px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Landscape Mode Favoriten</p>
+  </div>
+</div>
+
+<!-- Vierte Zeile mit drei Bildern -->
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/09.png" alt="Sprint 2 - Bild 9" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">EPG-Programm</p>
+  </div>
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/10.png" alt="Sprint 2 - Bild 10" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Kategorien</p>
+  </div>
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/11.png" alt="Sprint 2 - Bild 11" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Favoriten Bearbeitungsmodus</p>
+  </div>
+</div>
+
+<!-- Fünfte Zeile mit zwei Bildern -->
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/12.png" alt="Sprint 2 - Bild 12" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Einstellungen Menü</p>
+  </div>
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/13.png" alt="Sprint 2 - Bild 13" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Einstellungen</p>
+  </div>
+</div>
+
+<!-- Sechste Zeile mit zwei Bildern -->
+<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/14.png" alt="Sprint 2 - Bild 14" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Mein Konto Menü</p>
+  </div>
+  <div style="width: 300px;">
+    <img src="pics/Sprint2/15.png" alt="Sprint 2 - Bild 15" style="width: 300px;">
+    <p style="text-align: center; margin-top: 8px; font-weight: 500;">Mein Konto</p>
+  </div>
+</div>
 
 ## Tag 19 (19.07.2025)
 
