@@ -116,39 +116,103 @@ class _AuthScreenState extends State<AuthScreen> {
             });
           }
         } else {
-          // Implementierung der Registrierung
+          // Implementierung der Registrierung nach dem Zwei-Schritte-Prozess
           setState(() {
             _isLoading = true;
           });
           
           try {
-            // Benutzer direkt im Auth-System registrieren und anmelden
-            print('Registration: Creating new user in Auth API');
+            print('Registration: Creating new user in Billing API');
             final email = _emailController.text.trim();
             final firstName = _firstNameController.text.trim();
             final lastName = _lastNameController.text.trim();
             final password = _passwordController.text;
             
-            // Vollständigen Namen aus Vor- und Nachname bilden (nur für die Anzeige) 
-            final name = '$firstName $lastName';
-            print('Registration: Registering user: $name / $email');
+            // Schritt 1: Benutzer im Billing-System erstellen
+            // Dabei werden nur die minimal notwendigen Parameter gesendet
+            final userData = await _apiService.createUser(
+              name: firstName,
+              secondName: lastName,
+              email: email,
+              tariff: 'full_de', // Wichtig: Pflichtfeld für erfolgreiche Registrierung
+              isTest: false,     // Kein Testbenutzer
+            );
             
-            // Mit der Auth-API authentifizieren - die Registrierung erfolgt dabei
-            // automatisch auf der Serverseite
-            final authResponse = await _apiService.authenticate(email, password);
-            
-            if (authResponse.isSuccess) {
-              print('Registration: Authentication successful after registration');
+            if (userData != null) {
+              print('Registration: User created successfully in billing system');
+              print('Registration: System generated password: ${userData['password']}');
+              print('Registration: User ID: ${userData['id']}');
               
-              // Zum Hauptbildschirm navigieren
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const MainScreen()),
+              // Schritt 2: Benutzerpasswort mit dem vom Benutzer gewählten Passwort aktualisieren
+              final updateSuccess = await _apiService.updateUserInfo(
+                email: email,
+                password: password,
               );
-              return; // Früher zurückkehren, da wir bereits navigiert haben
+              
+              if (updateSuccess) {
+                print('Registration: Password updated successfully');
+                
+                // Nach erfolgreicher Registrierung und Passwort-Update versuchen wir die Anmeldung
+                print('Registration: Attempting login to get Portal user data');
+                final authResponse = await _apiService.authenticate(email, password);
+                
+                if (authResponse.isSuccess) {
+                  print('Registration: Authentication successful after registration');
+                  
+                  // Nach erfolgreicher Authentifizierung die E-Mail-Adresse speichern
+                  await _storageService.setUserEmail(email);
+                  print('Auth: Saved user email: $email');
+                  
+                  // Billing-ID aus der Registrierungsantwort als Kontonummer speichern
+                  final billingId = int.tryParse(userData['id'].toString()) ?? 0;
+                  await _storageService.setBillingUserId(billingId);
+                  print('Auth: Saved billing account ID: $billingId');
+                  
+                  // Benutzerdaten speichern
+                  // Vollständigen Namen aus Vor- und Nachname bilden (für das fname Feld)
+                  final fullName = '$firstName $lastName';
+                  final user = User(
+                    id: authResponse.userId ?? 0,  // Portal-ID vom Login-Prozess
+                    email: email,
+                    fname: fullName,
+                    status: 1, // Aktiver Status
+                    phone: '',
+                    endDate: DateTime.now().add(const Duration(days: 30)).toString(),
+                    accountBalance: null,
+                    account: billingId,  // Billing-ID als Kontonummer
+                    mac: "Mobile-App-iOS",
+                  );
+                  
+                  await _storageService.saveUser(user);
+                  print('Registration: Created and saved user with Portal ID: ${authResponse.userId}');
+                  
+                  // Die Stalker-Portal ID speichern
+                  if (authResponse.userId != null) {
+                    await _storageService.setUserId(authResponse.userId!);
+                    print('Auth: Saved Portal user ID: ${authResponse.userId}');
+                  }
+                  
+                  // Zum Hauptbildschirm navigieren
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MainScreen()),
+                  );
+                  return;
+                } else {
+                  // Authentifizierungsfehler nach erfolgreicher Registrierung
+                  setState(() {
+                    _errorMessage = authResponse.errorMessage ?? 'Anmeldung nach Registrierung fehlgeschlagen';
+                  });
+                }
+              } else {
+                // Fehler beim Aktualisieren des Passworts
+                setState(() {
+                  _errorMessage = 'Passwort konnte nicht aktualisiert werden';
+                });
+              }
             } else {
-              // Authentifizierungsfehler anzeigen
+              // Fehler bei der Benutzerregistrierung
               setState(() {
-                _errorMessage = authResponse.errorMessage ?? 'Registrierung fehlgeschlagen';
+                _errorMessage = 'Registrierung fehlgeschlagen. Bitte versuchen Sie es später erneut.';
               });
             }
           } catch (e) {

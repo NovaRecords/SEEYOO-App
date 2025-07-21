@@ -93,7 +93,7 @@ class ApiService {
       // Geräteinformationen dynamisch abrufen
       final deviceInfo = await _getDeviceInfo();
       
-      // Anfrage mit den erforderlichen Parametern gemäß Beispiel
+      // Anfrage mit den erforderlichen Parametern
       final Map<String, String> requestBody = {
         'grant_type': 'password',
         'username': username,
@@ -466,8 +466,7 @@ class ApiService {
     required String name,
     String? secondName,
     required String email,
-    required String tariff,
-    required String password,
+    required String tariff, // Wichtig: Der Tarif muss gesetzt sein für erfolgreiche Registrierung
     String? phone,
     String? address,
     String? city,
@@ -485,18 +484,16 @@ class ApiService {
       // Basic Auth für die Billing-API
       const String authHeader = 'Basic YmlsbGluZzpMam5iR0NGdHlyZCY2dDk4IyQ5XzBpMFk4N3RlNXJ0ODY3dDd5';
       
-      // Erstellen der Form-Daten für die POST-Anfrage
+      // Erstellen der Form-Daten für die POST-Anfrage gemäß Billing-API Anforderungen
       final Map<String, String> formData = {
         'name': name,
+        'second_name': secondName ?? '',
         'email': email,
-        'tariff': tariff,       // Pflichtparameter direkt einfügen
-        'password': password,   // Pflichtparameter direkt einfügen
+        'tariff': tariff, // Tarif-Parameter hinzufügen - wichtig für erfolgreiche Registrierung
         'test': isTest ? '1' : '0',
       };
       
-      
-      // Optionale Parameter hinzufügen
-      if (secondName != null) formData['second_name'] = secondName;
+      // Andere Parameter werden nicht gesendet, da sie vom API nicht erwartet werden
       
       print('### createUser: Form data: $formData');
       
@@ -607,11 +604,8 @@ class ApiService {
       if (data['status'] == 'OK' && data['results'] == true) {
         print('### updateUserInfo: User data updated successfully');
         
-        // Nach erfolgreicher Aktualisierung frische Benutzerdaten abrufen
-        final updatedUser = await getUserInfo();
-        if (updatedUser != null) {
-          print('### updateUserInfo: Retrieved updated user data');
-        }
+        // HINWEIS: getUserInfo() wird nicht mehr aufgerufen, da dieser vorzeitige
+        // Portal-Zugriff zu Fehlern führen kann, wenn der Portal-Benutzer noch nicht existiert.
         
         return true;
       } else {
@@ -724,9 +718,15 @@ class ApiService {
         
         if (userData != null) {
           // Mapping der Daten auf unser User-Modell
+          String fullName = userData['name']?.toString() ?? '';
+          String secondName = userData['second_name']?.toString() ?? '';
+          if (secondName.isNotEmpty) {
+            fullName = '$fullName $secondName'.trim();
+          }
+          
           final user = User(
             id: int.tryParse(userData['id']?.toString() ?? '') ?? 0,
-            fname: userData['name']?.toString() ?? '',
+            fname: fullName, // Vollständiger Name aus name + second_name
             email: userData['email']?.toString() ?? '',
             phone: userData['phone']?.toString() ?? '',
             tariffPlan: userData['tariff']?.toString() ?? '',

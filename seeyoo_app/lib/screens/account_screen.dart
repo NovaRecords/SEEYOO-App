@@ -222,9 +222,9 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Vollständiger Benutzername
+                  // Vollständiger Benutzername (Vorname + Nachname)
                   Text(
-                    _user?.fname ?? 'SEEYOO Nutzer',
+                    _getFullName(),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -337,6 +337,12 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
         ],
       ),
     );
+  }
+
+  // Einfach den vollständigen Namen aus dem Portal-fname-Feld zurückgeben
+  String _getFullName() {
+    // Das Portal liefert bereits den vollständigen Namen im fname-Feld
+    return _user?.fname ?? 'SEEYOO Nutzer';
   }
 
   String _formatDate(String? dateStr) {
