@@ -343,10 +343,38 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 21 (21.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - Implementierung und Test der Register/Login-Funktionalität
+  - Behebung von Android-Build-Problemen
+  - Vorbereitung der App für den Store-Deployment
+  - Testen der App auf dem Zielgerät
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - Register/Login-Funktionalität erfolgreich implementiert und getestet
+  - User-Authentication-Flow vollständig umgesetzt
+  - Android-Build-Probleme erfolgreich behoben:
+    - Namespace-Konfiguration für das `auto_orientation`-Plugin (Version 2.3.1) hinzugefügt
+    - Namespace-Konfiguration für das `wakelock`-Plugin (Version 0.4.0) hinzugefügt
+    - Kotlin-Version im `wakelock`-Plugin von 1.3.50 auf 1.5.20 aktualisiert
+  - App läuft erfolgreich auf Android-Geräten
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Fehlende Namespace-Einträge in Plugin-Build-Dateien identifiziert und behoben
+  - Veraltete Kotlin-Version im wakelock-Plugin aktualisiert
+  - iOS-Build-Fehler identifiziert (Bearbeitung für morgen geplant):
+    - `Generated.xcconfig` fehlt in den Suchpfaden
+    - Probleme mit `.xcfilelist`-Dateien für Pods-Runner
+
 - 🟢 **Was ich heute gelernt habe:**
+  - Neuere Android Gradle Plugins erfordern explizite Namespace-Angaben in build.gradle-Dateien
+  - Wie man Plugin-Abhängigkeiten in Flutter manuell aktualisiert
+  - Kompatibilitätsanforderungen zwischen Kotlin Gradle Plugin und Android Gradle Plugin
+
 - 🟢 **Plan für morgen:**
+  - iOS-Build-Probleme beheben:
+    - Flutter-Projekt bereinigen und neu initialisieren
+    - CocoaPods aktualisieren und neu installieren
+    - Build-Konfiguration im Xcode-Projekt anpassen
+  - Vorbereitung für App Store und Play Store Deployment
 
 ## Tag 22 (22.07.2025)
 
