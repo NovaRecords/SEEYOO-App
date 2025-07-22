@@ -379,10 +379,32 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 22 (22.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - iOS-Build- und Archivierungsprobleme beheben
+  - App Store-Einreichung vorbereiten und durchführen
+  - Problematische Flutter-Plugins identifizieren und beheben
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - Erfolgreiche Archivierung der iOS-App nach Behebung mehrerer Build-Probleme
+  - Erfolgreicher Upload der App zum App Store Connect
+  - Komplette Bereinigung und Neuaufbau des iOS-Projekts
+  - Entfernung problematischer Plugins und Anpassung des Codes
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Probleme mit mehreren Plugins bei der iOS-Archivierung: device_info_plus, auto_orientation, battery_plus
+  - Fehlende oder korrupte XCFileLists und Framework-Integrationen
+  - Disk I/O Fehler und Build-Datenbankprobleme in Xcode DerivedData
+  - Syntaxfehler nach Code-Refaktorierung
+
 - 🟢 **Was ich heute gelernt habe:**
+  - Manche Flutter-Plugins verursachen Probleme nur beim Archivieren, nicht beim normalen Build
+  - Vollständige Bereinigung von DerivedData und Flutter-Build-Artefakten kann hartnäckige Build-Probleme lösen
+  - Wie man Flutter-App-Code refaktoriert, um ohne bestimmte Plugins zu funktionieren
+  - iOS-Archivierungs- und Einreichungsprozess für den App Store
+
 - 🟢 **Plan für morgen:**
+  - Backend bei AWS aufsetzen
+  - Alternativen für entfernte Plugins evaluieren
+  - Testplan für App Store Review vorbereiten
 
 ## Tag 23 (23.07.2025)
 
