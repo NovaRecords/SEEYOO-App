@@ -36,15 +36,11 @@ dependencies:
   google_fonts: ^6.1.0  # Für die Verwendung der Montserrat-Schriftart
   http: ^1.2.1  # Für HTTP-Requests zur API
   shared_preferences: ^2.3.2  # Für lokale Speicherung der Token
-  device_info_plus: ^9.1.2  # Für das Auslesen von Geräteinformationen
   uuid: ^4.3.3  # Für die Generierung eindeutiger IDs
   intl: ^0.20.2
-  battery_plus: ^6.2.2
   package_info_plus: ^8.3.0  # Für Zugriff auf App-Version und Build-Nummer
   flutter_secure_storage: ^9.2.4
   video_player: ^2.8.2  # Video Player mit Unterstützung für MPEG4, H264, MPEG2-TS
-  wakelock: ^0.4.0  # Verhindert Bildschirm-Timeout während Video-Wiedergabe
-  auto_orientation: ^2.3.1  # Für automatische Bildschirm-Rotation bei Vollbildmodus
 
 dev_dependencies:
   flutter_test:

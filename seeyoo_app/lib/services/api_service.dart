@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'package:device_info_plus/device_info_plus.dart';
+// device_info_plus wurde entfernt
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:seeyoo_app/models/auth_response.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
@@ -17,8 +17,7 @@ class ApiService {
   static const String baseUrl = 'http://app.seeyoo.tv/stalker_portal';
   static const String authEndpoint = '/auth/token';
   
-  // DeviceInfo Plugin und UUID für Geräteidentifikation
-  final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
+  // UUID für Geräteidentifikation
   final Uuid _uuid = Uuid();
 
   final StorageService _storageService = StorageService();
@@ -32,55 +31,26 @@ class ApiService {
   
   ApiService._internal();
   
-  // Geräteidentifikation abrufen
+  // Geräteidentifikation abrufen (vereinfacht ohne device_info_plus)
   Future<Map<String, String>> _getDeviceInfo() async {
-    // Initialwerte nur deklarieren, werden dynamisch basierend auf der Plattform gesetzt
-    late String deviceId;
-    // String deviceMac = '00:00:00:00:00:00'; // Auskommentiert - MAC-Adresse wird nicht mehr verwendet
-    String platformType = 'Mobile-App'; // Standardwert
-    String serialNumber = '';
+    // Wir generieren eine eindeutige ID mit UUID
+    final uuid = _uuid.v4();
+    final deviceId = 'seeyoo-app-$uuid';
     
-    try {
-      if (Platform.isAndroid) {
-        platformType = 'Mobile-App-Android';
-        final androidInfo = await _deviceInfo.androidInfo;
-        deviceId = androidInfo.id;
-        serialNumber = androidInfo.serialNumber;
-        // MAC-Adresse auf Android auskommentiert
-        // deviceMac = androidInfo.id.substring(0, 12).replaceAllMapped(
-        //     RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
-      } else if (Platform.isIOS) {
-        platformType = 'Mobile-App-iOS';
-        final iosInfo = await _deviceInfo.iosInfo;
-        deviceId = iosInfo.identifierForVendor ?? _uuid.v4();
-        serialNumber = iosInfo.utsname.machine;
-        // iOS MAC-Adresse auskommentiert
-        // deviceMac = deviceId.substring(0, 12).replaceAllMapped(
-        //     RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
-      } else if (kIsWeb) {
-        platformType = 'Mobile-App-Web';
-        final webInfo = await _deviceInfo.webBrowserInfo;
-        deviceId = webInfo.userAgent ?? 'web-browser';
-        serialNumber = webInfo.browserName?.toString() ?? 'unknown';
-        // Pseudo-MAC für Web auskommentiert
-        // deviceMac = _uuid.v4().substring(0, 12).replaceAllMapped(
-        //     RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
-      }
-    } catch (e) {
-      print('Error getting device info: $e');
-      // Fallback auf UUID für die Geräteidentifikation
-      final uuid = _uuid.v4();
-      deviceId = 'seeyoo-app-$uuid';
-      serialNumber = uuid;
-      // Fallback MAC-Adresse auskommentiert
-      // deviceMac = uuid.substring(0, 12).replaceAllMapped(
-      //     RegExp(r'(.{2})'), (match) => '${match.group(0)}:').substring(0, 17);
+    // Plattform-Typ erkennen ohne Plugin
+    String platformType = 'Mobile-App';
+    if (Platform.isAndroid) {
+      platformType = 'Mobile-App-Android';
+    } else if (Platform.isIOS) {
+      platformType = 'Mobile-App-iOS';
+    } else if (kIsWeb) {
+      platformType = 'Mobile-App-Web';
     }
     
     return {
       'device_id': deviceId,
-      'mac': platformType, // Statt MAC-Adresse geben wir nun die Plattform-Identifikation zurück
-      'serial_number': serialNumber,
+      'mac': platformType, // Statt MAC-Adresse geben wir die Plattform-Identifikation zurück
+      'serial_number': uuid.substring(0, 8), // Kurzversion der UUID als Seriennummer
     };
   }
 
