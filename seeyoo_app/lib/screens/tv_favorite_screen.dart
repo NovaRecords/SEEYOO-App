@@ -1356,11 +1356,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                           style: const TextStyle(
                             color: Colors.white, 
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.bold
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
                         
                         // Zeige aktuelle Sendung - bevorzuge EPG-Daten, sonst Fallback
                         Builder(
@@ -1438,7 +1437,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                   const SizedBox(height: 4),
                                   Text(
                                     channel.currentShow!,
-                                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   if (channel.currentShowTime != null)
@@ -1552,9 +1551,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                             // Kanalname
                             Text(
                               channel.name,
-                              style: const TextStyle(color: Colors.white, fontSize: 18),
+                              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 4),
                             // EPG-Daten wenn vorhanden
                             Builder(builder: (context) {
                               // EPG-Daten für diesen Kanal holen
