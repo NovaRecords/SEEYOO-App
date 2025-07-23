@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Transparenter Hintergrund mit voller Größe -->
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="108dp" android:height="108dp"/>
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+    
+    <!-- Stark vergrößertes Icon für den Splash-Screen -->
+    <item
+        android:width="108dp"
+        android:height="108dp"
+        android:gravity="center">
+        <bitmap 
+            android:src="@drawable/ic_launcher_foreground"
+            android:gravity="fill" />
+    </item>
+</layer-list>

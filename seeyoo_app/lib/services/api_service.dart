@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-// device_info_plus wurde entfernt
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:seeyoo_app/models/auth_response.dart';
 import 'package:seeyoo_app/models/epg_program.dart';
@@ -12,6 +11,7 @@ import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/models/user.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = 'http://app.seeyoo.tv/stalker_portal';
@@ -22,6 +22,9 @@ class ApiService {
 
   final StorageService _storageService = StorageService();
   
+  // Schlüssel für die gespeicherte virtuelle MAC-Adresse
+  static const String _virtualMacKey = 'virtual_mac_address';
+  
   // Singleton-Pattern
   static final ApiService _instance = ApiService._internal();
   
@@ -31,6 +34,33 @@ class ApiService {
   
   ApiService._internal();
   
+  // Generiert eine virtuelle MAC-Adresse im Format 00:00:00:00-{Plattform}
+  Future<String> _getOrCreateVirtualMac(String platformSuffix) async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Prüfen, ob bereits eine MAC-Adresse gespeichert ist
+    String? storedMac = prefs.getString(_virtualMacKey);
+    if (storedMac != null && storedMac.isNotEmpty) {
+      print('Verwende gespeicherte virtuelle MAC: $storedMac');
+      return storedMac;
+    }
+    
+    // Keine gespeicherte MAC gefunden, generiere eine neue
+    final random = Random.secure();
+    final macBytes = List<String>.generate(4, (_) {
+      return random.nextInt(256).toRadixString(16).padLeft(2, '0');
+    });
+    
+    // MAC-Adresse im Format 00:00:00:00-Android oder 00:00:00:00-iOS erstellen
+    final virtualMac = '${macBytes.join(':')}$platformSuffix';
+    
+    // MAC-Adresse speichern
+    await prefs.setString(_virtualMacKey, virtualMac);
+    print('Neue virtuelle MAC generiert und gespeichert: $virtualMac');
+    
+    return virtualMac;
+  }
+  
   // Geräteidentifikation abrufen (vereinfacht ohne device_info_plus)
   Future<Map<String, String>> _getDeviceInfo() async {
     // Wir generieren eine eindeutige ID mit UUID
@@ -38,18 +68,21 @@ class ApiService {
     final deviceId = 'seeyoo-app-$uuid';
     
     // Plattform-Typ erkennen ohne Plugin
-    String platformType = 'Mobile-App';
+    String platformSuffix = '';
     if (Platform.isAndroid) {
-      platformType = 'Mobile-App-Android';
+      platformSuffix = '-Android';
     } else if (Platform.isIOS) {
-      platformType = 'Mobile-App-iOS';
+      platformSuffix = '-iOS';
     } else if (kIsWeb) {
-      platformType = 'Mobile-App-Web';
+      platformSuffix = '-Web';
     }
+    
+    // MAC-Adresse aus dem Storage holen oder neu generieren
+    String virtualMac = await _getOrCreateVirtualMac(platformSuffix);
     
     return {
       'device_id': deviceId,
-      'mac': platformType, // Statt MAC-Adresse geben wir die Plattform-Identifikation zurück
+      'mac': virtualMac, // Virtuelle eindeutige MAC-Adresse verwenden
       'serial_number': uuid.substring(0, 8), // Kurzversion der UUID als Seriennummer
     };
   }
