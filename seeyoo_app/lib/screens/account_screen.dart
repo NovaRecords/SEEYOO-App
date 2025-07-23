@@ -139,7 +139,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
                       'Benutzerdaten konnten nicht geladen werden',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16.0,
+                        fontSize: 18.0,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -255,7 +255,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
           const Center(
             child: Text(
               'Kontoinformationen',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),
           const Divider(color: Color(0xFF3B4248)),
@@ -295,7 +295,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
                           Text(
                             'Ausloggen',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),

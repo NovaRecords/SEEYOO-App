@@ -281,7 +281,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         'Login',
                         style: TextStyle(
                           color: isLogin ? Colors.white : Colors.white54,
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: isLogin ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
@@ -301,7 +301,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         'Registrieren',
                         style: TextStyle(
                           color: !isLogin ? Colors.white : Colors.white54,
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: !isLogin ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
@@ -465,7 +465,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               : Text(
                                   isLogin ? 'Login' : 'Registrieren',
                                   style: GoogleFonts.montserrat(
-                                    fontSize: 16,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
@@ -535,13 +535,13 @@ class _AuthScreenState extends State<AuthScreen> {
       validator: validator,
       style: GoogleFonts.montserrat(
         color: Colors.white,
-        fontSize: 16,
+        fontSize: 18,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.montserrat(
           color: Colors.white54,
-          fontSize: 16,
+          fontSize: 18,
         ),
         prefixIcon: Icon(icon, color: Colors.white54),
         enabledBorder: UnderlineInputBorder(

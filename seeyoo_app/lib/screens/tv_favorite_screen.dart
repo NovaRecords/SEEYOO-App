@@ -930,7 +930,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
               const SizedBox(height: 16),
               Text(
                 'Keine Kategorien verfügbar',
-                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -1035,7 +1035,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: 20,
                             ),
                           ),
                         )
@@ -1044,7 +1044,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                           style: const TextStyle(
                             color: Color(0xFF8D9296),
                             fontWeight: FontWeight.normal,
-                            fontSize: 18,
+                            fontSize: 20,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -1075,7 +1075,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
               'Mediathek-Funktion',
               style: TextStyle(
                 color: const Color(0xFF8D9296),
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -1083,7 +1083,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
             const SizedBox(height: 12),
             Text(
               'Diese Funktion befindet sich\nnoch in der Entwicklung\nund wird mit dem nächsten\nRelease verfügbar sein.',
-              style: TextStyle(color: const Color(0xFF8D9296), fontSize: 14),
+              style: TextStyle(color: const Color(0xFF8D9296), fontSize: 16),
               textAlign: TextAlign.center,
             ),
             ],
@@ -1114,14 +1114,14 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
               const SizedBox(height: 16),
               Text(
                 'Programminfo zur Zeit\nnicht verfügbar',
-                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 20, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Die elektronischen Programminformationen (EPG) werden in Kürze aktiviert.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 14),
+                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 16),
               ),
             ],
           ),
@@ -1172,7 +1172,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                               program.startTimeFormatted,
                               style: TextStyle(
                                 color: isNowPlaying ? Colors.white : const Color(0xFF8D9296),
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
@@ -1183,7 +1183,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                               '${program.durationMinutes} min',
                               style: TextStyle(
                                 color: isNowPlaying ? Colors.white : const Color(0xFF8D9296),
-                                fontSize: 12,
+                                fontSize: 14,
                               ),
                             ),
                           ),
@@ -1209,7 +1209,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                 'Läuft gerade',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 10,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -1219,7 +1219,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                             program.name,
                             style: TextStyle(
                               color: isNowPlaying ? Colors.white : const Color(0xFF8D9296),
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: isNowPlaying ? FontWeight.bold : FontWeight.normal,
                             ),
                             maxLines: 2,
@@ -1353,9 +1353,15 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                         // Kanalname
                         Text(
                           channel.name,
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          style: const TextStyle(
+                            color: Colors.white, 
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 4),
+                        
                         // Zeige aktuelle Sendung - bevorzuge EPG-Daten, sonst Fallback
                         Builder(
                           builder: (context) {
@@ -1385,7 +1391,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                           'JETZT',
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 10,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -1395,7 +1401,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                           currentProgram.name,
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 16,
+                                            fontSize: 18,
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -1424,7 +1430,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                       'JETZT',
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 10,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -1432,7 +1438,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                   const SizedBox(height: 4),
                                   Text(
                                     channel.currentShow!,
-                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    style: const TextStyle(color: Colors.white, fontSize: 18),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   if (channel.currentShowTime != null)
@@ -1546,7 +1552,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                             // Kanalname
                             Text(
                               channel.name,
-                              style: const TextStyle(color: Colors.white, fontSize: 16),
+                              style: const TextStyle(color: Colors.white, fontSize: 18),
                               overflow: TextOverflow.ellipsis,
                             ),
                             // EPG-Daten wenn vorhanden
@@ -1562,7 +1568,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                   'Lade Programmdaten...',
                                   style: TextStyle(
                                     color: Colors.white70,
-                                    fontSize: 14,
+                                    fontSize: 16,
                                   ),
                                 );
                               }
@@ -1573,7 +1579,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                   'Lade Programmdaten...',
                                   style: TextStyle(
                                     color: Colors.white70,
-                                    fontSize: 14,
+                                    fontSize: 16,
                                   ),
                                 );
                               }
@@ -1584,7 +1590,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                   'Keine EPG-Daten verfügbar',
                                   style: TextStyle(
                                     color: Colors.white70,
-                                    fontSize: 12,
+                                    fontSize: 14,
                                   ),
                                 );
                               }
@@ -1623,7 +1629,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                             'JETZT',
                                             style: TextStyle(
                                               color: Colors.white,
-                                              fontSize: 10,
+                                              fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -1633,7 +1639,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                             currentProgram.name,
                                             style: const TextStyle(
                                               color: Colors.white,
-                                              fontSize: 16,
+                                              fontSize: 18,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -1650,7 +1656,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                 'Keine Daten',
                                 style: TextStyle(
                                   color: Colors.white70,
-                                  fontSize: 14,
+                                  fontSize: 16,
                                 ),
                               );
                             }),
@@ -2053,7 +2059,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                       channel.name,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
@@ -2075,7 +2081,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                               'JETZT',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -2086,7 +2092,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                               currentProgram.name,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w500,
                               ),
                               maxLines: 1,
@@ -2100,7 +2106,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                         'Keine Programminformationen verfügbar',
                         style: TextStyle(
                           color: Color(0xFF8D9296),
-                          fontSize: 14,
+                          fontSize: 16,
                         ),
                       ),
                     ],
@@ -2114,7 +2120,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                             nextProgram.startTimeFormatted,
                             style: const TextStyle(
                               color: Color(0xFFE53A56),
-                              fontSize: 14,
+                              fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -2124,7 +2130,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                               nextProgram.name,
                               style: const TextStyle(
                                 color: Color(0xFF8D9296),
-                                fontSize: 14,
+                                fontSize: 16,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -2233,7 +2239,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                 channel.name,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
@@ -2322,7 +2328,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                                           _errorMessage!,
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 16,
+                                            fontSize: 18,
                                           ),
                                           textAlign: TextAlign.center,
                                         ),
@@ -2393,7 +2399,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                             'Wischen zum Kanalwechsel',
                             style: TextStyle(
                               color: Colors.white54,
-                              fontSize: 12,
+                              fontSize: 14,
                             ),
                           ),
                         ],
@@ -2651,7 +2657,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                           style: TextStyle(
                             color: _selectedTabIndex == index ? Colors.white : const Color(0xFF8D9296),
                             fontWeight: _selectedTabIndex == index ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 12,
+                            fontSize: 14,
                           ),
                           textAlign: TextAlign.center,
                           maxLines: 1,

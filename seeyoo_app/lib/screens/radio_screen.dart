@@ -23,7 +23,7 @@ class RadioScreen extends StatelessWidget {
                 'Radio',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
@@ -31,7 +31,7 @@ class RadioScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Diese Funktion befindet sich\nnoch in der Entwicklung\nund wird mit dem nächsten\nRelease verfügbar sein.',
-                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 14),
+                style: TextStyle(color: const Color(0xFF8D9296), fontSize: 16),
                 textAlign: TextAlign.center,
               ),
             ],

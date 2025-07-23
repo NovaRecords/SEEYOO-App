@@ -187,7 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       const Text(
                         'Keine Einstellungen verfügbar',
-                        style: TextStyle(color: Color(0xFF8D9296), fontSize: 16),
+                        style: TextStyle(color: Color(0xFF8D9296), fontSize: 18),
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
@@ -270,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Text(
         title,
-        style: const TextStyle(color: Color(0xFF8D9296), fontSize: 14),
+        style: const TextStyle(color: Color(0xFF8D9296), fontSize: 16),
       ),
     );
   }
@@ -294,13 +294,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: const TextStyle(color: Colors.white, fontSize: 18),
             ),
             Row(
               children: [
                 Text(
                   currentValue,
-                  style: const TextStyle(color: Color(0xFF8D9296), fontSize: 16),
+                  style: const TextStyle(color: Color(0xFF8D9296), fontSize: 18),
                 ),
                 const SizedBox(width: 8),
                 const Icon(Icons.chevron_right, color: Color(0xFF8D9296)),
@@ -320,7 +320,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+            style: const TextStyle(color: Colors.white, fontSize: 18),
           ),
           Switch(
             value: value,
@@ -348,7 +348,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: const TextStyle(color: Colors.white, fontSize: 18),
             ),
             const Icon(Icons.chevron_right, color: Color(0xFF8D9296)),
           ],
@@ -365,11 +365,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           const Text(
             'Version',
-            style: TextStyle(color: Colors.white, fontSize: 16),
+            style: TextStyle(color: Colors.white, fontSize: 18),
           ),
           Text(
             _appVersion,
-            style: const TextStyle(color: Color(0xFF8D9296), fontSize: 16),
+            style: const TextStyle(color: Color(0xFF8D9296), fontSize: 18),
           ),
         ],
       ),

@@ -355,7 +355,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           style: TextStyle(
             color: isSelected ? Colors.white : const Color(0xFF8D9296),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 18.0, // Größere Schrift für bessere Lesbarkeit
+            fontSize: 20.0, // Größere Schrift für bessere Lesbarkeit
             height: 1.2, // Etwas mehr Zeilenabstand
           ),
         ),
