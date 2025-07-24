@@ -10,8 +10,10 @@ import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/models/user.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
+import 'package:seeyoo_app/services/device_id_service.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiService {
   static const String baseUrl = 'http://app.seeyoo.tv/stalker_portal';
@@ -34,14 +36,30 @@ class ApiService {
   
   ApiService._internal();
   
-  // Generiert eine virtuelle MAC-Adresse im Format 00:00:00:00-{Plattform}
+  // Holt die persistente MAC-Adresse aus dem DeviceIdService
+  Future<String> _getPersistentMac() async {
+    try {
+      // Hole die persistente MAC-Adresse vom DeviceIdService im normalen Format
+      String macAddress = await DeviceIdService.getMacAddress();
+      
+      print('Verwende persistente MAC-Adresse: $macAddress');
+      
+      return macAddress;
+    } catch (e) {
+      print('Fehler beim Abrufen der persistenten MAC-Adresse: $e');
+      // Fallback zur alten Methode
+      return await _getOrCreateVirtualMac('-Unknown');
+    }
+  }
+  
+  // Fallback-Methode für den Fall, dass DeviceIdService nicht funktioniert
   Future<String> _getOrCreateVirtualMac(String platformSuffix) async {
     final prefs = await SharedPreferences.getInstance();
     
     // Prüfen, ob bereits eine MAC-Adresse gespeichert ist
     String? storedMac = prefs.getString(_virtualMacKey);
     if (storedMac != null && storedMac.isNotEmpty) {
-      print('Verwende gespeicherte virtuelle MAC: $storedMac');
+      print('Verwende gespeicherte virtuelle MAC (Fallback): $storedMac');
       return storedMac;
     }
     
@@ -56,35 +74,51 @@ class ApiService {
     
     // MAC-Adresse speichern
     await prefs.setString(_virtualMacKey, virtualMac);
-    print('Neue virtuelle MAC generiert und gespeichert: $virtualMac');
+    print('Neue virtuelle MAC generiert und gespeichert (Fallback): $virtualMac');
     
     return virtualMac;
   }
   
-  // Geräteidentifikation abrufen (vereinfacht ohne device_info_plus)
+  // Geräteidentifikation abrufen mit persistenter MAC-Adresse
   Future<Map<String, String>> _getDeviceInfo() async {
-    // Wir generieren eine eindeutige ID mit UUID
-    final uuid = _uuid.v4();
-    final deviceId = 'seeyoo-app-$uuid';
-    
-    // Plattform-Typ erkennen ohne Plugin
-    String platformSuffix = '';
-    if (Platform.isAndroid) {
-      platformSuffix = '-Android';
-    } else if (Platform.isIOS) {
-      platformSuffix = '-iOS';
-    } else if (kIsWeb) {
-      platformSuffix = '-Web';
+    try {
+      // Verwende persistente Geräte-ID vom DeviceIdService
+      final deviceId = await DeviceIdService.getDeviceId();
+      
+      // Verwende persistente MAC-Adresse vom DeviceIdService
+      final persistentMac = await _getPersistentMac();
+      
+      // Generiere Seriennummer aus Geräte-ID (erste 8 Zeichen)
+      final serialNumber = deviceId.substring(0, 8);
+      
+      return {
+        'device_id': 'seeyoo-app-$deviceId',
+        'mac': persistentMac, // Persistente MAC-Adresse mit Plattform-Suffix
+        'serial_number': serialNumber,
+      };
+    } catch (e) {
+      print('Fehler beim Abrufen der Geräteinformationen: $e');
+      // Fallback zur alten UUID-basierten Methode
+      final uuid = _uuid.v4();
+      final deviceId = 'seeyoo-app-$uuid';
+      
+      String platformSuffix = '';
+      if (Platform.isAndroid) {
+        platformSuffix = '-Android';
+      } else if (Platform.isIOS) {
+        platformSuffix = '-iOS';
+      } else if (kIsWeb) {
+        platformSuffix = '-Web';
+      }
+      
+      String virtualMac = await _getOrCreateVirtualMac(platformSuffix);
+      
+      return {
+        'device_id': deviceId,
+        'mac': virtualMac,
+        'serial_number': uuid.substring(0, 8),
+      };
     }
-    
-    // MAC-Adresse aus dem Storage holen oder neu generieren
-    String virtualMac = await _getOrCreateVirtualMac(platformSuffix);
-    
-    return {
-      'device_id': deviceId,
-      'mac': virtualMac, // Virtuelle eindeutige MAC-Adresse verwenden
-      'serial_number': uuid.substring(0, 8), // Kurzversion der UUID als Seriennummer
-    };
   }
 
   // Authentifizierung mit Resource Owner Password Credentials

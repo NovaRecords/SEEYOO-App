@@ -4,6 +4,8 @@ import 'package:seeyoo_app/services/api_service.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
 import 'package:seeyoo_app/screens/auth_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:io';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -19,6 +21,12 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
   bool _isLoading = false;
   User? _user;
   bool _isLoadingUserInfo = true;
+  
+  // Geräteinformationen
+  String _platform = '';
+  String _systemVersion = '';
+  String _model = '';
+  String _currentMacAddress = '';
 
   @override
   void initState() {
@@ -27,6 +35,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
     _focusNode = FocusNode();
     _focusNode.addListener(_onFocusChange);
     _loadUserInfo();
+    _loadDeviceInfo();
   }
   
   void _onFocusChange() {
@@ -89,6 +98,41 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
         });
         print('### _loadUserInfo: Loading complete, isLoading set to false');
       }
+    }
+  }
+
+  Future<void> _loadDeviceInfo() async {
+    try {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      
+      if (Platform.isAndroid) {
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        setState(() {
+          _platform = 'Android';
+          _systemVersion = 'Android ${androidInfo.version.release}';
+          _model = '${androidInfo.brand} ${androidInfo.model}';
+        });
+      } else if (Platform.isIOS) {
+        IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        setState(() {
+          _platform = 'iOS';
+          _systemVersion = '${iosInfo.systemName} ${iosInfo.systemVersion}';
+          _model = iosInfo.model ?? 'Unbekannt';
+        });
+      } else {
+        setState(() {
+          _platform = 'Unbekannt';
+          _systemVersion = 'Unbekannt';
+          _model = 'Unbekannt';
+        });
+      }
+    } catch (e) {
+      print('Fehler beim Laden der Geräteinformationen: $e');
+      setState(() {
+        _platform = 'Fehler';
+        _systemVersion = 'Fehler';
+        _model = 'Fehler';
+      });
     }
   }
 
@@ -260,11 +304,22 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
           ),
           const Divider(color: Color(0xFF3B4248)),
           _buildInfoItem('E-Mail:', _user?.email ?? 'Nicht angegeben'),
-          _buildInfoItem('Gerät:', _user?.mac ?? 'Nicht angegeben'),
+          _buildInfoItem('vMAC:', _user?.mac ?? 'Nicht angegeben'),
           _buildInfoItem('Tarif:', _user?.tariffPlan ?? 'Standard'),
           if (_user?.endDate != null)
             _buildInfoItem('Aktiv bis:', _formatDate(_user?.endDate)),
-          const SizedBox(height: 60),
+          const SizedBox(height: 20),
+          const Center(
+            child: Text(
+              'Geräteinformationen',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const Divider(color: Color(0xFF3B4248)),
+          _buildInfoItem('Platform:', _platform.isNotEmpty ? _platform : 'Lade...'),
+          _buildInfoItem('Version:', _systemVersion.isNotEmpty ? _systemVersion : 'Lade...'),
+          _buildInfoItem('Gerät:', _model.isNotEmpty ? _model : 'Lade...'),
+          const SizedBox(height: 20),
           // Ausloggen-Button
           Center(
             child: SizedBox(
@@ -305,7 +360,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
               ),
             ),
           ),
-          const SizedBox(height: 0), // Zusätzlicher Abstand am unteren Rand
+          const SizedBox(height: 20), // Zusätzlicher Abstand am unteren Rand
         ],
       ),
     );
