@@ -409,10 +409,31 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 23 (23.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - Schriftgrößen auf Android-Geräten anpassen (10-12% kleiner als auf iOS)
+  - EPG-Daten im Bearbeitungsmodus der Favoriten ausblenden
+  - Globale Lösung für plattformspezifische Schriftgrößenanpassung implementieren
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - Erfolgreiche Implementierung einer globalen Lösung für Android-Schriftgrößen (12% kleiner)
+  - Verwendung von MediaQuery.textScaleFactor für konsistente Anpassung in der gesamten App
+  - EPG-Daten werden nun im Bearbeitungsmodus nicht mehr angezeigt, was die UI übersichtlicher macht
+  - Entfernung nicht mehr benötigter Hilfsfunktionen und Dateien (platform_utils.dart)
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Anfänglicher Ansatz mit TextTheme-Anpassung führte zu Null-Check-Fehlern
+  - Erste Implementierung zeigte keine sichtbaren Änderungen auf Android-Geräten
+  - Musste alternative Lösung mit MediaQuery finden für zuverlässige plattformspezifische Anpassungen
+
 - 🟢 **Was ich heute gelernt habe:**
+  - MediaQuery.textScaleFactor ist eine effektivere Methode zur globalen Schriftgrößenanpassung als TextTheme-Modifikationen
+  - Bedingte Rendering mit if-Statements in Flutter-Widgets für kontextabhängige UI-Elemente
+  - Wie man plattformspezifische Anpassungen global und wartbar implementiert
+
 - 🟢 **Plan für morgen:**
+  - Strategie zur Generierung einer eindeutigen Geräte-ID entwickeln, die konsistent bleibt
+  - Implementierung einer Methode zur Umwandlung der Geräte-ID in eine MAC-Adresse
+  - Sicherstellen, dass die generierte ID über App-Neustarts hinweg konsistent bleibt
+  - API-Integration mit der neuen Geräte-ID-Lösung testen
 
 ## Tag 24 (24.07.2025)
 

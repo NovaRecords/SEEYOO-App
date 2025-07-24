@@ -1361,8 +1361,8 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                           overflow: TextOverflow.ellipsis,
                         ),
                         
-                        // Zeige aktuelle Sendung - bevorzuge EPG-Daten, sonst Fallback
-                        Builder(
+                        // Zeige aktuelle Sendung nur, wenn nicht im Bearbeitungsmodus
+                        if (!_isInReorderMode) Builder(
                           builder: (context) {
                             // Prüfe zuerst EPG-Daten aus der Map
                             final epgData = _epgDataMap[channel.id];

@@ -259,12 +259,12 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
             ),
           ),
           const Divider(color: Color(0xFF3B4248)),
-          _buildInfoItem('E-Mail', _user?.email ?? 'Nicht angegeben'),
-          _buildInfoItem('Gerät', _user?.mac ?? 'Nicht angegeben'),
-          _buildInfoItem('Tarif', _user?.tariffPlan ?? 'Standard'),
+          _buildInfoItem('E-Mail:', _user?.email ?? 'Nicht angegeben'),
+          _buildInfoItem('Gerät:', _user?.mac ?? 'Nicht angegeben'),
+          _buildInfoItem('Tarif:', _user?.tariffPlan ?? 'Standard'),
           if (_user?.endDate != null)
-            _buildInfoItem('Ablaufdatum', _formatDate(_user?.endDate)),
-          const SizedBox(height: 30),
+            _buildInfoItem('Aktiv bis:', _formatDate(_user?.endDate)),
+          const SizedBox(height: 60),
           // Ausloggen-Button
           Center(
             child: SizedBox(
@@ -305,7 +305,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
               ),
             ),
           ),
-          const SizedBox(height: 40), // Zusätzlicher Abstand am unteren Rand
+          const SizedBox(height: 0), // Zusätzlicher Abstand am unteren Rand
         ],
       ),
     );
@@ -323,7 +323,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
             child: Text(
               label,
               textAlign: TextAlign.end,
-              style: const TextStyle(color: Color(0xFF8D9296)),
+              style: const TextStyle(color: Color(0xFF8D9296), fontSize: 16),
             ),
           ),
           const SizedBox(width: 16),
@@ -331,7 +331,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
             flex: 3,
             child: Text(
               value,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
         ],
