@@ -299,7 +299,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
           const Center(
             child: Text(
               'Kontoinformationen',
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           const Divider(color: Color(0xFF3B4248)),
@@ -312,7 +312,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
           const Center(
             child: Text(
               'Geräteinformationen',
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           const Divider(color: Color(0xFF3B4248)),
