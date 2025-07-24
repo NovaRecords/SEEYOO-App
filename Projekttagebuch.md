@@ -438,10 +438,53 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 24 (24.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - Persistente Geräte-Identifikation finalisieren und produktionsreif machen
+  - MAC-Adresse standardisieren und API-Integration vervollständigen
+  - Account-Screen mit Geräteinformationen erweitern
+  - Debug-Code entfernen und Clean Code sicherstellen
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  ✅ **Persistente Geräte-Identifikation vollständig implementiert:**
+    • Android: Nutzt Android ID (überlebt App-Deinstallation)
+    • iOS: Nutzt identifierForVendor (überlebt App-Deinstallation)
+    • MAC-Format: Standard XX:XX:XX:XX:XX:XX Format
+    • Sichere Speicherung: Keychain/Keystore Integration
+  
+  ✅ **API-Integration erfolgreich:**
+    • Persistente MAC-Adresse wird automatisch bei jedem Login gesendet
+    • Server speichert und gibt die neue MAC-Adresse zurück
+    • Nahtlose Integration in bestehende Authentifizierung
+  
+  ✅ **Benutzeroberfläche erweitert:**
+    • Account-Screen erweitert mit:
+      ◦ vMAC (persistente MAC-Adresse)
+      ◦ Platform (Android/iOS)
+      ◦ Version (Betriebssystemversion)
+      ◦ Gerät (Gerätemodell)
+  
+  ✅ **Produktionsreife erreicht:**
+    • Debug-Screens entfernt
+    • Clean Code ohne tote Referenzen
+    • Robuste Fallback-Mechanismen implementiert
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Keine größeren technischen Blockaden heute
+  - Zeitmanagement: Viele andere Korrekturen und Implementierungen haben Backend-Aufgaben verzögert
+  - Priorisierung: Geräte-ID-System hatte Vorrang vor Backend-Entwicklung
+
 - 🟢 **Was ich heute gelernt habe:**
+  - Plattformspezifische Geräte-Identifikation ist komplex aber lösbar
+  - Sichere Speicherung mit flutter_secure_storage funktioniert zuverlässig
+  - MAC-Adress-Generierung aus Device-IDs ist konsistent reproduzierbar
+  - Clean Code und Produktionsreife erfordern konsequente Refactoring-Zyklen
+  - API-Integration für Geräte-Identifikation läuft nahtlos
+
 - 🟢 **Plan für morgen:**
+  - **FOKUS: Backend-Aufgaben angehen!**
+  - Backend-Architektur analysieren und verstehen
+  - Offene Backend-Issues identifizieren und priorisieren
+  - Erste Backend-Implementierungen starten
+  - Da in den letzten Tagen viele Frontend-Korrekturen gemacht wurden, ist es Zeit sich dem Backend zu widmen
 
 ## Tag 25 (25.07.2025)
 
