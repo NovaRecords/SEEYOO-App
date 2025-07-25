@@ -489,10 +489,21 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 25 (25.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - Backend-Architektur analysieren und verstehen
+  - Offene Backend-Issues identifizieren und priorisieren
+  - Erste Backend-Implementierungen starten
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - Erste Backend-Implementierungen abgeschlossen. 
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - Zur zeit noch keine Blockaden oder Ähnliches..
+
 - 🟢 **Was ich heute gelernt habe:**
+  - VPC, Subnetze, Sicherheitsgruppen - alles noch mal gelernt.
+
 - 🟢 **Plan für morgen:**
+  - am Montag werde ich die Server konfigurieren um eine lauffähige Backend zu bekommen.
 
 ## Tag 26 (26.07.2025)
 
