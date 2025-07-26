@@ -8,6 +8,7 @@ import 'package:seeyoo_app/models/tv_channel.dart';
 import 'package:seeyoo_app/models/tv_genre.dart';
 import 'package:seeyoo_app/services/api_service.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
+import 'package:seeyoo_app/services/wakelock_service.dart';
 
 
 class TvScreen extends StatefulWidget {
@@ -179,6 +180,9 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     _loadGenres();
     _loadSavedCategory(); // Lade die gespeicherte Kategorie
     
+    // Wakelock aktivieren - Bildschirm darf während TV-Wiedergabe nicht ausgehen
+    WakelockService().enableWakelock();
+    
     // Sende sofort einen initialen Ping beim Start
     _pingServer();
     
@@ -213,6 +217,8 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+    
+    // Wakelock bleibt global aktiv - wird nicht deaktiviert
     
     super.dispose();
   }

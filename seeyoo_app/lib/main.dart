@@ -3,14 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:seeyoo_app/screens/splash_screen.dart';
+import 'package:seeyoo_app/services/wakelock_service.dart';
 
-void main() {
+void main() async {
   // Globale Orientierung auf Portrait sperren
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  
+  // Wakelock Service initialisieren - verhindert dass der Bildschirm ausgeht
+  await WakelockService().initialize();
   
   runApp(const MyApp());
 }
@@ -68,7 +72,7 @@ class MyApp extends StatelessWidget {
     
     // Basis-MaterialApp erstellen
     return MaterialApp(
-      title: 'SEEYOO',
+      title: 'SEEYOO TV',
       debugShowCheckedModeBanner: false,
       theme: adjustedTheme.copyWith(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),

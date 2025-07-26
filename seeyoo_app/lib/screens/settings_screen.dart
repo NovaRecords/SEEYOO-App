@@ -20,11 +20,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _saveInProgress = false;
   Map<String, dynamic>? _settings;
   bool _startWithFavorites = false;
-  String _mobileQuality = 'Hoch';
-  String _wifiQuality = 'Hoch';
+  String _mobileQuality = 'Automatisch';
+  String _wifiQuality = 'Automatisch';
   
   // Bitrate-Optionen
-  final List<String> _bitrateOptions = ['Automatisch', 'Hoch', 'Klein'];
+  final List<String> _bitrateOptions = ['Automatisch', 'Hoch', 'Niedrig'];
   
   // App-Version
   String _appVersion = '1.0.0';
@@ -70,15 +70,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (_settings == null) {
         _settings = {
           'start_with_favorites': false,
-          'mobile_quality': 'Hoch',
-          'wifi_quality': 'Hoch',
+          'mobile_quality': 'Automatisch',
+          'wifi_quality': 'Automatisch',
         };
       }
       
       setState(() {
         _startWithFavorites = _settings!['start_with_favorites'] == true || _settings!['start_with_favorites'] == 'true';
-        _mobileQuality = _settings!['mobile_quality']?.toString() ?? 'Hoch';
-        _wifiQuality = _settings!['wifi_quality']?.toString() ?? 'Hoch';
+        _mobileQuality = _settings!['mobile_quality']?.toString() ?? 'Automatisch';
+        _wifiQuality = _settings!['wifi_quality']?.toString() ?? 'Automatisch';
       });
     } catch (e) {
       if (!mounted) return;
@@ -211,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // BITRATE Sektion
-          _buildSectionHeader('BITRATE'),
+          _buildSectionHeader('STREAMING QUALITÄT'),
           _buildBitrateOption('Mobil', _mobileQuality, (value) async {
             setState(() {
               _mobileQuality = value;
@@ -338,7 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () {
         // Navigation zur entsprechenden Seite
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$title Seite wird geöffnet')),
+          SnackBar(content: Text('$title Seite noch nicht verfügbar')),
         );
       },
       child: Padding(
