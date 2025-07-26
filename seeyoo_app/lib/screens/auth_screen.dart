@@ -134,7 +134,7 @@ class _AuthScreenState extends State<AuthScreen> {
               name: firstName,
               secondName: lastName,
               email: email,
-              tariff: 'full_de', // Wichtig: Pflichtfeld für erfolgreiche Registrierung
+              tariff: 'full-de', // Wichtig: Pflichtfeld für erfolgreiche Registrierung
               isTest: false,     // Kein Testbenutzer
             );
             
