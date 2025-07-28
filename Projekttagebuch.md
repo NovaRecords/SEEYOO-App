@@ -513,21 +513,49 @@ Ein Paar Bilder zum Fortschritt:
 
 - 🟢 ** Sonntag **
 
-## Tag 27 (27.07.2025)
-
-- 🟢 **Heutige Hauptaufgaben:**
-- 🟢 **Fortschritt & Ergebnisse:**
-- 🟢 **Herausforderungen & Blockaden:**
-- 🟢 **Was ich heute gelernt habe:**
-- 🟢 **Plan für morgen:**
-
 ## Tag 28 (28.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - Google und Facebook OAuth Login/Registrierung implementieren und testen
+  - CocoaPods-Probleme bei iOS Build beheben
+  - OAuth-Flow end-to-end testen
+  - UI-Verbesserungen im Account-Bereich
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - ✅ **CocoaPods erfolgreich repariert:** Homebrew-Installation und Symlink-Konflikte behoben
+  - ✅ **Google OAuth vollständig implementiert:** End-to-end funktionsfähig
+    - Google Cloud Console OAuth Client konfiguriert (iOS: 17584210819-m8t06j7kiob4g9ucl1dj4v1mvsteh04b)
+    - GoogleService-Info.plist korrekt eingebunden
+    - Info.plist mit GIDClientID und REVERSED_CLIENT_ID konfiguriert
+    - Automatische User-Erstellung in Billing-API (User ID 155 erstellt)
+    - OAuth-Passwort-Generierung und sichere Speicherung
+    - Nahtlose Navigation zur Hauptapp nach Login
+  - ✅ **Facebook OAuth konfiguriert:** App ID 754547147514361, bereit zum Testen
+  - ✅ **OAuth-Service implementiert:** Einheitliche Behandlung von Google/Facebook
+  - ✅ **UI-Cleanup durchgeführt:**
+    - OAuth-Buttons nur noch im Login-Screen (nicht mehr im Registrierungs-Screen)
+    - Geräteinformationen optimiert: "Platform" entfernt, "Version" → "OS Version"
+    - Account-Status-Label verbessert: "aktiviert" → "aktiv"
+    - E-Mail-Anzeige mit intelligentem Zeilenumbruch nach 20 Zeichen
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - **CocoaPods-Installation:** Mehrere Versuche nötig (Ruby gem vs. Homebrew)
+  - **Build-Fehler:** User-Model-Parameter (lname/secondName) existierten nicht
+  - **Google OAuth Konfiguration:** GIDClientID fehlte in Info.plist
+  - **OAuth-Flow-Design:** Entscheidung für MVP-Ansatz ohne Passwort-Option für OAuth-User
+
 - 🟢 **Was ich heute gelernt habe:**
+  - **CocoaPods-Troubleshooting:** Symlink-Konflikte und verschiedene Installationsmethoden
+  - **iOS OAuth-Konfiguration:** Wichtigkeit von GIDClientID und REVERSED_CLIENT_ID
+  - **Flutter OAuth-Integration:** google_sign_in und flutter_facebook_auth Packages
+  - **UX-Design:** OAuth-Buttons strategisch nur im Login-Screen platzieren
+  - **API-Integration:** Billing-API User-Erstellung mit automatischer Passwort-Generierung
+
 - 🟢 **Plan für morgen:**
+  - Backend-Konfiguration und -Optimierung
+  - Server-Setup für produktive Umgebung
+  - Facebook OAuth end-to-end testen
+  - Weitere Backend-Verbesserungen implementieren
 
 ## Tag 29 (29.07.2025)
 
@@ -551,4 +579,4 @@ Ein Paar Bilder zum Fortschritt:
 - 🟢 **Fortschritt & Ergebnisse:**
 - 🟢 **Herausforderungen & Blockaden:**
 - 🟢 **Was ich heute gelernt habe:**
-
+- 🟢 **Plan für morgen:**
