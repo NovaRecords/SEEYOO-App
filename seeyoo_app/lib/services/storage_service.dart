@@ -10,6 +10,7 @@ class StorageService {
   
   // Keys für Secure Storage
   static const String _billingAuthKey = 'billing_auth';
+  static const String _oauthPasswordPrefix = 'oauth_password_'; // Prefix für OAuth-Passwörter
   
   // Keys für SharedPreferences
   static const String _tokenKey = 'auth_token_data';
@@ -336,5 +337,44 @@ class StorageService {
     await prefs.remove('last_favorite_channel'); // Lösche den gespeicherten letzten Favoriten-Kanal
     await prefs.remove('selected_tv_genre'); // Lösche die gespeicherte Genre-ID für den TV-Screen
     await prefs.remove('selected_favorite_tv_genre'); // Lösche die gespeicherte Genre-ID für den TV-Favoriten-Screen
+  }
+  
+  /// OAuth-Passwort für eine E-Mail-Adresse speichern
+  Future<void> saveOAuthPassword(String email, String password) async {
+    try {
+      final key = '$_oauthPasswordPrefix$email';
+      await _secureStorage.write(key: key, value: password);
+      print('StorageService: OAuth password saved for $email');
+    } catch (e) {
+      print('StorageService: Error saving OAuth password for $email: $e');
+    }
+  }
+  
+  /// OAuth-Passwort für eine E-Mail-Adresse abrufen
+  Future<String?> getOAuthPassword(String email) async {
+    try {
+      final key = '$_oauthPasswordPrefix$email';
+      final password = await _secureStorage.read(key: key);
+      if (password != null) {
+        print('StorageService: OAuth password found for $email');
+      } else {
+        print('StorageService: No OAuth password found for $email');
+      }
+      return password;
+    } catch (e) {
+      print('StorageService: Error reading OAuth password for $email: $e');
+      return null;
+    }
+  }
+  
+  /// OAuth-Passwort für eine E-Mail-Adresse löschen
+  Future<void> deleteOAuthPassword(String email) async {
+    try {
+      final key = '$_oauthPasswordPrefix$email';
+      await _secureStorage.delete(key: key);
+      print('StorageService: OAuth password deleted for $email');
+    } catch (e) {
+      print('StorageService: Error deleting OAuth password for $email: $e');
+    }
   }
 }

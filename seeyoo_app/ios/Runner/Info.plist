@@ -65,5 +65,33 @@
 	<string>#000000</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<!-- Google Sign-In Configuration -->
+	<key>GIDClientID</key>
+	<string>17584210819-m8t06j7kiob4g9ucl1dj4v1mvsteh04b.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>google-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.17584210819-m8t06j7kiob4g9ucl1dj4v1mvsteh04b</string>
+			</array>
+		</dict>
+		<!-- Facebook URL Scheme - PLACEHOLDER -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>facebook</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb754547147514361</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Facebook App ID - PLACEHOLDER -->
+	<key>FacebookAppID</key>
+	<string>754547147514361</string>
+	<key>FacebookDisplayName</key>
+	<string>SEEYOO TV</string>
 </dict>
 </plist>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Facebook App ID - PLACEHOLDER -->
+    <!-- Ersetze YOUR_FACEBOOK_APP_ID mit der echten Facebook App ID -->
+    <string name="facebook_app_id">754547147514361</string>
+    <string name="fb_login_protocol_scheme">fb754547147514361</string>
+    <string name="facebook_client_token">2fa1fd5f8e98a821f3b790d93d67b42b</string>
+</resources>

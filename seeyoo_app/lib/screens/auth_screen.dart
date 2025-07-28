@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:seeyoo_app/screens/main_screen.dart';
 import 'package:seeyoo_app/services/api_service.dart';
 import 'package:seeyoo_app/services/storage_service.dart';
+import 'package:seeyoo_app/services/oauth_service.dart';
 import 'package:seeyoo_app/models/user.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _AuthScreenState extends State<AuthScreen> {
   
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
+  final OAuthService _oauthService = OAuthService();
   
   @override
   void initState() {
@@ -242,6 +244,70 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  /// Google OAuth Anmeldung/Registrierung
+  void _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    try {
+      final result = await _oauthService.signInWithGoogle();
+      
+      if (result.success) {
+        print('AuthScreen: Google OAuth successful');
+        // Navigation zum Hauptbildschirm
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      } else {
+        setState(() {
+          _errorMessage = result.errorMessage ?? 'Google Anmeldung fehlgeschlagen';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Google Anmeldung fehlgeschlagen: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Facebook OAuth Anmeldung/Registrierung
+  void _handleFacebookSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    try {
+      final result = await _oauthService.signInWithFacebook();
+      
+      if (result.success) {
+        print('AuthScreen: Facebook OAuth successful');
+        // Navigation zum Hauptbildschirm
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      } else {
+        setState(() {
+          _errorMessage = result.errorMessage ?? 'Facebook Anmeldung fehlgeschlagen';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Facebook Anmeldung fehlgeschlagen: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -314,12 +380,14 @@ class _AuthScreenState extends State<AuthScreen> {
                   'assets/icons/facebook.svg',
                   'Mit Facebook anmelden',
                   Colors.grey[700]!,
+                  _handleFacebookSignIn,
                 ),
                 const SizedBox(height: 16),
                 _buildSocialButton(
                   'assets/icons/google.svg',
                   'Mit Google anmelden',
                   Colors.grey[700]!,
+                  _handleGoogleSignIn,
                 ),
                 const SizedBox(height: 24),
                 // Divider with "oder"
@@ -484,11 +552,9 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildSocialButton(String iconPath, String text, Color color) {
+  Widget _buildSocialButton(String iconPath, String text, Color color, VoidCallback? onPressed) {
     return ElevatedButton(
-      onPressed: () {
-        // TODO: Implement social login
-      },
+      onPressed: _isLoading ? null : onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: color, // Grau für Social Buttons
         padding: const EdgeInsets.symmetric(vertical: 16),

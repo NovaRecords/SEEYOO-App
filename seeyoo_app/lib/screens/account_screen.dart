@@ -286,7 +286,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      _user?.status == 1 ? 'Account aktiviert' : 'Account deaktiviert',
+                      _user?.status == 1 ? 'Account aktiv' : 'Account deaktiviert',
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
@@ -303,7 +303,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
             ),
           ),
           const Divider(color: Color(0xFF3B4248)),
-          _buildInfoItem('E-Mail:', _user?.email ?? 'Nicht angegeben'),
+          _buildInfoItem('E-Mail:', _formatEmail(_user?.email ?? 'Nicht angegeben')),
           _buildInfoItem('vMAC:', _user?.mac ?? 'Nicht angegeben'),
           _buildInfoItem('Tarif:', _user?.tariffPlan ?? 'Standard'),
           if (_user?.endDate != null)
@@ -316,8 +316,7 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
             ),
           ),
           const Divider(color: Color(0xFF3B4248)),
-          _buildInfoItem('Platform:', _platform.isNotEmpty ? _platform : 'Lade...'),
-          _buildInfoItem('Version:', _systemVersion.isNotEmpty ? _systemVersion : 'Lade...'),
+          _buildInfoItem('OS Version:', _systemVersion.isNotEmpty ? _systemVersion : 'Lade...'),
           _buildInfoItem('Gerät:', _model.isNotEmpty ? _model : 'Lade...'),
           const SizedBox(height: 20),
           // Ausloggen-Button
@@ -392,6 +391,24 @@ class _AccountScreenState extends State<AccountScreen> with WidgetsBindingObserv
         ],
       ),
     );
+  }
+
+  // E-Mail nach 20 Zeichen umbrechen für bessere Darstellung
+  String _formatEmail(String email) {
+    if (email.length <= 20) {
+      return email;
+    }
+    
+    // Suche nach einem guten Umbruchpunkt (@ oder .)
+    int breakPoint = 20;
+    
+    // Versuche bei @ zu brechen wenn es in der Nähe ist
+    int atIndex = email.indexOf('@');
+    if (atIndex > 0 && atIndex <= 25) {
+      breakPoint = atIndex;
+    }
+    
+    return email.substring(0, breakPoint) + '\n' + email.substring(breakPoint);
   }
 
   // Einfach den vollständigen Namen aus dem Portal-fname-Feld zurückgeben
