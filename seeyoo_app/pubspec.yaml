@@ -44,8 +44,9 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   video_player: ^2.8.2  # Video Player mit Unterstützung für MPEG4, H264, MPEG2-TS
   wakelock_plus: ^1.2.8  # Verhindert dass der Bildschirm ausgeht
-  google_sign_in: ^6.2.1  # Google OAuth Authentication
-  flutter_facebook_auth: ^7.1.1  # Facebook OAuth Authentication
+  # OAuth dependencies removed - implementation not supported by billing API yet
+  # google_sign_in: ^6.2.1  # Google OAuth Authentication
+  # flutter_facebook_auth: ^7.1.1  # Facebook OAuth Authentication
 
 dev_dependencies:
   flutter_test:

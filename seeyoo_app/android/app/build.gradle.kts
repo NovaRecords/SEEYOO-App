@@ -3,8 +3,8 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    // Google Services Plugin für Firebase/Google Sign-In
-    id("com.google.gms.google-services")
+    // Google Services Plugin removed - OAuth implementation not needed
+    // id("com.google.gms.google-services")
 }
 
 android {
@@ -43,4 +43,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Google Play Services für Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 }

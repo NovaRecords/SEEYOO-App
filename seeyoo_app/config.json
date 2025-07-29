@@ -1,0 +1,17 @@
+{
+  "oauth": {
+    "facebook": {
+      "app_id": "754547147514361",
+      "client_token": "4277f5cae9d155bd49686c1fe3aa72d3"
+    },
+    "google": {
+      "client_id": "17584210819-jvs9dtsokhbroui7brvt1e761unkim7u.apps.googleusercontent.com",
+      "reversed_client_id": "com.googleusercontent.apps.17584210819-m8t06j7kiob4g9ucl1dj4v1mvsteh04b"
+    }
+  },
+  "app": {
+    "name": "SEEYOO TV",
+    "package_name": "com.seeyoo.seeyoo_app",
+    "bundle_id": "de.streaming.seeyooapp"
+  }
+}
