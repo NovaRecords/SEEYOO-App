@@ -560,10 +560,40 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 29 (29.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - OAuth-Implementierung debuggen und finalisieren
+  - Backend-Integration für bestehende Benutzer verbessern
+  - Google Sign-In Konfiguration auf Android optimieren
+  - Entscheidung über OAuth-Zukunft treffen
+  - Projekt-Cleanup und Code-Bereinigung
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - ✅ **OAuth-Problem gelöst:** Google Sign-In funktioniert jetzt auf Android (fehlende Web Client-ID war das Problem)
+  - ✅ **Backend-Logik erweitert:** Bestehende Benutzer werden bei OAuth-Anmeldung korrekt behandelt
+  - ✅ **Strategische Entscheidung:** OAuth-Implementierung entfernt aufgrund Billing-API-Limitationen
+  - ✅ **Code-Bereinigung:** google-services.json, OAuth-Dependencies und Implementierung entfernt
+  - ✅ **UI-Platzhalter:** Google/Facebook Buttons bleiben für zukünftige Implementierung
+  - ✅ **Version Update:** App-Version auf 1.0.0+8 erhöht
+  - ✅ **Git-Management:** Alle Änderungen committet und gepusht
+  - 🔄 **Backend-Arbeit:** Parallel an Backend-Optimierungen gearbeitet
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - **Billing-API-Limitierung:** OAuth-Login ohne Passwort noch nicht unterstützt
+  - **Architektur-Entscheidung:** Zwischen funktionierender aber unvollständiger OAuth-Lösung und sauberer Implementierung entschieden
+  - **Dependency-Management:** Komplexe OAuth-Dependencies erfolgreich entfernt ohne App-Funktionalität zu beeinträchtigen
+
 - 🟢 **Was ich heute gelernt habe:**
+  - **Google OAuth Konfiguration:** Web Client-ID ist für Flutter Android OAuth zwingend erforderlich
+  - **API-Architektur:** Billing-APIs müssen OAuth-spezifische Endpunkte unterstützen für nahtlose Integration
+  - **Code-Hygiene:** Rechtzeitige Entfernung nicht funktionierender Features ist besser als Workarounds
+  - **Git-Workflow:** Strukturierte Commits mit aussagekräftigen Messages für komplexe Änderungen
+  - **Strategische Entwicklung:** Manchmal ist "weniger" mehr - fokussierte Features statt halbfertiger Implementierungen
+
 - 🟢 **Plan für morgen:**
+  - **Backend weiterentwickeln:** Server-Optimierungen und API-Verbesserungen
+  - **Projekt-Präsentation erstellen:** Umfassende Dokumentation der App-Features und Architektur
+  - **Produktions-Vorbereitung:** App für finale Tests und Deployment vorbereiten
+  - **Feature-Dokumentation:** Vollständige Übersicht aller implementierten Funktionen
+  - **OAuth-Roadmap:** Planung für zukünftige OAuth-Integration wenn Billing-API bereit ist
 
 ## Tag 30 (30.07.2025)
 
