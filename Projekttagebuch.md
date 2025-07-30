@@ -598,10 +598,42 @@ Ein Paar Bilder zum Fortschritt:
 ## Tag 30 (30.07.2025)
 
 - 🟢 **Heutige Hauptaufgaben:**
+  - **Backend-Entwicklung:** Server-Optimierungen und API-Verbesserungen vorantreiben
+  - **Projektpräsentation:** Umfassende Dokumentation der App-Features und Architektur erstellen
+  - **vMAC-Kollisionsproblem:** Kritischen Bug bei Android-Geräte-Identifikation lösen
+  - **Code-Qualität:** Robuste Geräte-ID-Generierung implementieren
+
 - 🟢 **Fortschritt & Ergebnisse:**
+  - **✅ vMAC-Kollisionsproblem vollständig gelöst:**
+    - Root Cause identifiziert: `androidInfo.id` aus device_info_plus ist nicht die echte Android ID
+    - android_id Package (v0.3.6) hinzugefügt für echte Android ID
+    - DeviceIdService aktualisiert: `AndroidId().getId()` statt Build-Fingerprint
+    - Erfolgreich getestet: Neue vMAC F6:85:E2:1B:B2:19 generiert
+    - Vollständige API-Integration funktioniert (User ID 165, Portal ID 91)
+  - **Backend-Architektur:** Weitere Optimierungen und Strukturverbesserungen
+  - **Projektpräsentation:** Dokumentation der implementierten Features begonnen
+  - **Code-Hygiene:** Imports korrigiert, dart:math hinzugefügt
+
 - 🟢 **Herausforderungen & Blockaden:**
+  - **vMAC-Kollisionen bei identischen Android-Geräten:** Zwei verschiedene Geräte generierten die gleiche vMAC-Adresse
+  - **device_info_plus Limitation:** `androidInfo.id` gibt Build-Fingerprint statt echter Android ID zurück
+  - **Debugging-Aufwand:** Recherche und Analyse der Android ID Generierung nötig
+  - **Import-Fehler:** Missing dart:math Import führte zu Build-Fehlern
+
 - 🟢 **Was ich heute gelernt habe:**
+  - **Android ID Fallstricke:** device_info_plus `id` Feld ist nicht die echte Android ID
+  - **Kollisionsrisiken:** Identische Gerätemodelle können gleiche Build-Fingerprints haben
+  - **Deterministische vs. Zufällige IDs:** Wichtigkeit konsistenter Geräte-Identifikation
+  - **Package-Recherche:** android_id Package als zuverlässige Alternative
+  - **Debugging-Strategien:** Systematische Analyse von ID-Generierungsproblemen
+  - **API-Integration:** Robuste Geräte-ID-Übertragung an Backend-Services
+
 - 🟢 **Plan für morgen:**
+  - **Backend weiterentwickeln:** Server-Optimierungen und API-Verbesserungen fortsetzen
+  - **vMAC-Tests abschließen:** Zweites Android-Gerät testen für finale Kollisions-Bestätigung
+  - **Projektpräsentation:** Dokumentation vervollständigen
+  - **Code-Review:** Weitere Backend-Komponenten analysieren und optimieren
+  - **Deployment-Vorbereitung:** App für Produktionsumgebung vorbereiten
 
 ## Tag 31 (31.07.2025)
 
