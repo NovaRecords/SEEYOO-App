@@ -40,6 +40,7 @@ dependencies:
   intl: ^0.20.2
   package_info_plus: ^8.3.0  # Für Zugriff auf App-Version und Build-Nummer
   device_info_plus: ^10.1.0  # Für Geräte-spezifische Informationen
+  android_id: ^0.3.6  # Für echte Android ID (verhindert vMAC-Kollisionen)
   crypto: ^3.0.3  # Für SHA256 Hashing
   flutter_secure_storage: ^9.2.4
   video_player: ^2.8.2  # Video Player mit Unterstützung für MPEG4, H264, MPEG2-TS

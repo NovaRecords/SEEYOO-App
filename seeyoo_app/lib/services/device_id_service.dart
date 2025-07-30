@@ -1,9 +1,10 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:convert';
 import 'dart:math';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:crypto/crypto.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:android_id/android_id.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class DeviceIdService {
   static const String _deviceIdKey = 'unique_device_id';
@@ -77,13 +78,13 @@ class DeviceIdService {
 
     try {
       if (Platform.isAndroid) {
-        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        // Verwende echte Android ID statt device_info_plus id (verhindert Kollisionen)
+        const AndroidId androidIdPlugin = AndroidId();
+        identifier = await androidIdPlugin.getId() ?? '';
         
-        // Android ID ist die beste Option für Persistenz über App-Deinstallationen
-        identifier = androidInfo.id ?? '';
-        
-        // Zusätzliche Fallback-Strategie mit Hardware-spezifischen Daten
+        // Fallback-Strategie mit Hardware-spezifischen Daten falls Android ID nicht verfügbar
         if (identifier.isEmpty) {
+          AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
           // Kombiniere Hardware-spezifische Eigenschaften die sich nicht ändern
           List<String> hardwareProps = [
             androidInfo.brand ?? '',
@@ -98,7 +99,7 @@ class DeviceIdService {
           identifier = hardwareProps.join('_');
         }
         
-        print('Android Geräte-ID Quelle: ${identifier.isNotEmpty ? "Android ID oder Hardware-Kombination" : "Fallback"}');
+        print('Android Geräte-ID Quelle: ${identifier.isNotEmpty ? "Echte Android ID oder Hardware-Kombination" : "Fallback"}');
         
       } else if (Platform.isIOS) {
         IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
