@@ -10,6 +10,7 @@ SEEYOO ist eine moderne Live-TV Streaming App für iOS und Android Smartphones, 
 - Projektmanagement-Board: https://github.com/vitalimack/SEEYOO-App/projects/1
 - Team-Meeting-Raum: https://meet.google.com/kxy-gvtc-pbk
 - Projekttagebuch: [hier](Projekttagebuch.md)
+- Abschlusspräsentation: [hier](pics/Präsentation/Abschlussprojekt%20SEEYOO%20App.pdf)
 - Daily Scrum: Mo-Fr 09:15 - 09:30
 
 ## Dokumentation
