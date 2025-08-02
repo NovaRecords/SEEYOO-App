@@ -970,6 +970,11 @@ class ApiService {
             settingsData['start_with_favorites'] = localSettings['start_with_favorites'];
           }
           
+          // Doppeltipp-Landscape Einstellung beibehalten
+          if (localSettings.containsKey('enable_double_tap_landscape')) {
+            settingsData['enable_double_tap_landscape'] = localSettings['enable_double_tap_landscape'];
+          }
+          
           // Kindersicherung beibehalten
           if (localSettings.containsKey('parental_control_enabled')) {
             settingsData['parental_control_enabled'] = localSettings['parental_control_enabled'];

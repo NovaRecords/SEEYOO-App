@@ -20,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _saveInProgress = false;
   Map<String, dynamic>? _settings;
   bool _startWithFavorites = false;
+  bool _enableDoubleTapLandscape = false;
   String _mobileQuality = 'Automatisch';
   String _wifiQuality = 'Automatisch';
   
@@ -59,17 +60,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     try {
       // Einstellungen vom Server laden
-      _settings = await _apiService.getUserSettings();
+      final serverSettings = await _apiService.getUserSettings();
       
-      // Falls keine Einstellungen vom Server verfügbar sind, lokale Einstellungen laden
-      if (_settings == null) {
-        _settings = await _storageService.getUserSettings();
+      // Lokale Einstellungen laden (für lokale-only Settings wie double-tap)
+      final localSettings = await _storageService.getUserSettings();
+      
+      // Server-Settings als Basis verwenden, lokale Settings haben Priorität
+      if (serverSettings != null) {
+        _settings = Map<String, dynamic>.from(serverSettings);
+        // Lokale-only Settings hinzufügen/überschreiben
+        if (localSettings != null) {
+          _settings!['start_with_favorites'] = localSettings['start_with_favorites'] ?? false;
+          _settings!['enable_double_tap_landscape'] = localSettings['enable_double_tap_landscape'] ?? false;
+        }
+      } else {
+        // Fallback: Nur lokale Einstellungen verwenden
+        _settings = localSettings;
       }
       
       // Falls noch immer keine Einstellungen vorhanden sind, Standardwerte verwenden
       if (_settings == null) {
         _settings = {
           'start_with_favorites': false,
+          'enable_double_tap_landscape': false,
           'mobile_quality': 'Automatisch',
           'wifi_quality': 'Automatisch',
         };
@@ -77,6 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       
       setState(() {
         _startWithFavorites = _settings!['start_with_favorites'] == true || _settings!['start_with_favorites'] == 'true';
+        _enableDoubleTapLandscape = _settings!['enable_double_tap_landscape'] == true || _settings!['enable_double_tap_landscape'] == 'true';
         _mobileQuality = _settings!['mobile_quality']?.toString() ?? 'Automatisch';
         _wifiQuality = _settings!['wifi_quality']?.toString() ?? 'Automatisch';
       });
@@ -245,6 +259,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             }
           ),
+          _buildDescriptionText(
+            'Wenn Sie diese Funktion aktivieren, startet die App immer mit Ihren TV-Favoriten.'
+          ),
+          _buildDivider(),
+          
+          // PLAYER Sektion
+          _buildSectionHeader('PLAYER'),
+          _buildSwitchOption(
+            'Doppeltipp für Querformat', 
+            _enableDoubleTapLandscape, 
+            (value) async {
+              setState(() {
+                _enableDoubleTapLandscape = value;
+              });
+              // Nur lokal speichern ohne Server-Update
+              if (_settings != null) {
+                Map<String, dynamic> localSettings = Map<String, dynamic>.from(_settings!);
+                localSettings['enable_double_tap_landscape'] = value;
+                await _storageService.saveUserSettings(localSettings);
+              }
+            }
+          ),
+          _buildDescriptionText(
+            'Falls Sie die automatische Bildschirmdrehung an Ihrem Gerät deaktiviert haben, können Sie diese Funktion nutzen, um den Player per Doppeltipp ins Querformat zu wechseln.'
+          ),
           
           // INFORMATION Sektion
           _buildSectionHeader('INFORMATION'),
@@ -279,6 +318,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       height: 1,
       color: Colors.grey[900],
+    );
+  }
+  
+  Widget _buildDescriptionText(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0, top: 2.0),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF8D9296),
+          fontSize: 14,
+          height: 1.3,
+        ),
+      ),
     );
   }
   

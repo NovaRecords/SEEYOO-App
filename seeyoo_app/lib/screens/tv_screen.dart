@@ -88,6 +88,12 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
   // Zeitstempel der letzten Overlay-Anzeige (um doppelte Anzeige zu verhindern)
   DateTime? _lastOverlayShow;
   
+  // Verfolgt, ob Landscape-Modus durch Doppeltipp gesperrt wurde
+  bool _landscapeLockedByDoubleTap = false;
+  
+  // Verfolgt, ob Doppeltipp-Landscape in den Einstellungen aktiviert ist
+  bool _doubleTapLandscapeEnabled = false;
+  
   // Flag, das anzeigt, ob gerade ein Swipe stattgefunden hat
   bool _recentSwipe = false;
   Timer? _swipeResetTimer;
@@ -170,7 +176,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
     
     // Animation Controller für Fade-in-Effekt initialisieren
     _fadeAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 250), // Verkürzt für schnelleres Einblenden
       vsync: this,
     );
     _fadeAnimation = Tween<double>(
@@ -184,6 +190,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
     _loadChannels();
     _loadGenres();
     _loadSavedCategory(); // Lade die gespeicherte Kategorie
+    _loadDoubleTapLandscapeSetting(); // Lade Doppeltipp-Landscape Einstellung
     
     // Wakelock aktivieren - Bildschirm darf während TV-Wiedergabe nicht ausgehen
     WakelockService().enableWakelock();
@@ -485,6 +492,20 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
         // Setze nur die Genre-ID, die tatsächliche Filterung erfolgt später in _loadChannels
         _selectedGenreId = savedGenreId;
       }
+    }
+  }
+  
+  // Lade die Doppeltipp-Landscape Einstellung
+  Future<void> _loadDoubleTapLandscapeSetting() async {
+    try {
+      final settings = await _storageService.getUserSettings();
+      if (settings != null && mounted) {
+        setState(() {
+          _doubleTapLandscapeEnabled = settings['enable_double_tap_landscape'] == true || settings['enable_double_tap_landscape'] == 'true';
+        });
+      }
+    } catch (e) {
+      print('Fehler beim Laden der Doppeltipp-Landscape Einstellung: $e');
     }
   }
 
@@ -1715,8 +1736,8 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
       _overlayReady = false;
     });
     
-    // Start delay timer (500ms)
-    _overlayDelayTimer = Timer(const Duration(milliseconds: 500), () {
+    // Start delay timer (250ms)
+    _overlayDelayTimer = Timer(const Duration(milliseconds: 250), () {
       if (mounted) {
         setState(() {
           _overlayReady = true;
@@ -1840,19 +1861,6 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Channel Name
-                    Text(
-                      channel.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    
                     // Current Program
                     if (currentProgram != null) ...[
                       Row(
@@ -2065,14 +2073,32 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
           }
         },
         onTap: () {
-          // Kanal-Info anzeigen beim Tippen
-          _showChannelInfoOverlay(forceShow: true);
+          // Wenn Overlay bereits sichtbar ist, sofort ausblenden
+          if (_showChannelInfo && _overlayReady) {
+            _channelInfoTimer?.cancel();
+            _fadeAnimationController.reverse().then((_) {
+              if (mounted) {
+                setState(() {
+                  _showChannelInfo = false;
+                  _overlayReady = false;
+                });
+              }
+            });
+          } else {
+            // Overlay anzeigen beim Tippen
+            _showChannelInfoOverlay(forceShow: true);
+          }
         },
         onDoubleTap: () {
-          // Zu Portrait zurückkehren
+          // Landscape-Lock aufheben und zu Portrait zurückkehren
+          setState(() {
+            _landscapeLockedByDoubleTap = false;
+          });
           SystemChrome.setPreferredOrientations([
             DeviceOrientation.portraitUp,
             DeviceOrientation.portraitDown,
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
           ]);
         },
         child: Stack(
@@ -2213,14 +2239,19 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
   @override
   Widget build(BuildContext context) {
     // Sicherstellen, dass Orientierung immer korrekt gesetzt ist (nach Menü-Wechsel)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  // Aber nur wenn Landscape nicht durch Doppeltipp gesperrt ist
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!_landscapeLockedByDoubleTap) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
-    });
+    }
+    // Doppeltipp-Einstellung aktualisieren (falls sie in Settings geändert wurde)
+    _loadDoubleTapLandscapeSetting();
+  });
     
     // Bildschirmdimensionen abrufen, um die UI responsiv zu gestalten
     final screenWidth = MediaQuery.of(context).size.width;
@@ -2294,14 +2325,26 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
                 // Video Player oder Sender-Logo
                 if (_currentStreamUrl != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
                   Center(
-                    child: Container(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width,
-                        maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
-                      ),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis
-                        child: VideoPlayer(_videoPlayerController!),
+                    child: GestureDetector(
+                      onDoubleTap: _doubleTapLandscapeEnabled ? () {
+                        // Lock in landscape mode until manually unlocked
+                        setState(() {
+                          _landscapeLockedByDoubleTap = true;
+                        });
+                        SystemChrome.setPreferredOrientations([
+                          DeviceOrientation.landscapeLeft,
+                          DeviceOrientation.landscapeRight,
+                        ]);
+                      } : null,
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width,
+                          maxHeight: MediaQuery.of(context).size.width * 9 / 16, // Erzwinge 16:9
+                        ),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9, // Striktes 16:9-Verhältnis
+                          child: VideoPlayer(_videoPlayerController!),
+                        ),
                       ),
                     ),
                   )
