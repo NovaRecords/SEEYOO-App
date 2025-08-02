@@ -202,7 +202,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
   DateTime? _backgroundTime;
   bool _isResuming = false;
 
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
     
     print('App Lifecycle State changed to: $state');
@@ -215,6 +215,17 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
       }
       
       print('App resumed from background - checking connection');
+      
+      // Kurze Verzögerung um Android Auto-Resume abzuwarten
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      // Prüfe ob Player bereits automatisch resumed ist (Android-Verhalten)
+      if (_videoPlayerController?.value.isPlaying == true) {
+        print('Player already resumed automatically - skipping reconnection');
+        _isResuming = false;
+        _backgroundTime = null;
+        return;
+      }
       
       // Berechne wie lange die App im Hintergrund war
       final backgroundDuration = _backgroundTime != null 

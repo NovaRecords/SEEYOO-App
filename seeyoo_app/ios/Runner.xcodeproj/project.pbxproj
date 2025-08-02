@@ -475,7 +475,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CP6X4NBBDQ;
 				ENABLE_BITCODE = NO;
-				FLUTTER_BUILD_NUMBER = 9;
+				FLUTTER_BUILD_NUMBER = 10;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "SEEYOO TV";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -671,7 +671,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CP6X4NBBDQ;
 				ENABLE_BITCODE = NO;
-				FLUTTER_BUILD_NUMBER = 9;
+				FLUTTER_BUILD_NUMBER = 10;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "SEEYOO TV";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
@@ -705,7 +705,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CP6X4NBBDQ;
 				ENABLE_BITCODE = NO;
-				FLUTTER_BUILD_NUMBER = 9;
+				FLUTTER_BUILD_NUMBER = 10;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "SEEYOO TV";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";

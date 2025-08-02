@@ -249,7 +249,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
   DateTime? _backgroundTime;
   bool _isResuming = false;
 
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
     
     print('TvFavoriteScreen - App Lifecycle State changed to: $state');
@@ -262,6 +262,17 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
       }
       
       print('TvFavoriteScreen - App resumed from background - checking connection');
+      
+      // Kurze Verzögerung um Android Auto-Resume abzuwarten
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      // Prüfe ob Player bereits automatisch resumed ist (Android-Verhalten)
+      if (_videoPlayerController?.value.isPlaying == true) {
+        print('TvFavoriteScreen - Player already resumed automatically - skipping reconnection');
+        _isResuming = false;
+        _backgroundTime = null;
+        return;
+      }
       
       // Berechne wie lange die App im Hintergrund war
       final backgroundDuration = _backgroundTime != null 
