@@ -18,7 +18,7 @@ class TvScreen extends StatefulWidget {
   State<TvScreen> createState() => _TvScreenState();
 }
 
-class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
+class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   final StorageService _storageService = StorageService();
   int _selectedTabIndex = -1; // -1 bedeutet kein Tab ist ausgewählt
   int _selectedChannelIndex = 0; // Index des ausgewählten Kanals
@@ -61,6 +61,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
   bool _isLoadingGenres = false;
   String? _currentStreamUrl;
   String? _errorMessage;
+  bool _isDisposingController = false; // Flag um Controller-Dispose zu verfolgen
   bool _showEpgView = false;
   bool _showGenresView = false;
   bool _showMediaLibraryMessage = false;
@@ -131,6 +132,10 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    
+    // App Lifecycle Observer registrieren für Resume-Detection
+    WidgetsBinding.instance.addObserver(this);
+    
     // Systemstatusleiste anzeigen lassen (transparent)
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent, // Transparent status bar
@@ -192,8 +197,128 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     });
   }
   
+  // App Lifecycle State Changes überwachen (für iOS Resume-Problem)
+  @override
+  DateTime? _backgroundTime;
+  bool _isResuming = false;
+
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    print('App Lifecycle State changed to: $state');
+    
+    // Wenn App aus dem Hintergrund zurückkehrt (resumed)
+    if (state == AppLifecycleState.resumed) {
+      if (_isResuming) {
+        print('Resume already in progress, skipping...');
+        return;
+      }
+      
+      print('App resumed from background - checking connection');
+      
+      // Berechne wie lange die App im Hintergrund war
+      final backgroundDuration = _backgroundTime != null 
+          ? DateTime.now().difference(_backgroundTime!)
+          : Duration.zero;
+      
+      print('App was in background for: ${backgroundDuration.inMinutes} minutes (${backgroundDuration.inSeconds} seconds)');
+      
+      // Da Token in Produktion alle 5 Sekunden ablaufen, immer Full Reconnection
+      print('Performing full reconnection (tokens expire every 5 seconds in production)');
+      _performFullReconnection(); 
+    }
+    
+    // Wenn App in den Hintergrund geht - nur beim ersten paused Event speichern
+    else if (state == AppLifecycleState.paused && _backgroundTime == null) {
+      print('App going to background - saving timestamp');
+      _backgroundTime = DateTime.now();
+    }
+    
+    // Wenn App wieder aktiv wird, Background-Zeit zurücksetzen
+    else if (state == AppLifecycleState.resumed) {
+      _backgroundTime = null;
+    }
+  }
+  
+  Future<void> _performQuickRestart() async {
+    if (_isResuming) return;
+    _isResuming = true;
+    
+    try {
+      // Ping senden um Verbindung zu reaktivieren
+      await _pingServer();
+      
+      // Video-Stream neu starten, wenn ein Kanal ausgewählt ist
+      if (_currentStreamUrl != null && _currentStreamUrl!.isNotEmpty) {
+        print('Quick restart - restarting video stream: $_currentStreamUrl');
+        
+        // RESUME: Garbage Collector Strategie um Race Conditions zu vermeiden
+        await _initializeOrUpdatePlayer(_currentStreamUrl!, disposeOldController: false);
+      }
+    } catch (e) {
+      print('Quick restart failed: $e - performing full reconnection');
+      await _performFullReconnection();
+    } finally {
+      _isResuming = false;
+    }
+  }
+  
+  Future<void> _performFullReconnection() async {
+    if (_isResuming) return;
+    _isResuming = true;
+    
+    try {
+      print('Starting full reconnection process...');
+      
+      // 1. Server-Verbindung testen und wiederherstellen
+      await _pingServer();
+      
+      // 2. Session validieren/erneuern
+      print('Validating session...');
+      try {
+        await _apiService.pingServer();
+      } catch (e) {
+        print('Session validation failed: $e');
+        // Bei Session-Problemen könnte eine Neuanmeldung nötig sein
+      }
+      
+      // 3. Kanalliste neu laden
+      print('Reloading channel list...');
+      await _loadChannels();
+      
+      // 4. Aktuellen Stream wiederherstellen
+      if (_currentStreamUrl != null && _currentStreamUrl!.isNotEmpty) {
+        print('Full reconnection - restarting video stream: $_currentStreamUrl');
+        
+        // RESUME: Garbage Collector Strategie um Race Conditions zu vermeiden
+        await _initializeOrUpdatePlayer(_currentStreamUrl!, disposeOldController: false);
+      }
+      
+      print('Full reconnection completed successfully');
+      
+    } catch (e) {
+      print('Full reconnection failed: $e');
+      
+      // Als letzter Ausweg: Fehlermeldung anzeigen
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verbindung wiederhergestellt. Bitte Kanal neu wählen falls Probleme auftreten.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      _isResuming = false;
+    }
+  }
+  
   @override
   void dispose() {
+    // App Lifecycle Observer entfernen
+    WidgetsBinding.instance.removeObserver(this);
+    
     // ScrollController freigeben, wenn das Widget entsorgt wird
     _genresScrollController.dispose();
     _channelListController.dispose();
@@ -205,8 +330,13 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
     _swipeResetTimer?.cancel();
     _apiService.removeMediaInfo(); // Media-Info beim Verlassen des Screens entfernen
     
-    // VideoPlayer freigeben
-    _videoPlayerController?.dispose();
+    // HYBRIDE LÖSUNG: Beim Screen-Wechsel explizit dispose() um Player zu stoppen
+    // (Bei Controller-Neuinitialisierung verwenden wir weiterhin Garbage Collector)
+    if (_videoPlayerController != null) {
+      print('Disposing VideoPlayerController on screen exit...');
+      _videoPlayerController!.dispose();
+      _videoPlayerController = null;
+    }
     
     // Animation Controller freigeben
     _swipeAnimationController.dispose();
@@ -1265,12 +1395,19 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin {
   }
   
   // Initialisiert oder aktualisiert den VideoPlayer
-  Future<void> _initializeOrUpdatePlayer(String url) async {
+  Future<void> _initializeOrUpdatePlayer(String url, {bool disposeOldController = true}) async {
     try {
       if (_videoPlayerController != null) {
-        // Wenn der Controller bereits existiert, freigeben und neu erstellen
-        await _videoPlayerController!.dispose();
-        _videoPlayerController = null;
+        if (disposeOldController) {
+          // KANALWECHSEL: Explizites dispose() um alten Player zu stoppen
+          print('Disposing old VideoPlayerController for channel switch...');
+          await _videoPlayerController!.dispose();
+          _videoPlayerController = null;
+        } else {
+          // RESUME: Garbage Collector Strategie um Race Conditions zu vermeiden
+          print('Creating new VideoPlayerController (old controller will be garbage collected)...');
+          _videoPlayerController = null;
+        }
       }
       
       // Http-Header für die Stream-Anfrage

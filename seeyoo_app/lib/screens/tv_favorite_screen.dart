@@ -181,6 +181,10 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
   @override
   void initState() {
     super.initState();
+    
+    // App Lifecycle Observer registrieren für Resume-Detection
+    WidgetsBinding.instance.addObserver(this);
+    
     // Systemstatusleiste anzeigen lassen (transparent)
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent, // Transparent status bar
@@ -240,13 +244,120 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     });
   }
   
+  // App Lifecycle State Changes überwachen (für iOS Resume-Problem)
   @override
+  DateTime? _backgroundTime;
+  bool _isResuming = false;
+
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Bei App-Pause/Hintergrund Video pausieren, bei Wiederaufnahme fortsetzen
-    if (state == AppLifecycleState.paused) {
-      _videoPlayerController?.pause();
-    } else if (state == AppLifecycleState.resumed) {
-      _videoPlayerController?.play();
+    super.didChangeAppLifecycleState(state);
+    
+    print('TvFavoriteScreen - App Lifecycle State changed to: $state');
+    
+    // Wenn App aus dem Hintergrund zurückkehrt (resumed)
+    if (state == AppLifecycleState.resumed) {
+      if (_isResuming) {
+        print('TvFavoriteScreen - Resume already in progress, skipping...');
+        return;
+      }
+      
+      print('TvFavoriteScreen - App resumed from background - checking connection');
+      
+      // Berechne wie lange die App im Hintergrund war
+      final backgroundDuration = _backgroundTime != null 
+          ? DateTime.now().difference(_backgroundTime!)
+          : Duration.zero;
+      
+      print('TvFavoriteScreen - App was in background for: ${backgroundDuration.inMinutes} minutes (${backgroundDuration.inSeconds} seconds)');
+      
+      // Da Token in Produktion alle 5 Sekunden ablaufen, immer Full Reconnection
+      print('TvFavoriteScreen - Performing full reconnection (tokens expire every 5 seconds in production)');
+      _performFullReconnection();
+    }
+    
+    // Wenn App in den Hintergrund geht - nur beim ersten paused Event speichern
+    else if (state == AppLifecycleState.paused && _backgroundTime == null) {
+      print('TvFavoriteScreen - App going to background - saving timestamp');
+      _backgroundTime = DateTime.now();
+    }
+    
+    // Wenn App wieder aktiv wird, Background-Zeit zurücksetzen
+    else if (state == AppLifecycleState.resumed) {
+      _backgroundTime = null;
+    }
+  }
+  
+  Future<void> _performQuickRestart() async {
+    if (_isResuming) return;
+    _isResuming = true;
+    
+    try {
+      // Ping senden um Verbindung zu reaktivieren
+      await _pingServer();
+      
+      // Video-Stream neu starten, wenn ein Kanal ausgewählt ist
+      if (_currentStreamUrl != null && _currentStreamUrl!.isNotEmpty) {
+        print('TvFavoriteScreen - Quick restart - restarting video stream: $_currentStreamUrl');
+        
+        // RESUME: Garbage Collector Strategie um Race Conditions zu vermeiden
+        await _initializeOrUpdatePlayer(_currentStreamUrl!, disposeOldController: false);
+      }
+    } catch (e) {
+      print('TvFavoriteScreen - Quick restart failed: $e - performing full reconnection');
+      await _performFullReconnection();
+    } finally {
+      _isResuming = false;
+    }
+  }
+  
+  Future<void> _performFullReconnection() async {
+    if (_isResuming) return;
+    _isResuming = true;
+    
+    try {
+      print('TvFavoriteScreen - Starting full reconnection process...');
+      
+      // 1. Server-Verbindung testen und wiederherstellen
+      await _pingServer();
+      
+      // 2. Session validieren/erneuern
+      print('TvFavoriteScreen - Validating session...');
+      try {
+        await _apiService.pingServer();
+      } catch (e) {
+        print('TvFavoriteScreen - Session validation failed: $e');
+        // Bei Session-Problemen könnte eine Neuanmeldung nötig sein
+      }
+      
+      // 3. Favoriten-Kanalliste neu laden
+      print('TvFavoriteScreen - Reloading favorite channels...');
+      await _loadFavoriteChannels();
+      
+      // 4. Aktuellen Stream wiederherstellen
+      if (_currentStreamUrl != null && _currentStreamUrl!.isNotEmpty) {
+        print('TvFavoriteScreen - Full reconnection - restarting video stream: $_currentStreamUrl');
+        
+        // RESUME: Garbage Collector Strategie um Race Conditions zu vermeiden
+        await _initializeOrUpdatePlayer(_currentStreamUrl!, disposeOldController: false);
+      }
+      
+      print('TvFavoriteScreen - Full reconnection completed successfully');
+      
+    } catch (e) {
+      print('TvFavoriteScreen - Full reconnection failed: $e');
+      
+      // Als letzter Ausweg: Fehlermeldung anzeigen
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verbindung wiederhergestellt. Bitte Kanal neu wählen falls Probleme auftreten.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      _isResuming = false;
     }
   }
   
@@ -293,8 +404,13 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     _swipeResetTimer?.cancel();
     _apiService.removeMediaInfo(); // Media-Info beim Verlassen des Screens entfernen
     
-    // VideoPlayerController freigeben
-    _videoPlayerController?.dispose();
+    // HYBRIDE LÖSUNG: Beim Screen-Wechsel explizit dispose() um Player zu stoppen
+    // (Bei Controller-Neuinitialisierung verwenden wir weiterhin Garbage Collector)
+    if (_videoPlayerController != null) {
+      print('TvFavoriteScreen - Disposing VideoPlayerController on screen exit...');
+      _videoPlayerController!.dispose();
+      _videoPlayerController = null;
+    }
     
     // Animation Controller freigeben
     _swipeAnimationController.dispose();
@@ -311,12 +427,19 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
 
   
   // Player-Initialisierung ähnlich wie im TV-Screen
-  Future<void> _initializeOrUpdatePlayer(String url) async {
+  Future<void> _initializeOrUpdatePlayer(String url, {bool disposeOldController = true}) async {
     try {
       if (_videoPlayerController != null) {
-        // Wenn der Controller bereits existiert, freigeben und neu erstellen
-        await _videoPlayerController!.dispose();
-        _videoPlayerController = null;
+        if (disposeOldController) {
+          // KANALWECHSEL: Explizites dispose() um alten Player zu stoppen
+          print('TvFavoriteScreen - Disposing old VideoPlayerController for channel switch...');
+          await _videoPlayerController!.dispose();
+          _videoPlayerController = null;
+        } else {
+          // RESUME: Garbage Collector Strategie um Race Conditions zu vermeiden
+          print('TvFavoriteScreen - Creating new VideoPlayerController (old controller will be garbage collected)...');
+          _videoPlayerController = null;
+        }
       }
       
       // Http-Header für die Stream-Anfrage
