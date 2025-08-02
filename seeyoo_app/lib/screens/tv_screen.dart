@@ -230,7 +230,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
       if (_videoPlayerController?.value.isPlaying == true) {
         print('Player already resumed automatically - skipping reconnection');
         _isResuming = false;
-        _backgroundTime = null;
+        _backgroundTime = null; // Background-Zeit zurücksetzen
         return;
       }
       
@@ -243,18 +243,16 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
       
       // Da Token in Produktion alle 5 Sekunden ablaufen, immer Full Reconnection
       print('Performing full reconnection (tokens expire every 5 seconds in production)');
-      _performFullReconnection(); 
+      await _performFullReconnection();
+      
+      // Background-Zeit nach erfolgreichem Reconnect zurücksetzen
+      _backgroundTime = null;
     }
     
     // Wenn App in den Hintergrund geht - nur beim ersten paused Event speichern
     else if (state == AppLifecycleState.paused && _backgroundTime == null) {
       print('App going to background - saving timestamp');
       _backgroundTime = DateTime.now();
-    }
-    
-    // Wenn App wieder aktiv wird, Background-Zeit zurücksetzen
-    else if (state == AppLifecycleState.resumed) {
-      _backgroundTime = null;
     }
   }
   
@@ -308,7 +306,15 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
       if (_currentStreamUrl != null && _currentStreamUrl!.isNotEmpty) {
         print('Full reconnection - restarting video stream: $_currentStreamUrl');
         
-        // RESUME: Garbage Collector Strategie um Race Conditions zu vermeiden
+        // RESUME: Explizites dispose() mit Wartezeit um disposed-Fehler zu vermeiden
+        if (_videoPlayerController != null) {
+          print('Disposing old controller before resume reconnection...');
+          await _videoPlayerController!.dispose();
+          _videoPlayerController = null;
+          // Längere Wartezeit für Resume um alle async Operationen abzuschließen
+          await Future.delayed(Duration(milliseconds: 800));
+        }
+        
         await _initializeOrUpdatePlayer(_currentStreamUrl!, disposeOldController: false);
       }
       
@@ -1433,7 +1439,13 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
         if (disposeOldController) {
           // KANALWECHSEL: Explizites dispose() um alten Player zu stoppen
           print('Disposing old VideoPlayerController for channel switch...');
-          await _videoPlayerController!.dispose();
+          try {
+            // Versuche dispose() - wenn Controller bereits disposed ist, wird Exception gefangen
+            await _videoPlayerController!.dispose();
+            print('Controller disposed successfully');
+          } catch (e) {
+            print('Controller already disposed or error during dispose: $e');
+          }
           _videoPlayerController = null;
         } else {
           // RESUME: Garbage Collector Strategie um Race Conditions zu vermeiden
