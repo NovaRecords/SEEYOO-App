@@ -221,38 +221,33 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
         return;
       }
       
-      print('App resumed from background - checking connection');
-      
-      // Kurze Verzögerung um Android Auto-Resume abzuwarten
-      await Future.delayed(Duration(milliseconds: 500));
-      
-      // Prüfe ob Player bereits automatisch resumed ist (Android-Verhalten)
-      if (_videoPlayerController?.value.isPlaying == true) {
-        print('Player already resumed automatically - skipping reconnection');
-        _isResuming = false;
-        _backgroundTime = null; // Background-Zeit zurücksetzen
-        return;
-      }
-      
-      // Berechne wie lange die App im Hintergrund war
-      final backgroundDuration = _backgroundTime != null 
-          ? DateTime.now().difference(_backgroundTime!)
-          : Duration.zero;
-      
-      print('App was in background for: ${backgroundDuration.inMinutes} minutes (${backgroundDuration.inSeconds} seconds)');
-      
-      // Da Token in Produktion alle 5 Sekunden ablaufen, immer Full Reconnection
-      print('Performing full reconnection (tokens expire every 5 seconds in production)');
-      await _performFullReconnection();
-      
-      // Background-Zeit nach erfolgreichem Reconnect zurücksetzen
-      _backgroundTime = null;
+      print('App resumed from background - performing reconnection');
+    
+    // Berechne wie lange die App im Hintergrund war
+    final backgroundDuration = _backgroundTime != null 
+        ? DateTime.now().difference(_backgroundTime!)
+        : Duration.zero;
+    
+    print('App was in background for: ${backgroundDuration.inMinutes} minutes (${backgroundDuration.inSeconds} seconds)');
+    
+    // IMMER Full Reconnection - Token ablaufen in Produktion alle 5 Sekunden
+    print('Performing full reconnection (tokens expire every 5 seconds in production - always reconnect)');
+    await _performFullReconnection();
+    
+    // Background-Zeit nach erfolgreichem Reconnect zurücksetzen
+    _backgroundTime = null;
     }
     
     // Wenn App in den Hintergrund geht - nur beim ersten paused Event speichern
     else if (state == AppLifecycleState.paused && _backgroundTime == null) {
       print('App going to background - saving timestamp');
       _backgroundTime = DateTime.now();
+      
+      // Player explizit stoppen um Auto-Resume zu verhindern
+      if (_videoPlayerController != null && _videoPlayerController!.value.isPlaying) {
+        print('Stopping player to prevent auto-resume before reconnection');
+        await _videoPlayerController!.pause();
+      }
     }
   }
   

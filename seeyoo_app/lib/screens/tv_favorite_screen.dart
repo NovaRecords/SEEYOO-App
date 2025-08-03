@@ -268,38 +268,33 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
         return;
       }
       
-      print('TvFavoriteScreen - App resumed from background - checking connection');
-      
-      // Kurze Verzögerung um Android Auto-Resume abzuwarten
-      await Future.delayed(Duration(milliseconds: 500));
-      
-      // Prüfe ob Player bereits automatisch resumed ist (Android-Verhalten)
-      if (_videoPlayerController?.value.isPlaying == true) {
-        print('TvFavoriteScreen - Player already resumed automatically - skipping reconnection');
-        _isResuming = false;
-        _backgroundTime = null; // Background-Zeit zurücksetzen
-        return;
-      }
-      
-      // Berechne wie lange die App im Hintergrund war
-      final backgroundDuration = _backgroundTime != null 
-          ? DateTime.now().difference(_backgroundTime!)
-          : Duration.zero;
-      
-      print('TvFavoriteScreen - App was in background for: ${backgroundDuration.inMinutes} minutes (${backgroundDuration.inSeconds} seconds)');
-      
-      // Da Token in Produktion alle 5 Sekunden ablaufen, immer Full Reconnection
-      print('TvFavoriteScreen - Performing full reconnection (tokens expire every 5 seconds in production)');
-      await _performFullReconnection();
-      
-      // Background-Zeit nach erfolgreichem Reconnect zurücksetzen
-      _backgroundTime = null;
+      print('TvFavoriteScreen - App resumed from background - performing reconnection');
+    
+    // Berechne wie lange die App im Hintergrund war
+    final backgroundDuration = _backgroundTime != null 
+        ? DateTime.now().difference(_backgroundTime!)
+        : Duration.zero;
+    
+    print('TvFavoriteScreen - App was in background for: ${backgroundDuration.inMinutes} minutes (${backgroundDuration.inSeconds} seconds)');
+    
+    // IMMER Full Reconnection - Token ablaufen in Produktion alle 5 Sekunden
+    print('TvFavoriteScreen - Performing full reconnection (tokens expire every 5 seconds in production - always reconnect)');
+    await _performFullReconnection();
+    
+    // Background-Zeit nach erfolgreichem Reconnect zurücksetzen
+    _backgroundTime = null;
     }
     
     // Wenn App in den Hintergrund geht - nur beim ersten paused Event speichern
     else if (state == AppLifecycleState.paused && _backgroundTime == null) {
       print('TvFavoriteScreen - App going to background - saving timestamp');
       _backgroundTime = DateTime.now();
+      
+      // Player explizit stoppen um Auto-Resume zu verhindern
+      if (_videoPlayerController != null && _isControllerInitialized() && _videoPlayerController!.value.isPlaying) {
+        print('TvFavoriteScreen - Stopping player to prevent auto-resume before reconnection');
+        await _videoPlayerController!.pause();
+      }
     }
   }
   
@@ -449,6 +444,16 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
     super.dispose();
   }
 
+  
+  // Sichere Prüfung ob Controller initialisiert ist (verhindert disposed-Fehler)
+  bool _isControllerInitialized() {
+    try {
+      return _videoPlayerController != null && _videoPlayerController!.value.isInitialized;
+    } catch (e) {
+      // Controller ist disposed oder hat einen Fehler
+      return false;
+    }
+  }
   
   // Player-Initialisierung ähnlich wie im TV-Screen
   Future<void> _initializeOrUpdatePlayer(String url, {bool disposeOldController = true}) async {
@@ -2485,7 +2490,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
                         Transform.translate(
                           offset: Offset(currentOffset, 0),
                           child: _currentStreamUrl != null && _videoPlayerController != null && 
-                                 _videoPlayerController!.value.isInitialized
+                                 _isControllerInitialized()
                               ? VideoPlayer(_videoPlayerController!)
                               : _errorMessage != null
                                   ? Column(
@@ -2671,7 +2676,7 @@ class _TvFavoriteScreenState extends State<TvFavoriteScreen> with AutomaticKeepA
             child: Stack(
               children: [
                 // Video Player oder Sender-Logo
-                if (_currentStreamUrl != null && _videoPlayerController != null && _videoPlayerController!.value.isInitialized)
+                if (_currentStreamUrl != null && _videoPlayerController != null && _isControllerInitialized())
                   Center(
                     child: Container(
                       constraints: BoxConstraints(
