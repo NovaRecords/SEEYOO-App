@@ -93,5 +93,8 @@
 	<string>754547147514361</string>
 	<key>FacebookDisplayName</key>
 	<string>SEEYOO TV</string>
+	<!-- Face ID / Touch ID Berechtigung -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Diese App verwendet Face ID für eine sichere und bequeme Anmeldung.</string>
 </dict>
 </plist>

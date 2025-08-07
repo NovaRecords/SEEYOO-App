@@ -11,6 +11,8 @@ class StorageService {
   // Keys für Secure Storage
   static const String _billingAuthKey = 'billing_auth';
   static const String _oauthPasswordPrefix = 'oauth_password_'; // Prefix für OAuth-Passwörter
+  static const String _savedEmailKey = 'saved_email'; // Gespeicherte E-Mail für "Remember Me"
+  static const String _savedPasswordKey = 'saved_password'; // Gespeichertes Passwort für "Remember Me"
   
   // Keys für SharedPreferences
   static const String _tokenKey = 'auth_token_data';
@@ -312,6 +314,7 @@ class StorageService {
   }
 
   /// Alle Benutzerdaten löschen (zusätzlich zu Auth-Daten)
+  /// WICHTIG: Löscht NICHT die "Remember Me" Daten - diese bleiben erhalten
   Future<void> clearAuthData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
@@ -327,18 +330,33 @@ class StorageService {
     // Auch sensible Daten aus Secure Storage löschen
     try {
       await _secureStorage.delete(key: _billingAuthKey);
+      // WICHTIG: Remember Me Daten werden NICHT gelöscht bei clearAuthData()
+      // Diese werden nur bei explizitem Logout gelöscht
+      // await clearSavedLoginCredentials(); // ENTFERNT - nur bei Logout
+      // await clearBiometricData(); // ENTFERNT - nur bei Logout
     } catch (e) {
       print('Fehler beim Löschen von Secure Storage Daten: $e');
       // Fehler ignorieren, da dies den Logout nicht blockieren sollte
     }
     // Die benutzerspezifischen Favoriten-Reihenfolgen werden NICHT gelöscht
-  // await prefs.remove('favorites_order'); // Alte nicht-benutzerspezifische Sortierung kann gelöscht werden
-    await prefs.remove('last_tv_channel'); // Lösche den gespeicherten letzten TV-Kanal
-    await prefs.remove('last_favorite_channel'); // Lösche den gespeicherten letzten Favoriten-Kanal
-    await prefs.remove('selected_tv_genre'); // Lösche die gespeicherte Genre-ID für den TV-Screen
-    await prefs.remove('selected_favorite_tv_genre'); // Lösche die gespeicherte Genre-ID für den TV-Favoriten-Screen
+    // da diese auch nach einem Logout erhalten bleiben sollen
+    print('StorageService: Auth data cleared');
   }
-  
+
+  /// Alle Benutzerdaten inklusive "Remember Me" Daten löschen (für expliziten Logout)
+  Future<void> clearAllUserDataIncludingRememberMe() async {
+    // Erst die normalen Auth-Daten löschen
+    await clearAuthData();
+    
+    // Dann auch die "Remember Me" Daten löschen
+    try {
+      await clearSavedLoginCredentials();
+      print('StorageService: All user data including Remember Me cleared');
+    } catch (e) {
+      print('StorageService: Error clearing Remember Me data: $e');
+    }
+  }
+
   /// OAuth-Passwort für eine E-Mail-Adresse speichern
   Future<void> saveOAuthPassword(String email, String password) async {
     try {
@@ -377,4 +395,57 @@ class StorageService {
       print('StorageService: Error deleting OAuth password for $email: $e');
     }
   }
+
+  // === LOGIN-DATEN SPEICHERN ("REMEMBER ME") ===
+  
+  /// Speichert E-Mail und Passwort für "Remember Me" Funktionalität
+  Future<void> saveLoginCredentials(String email, String password) async {
+    try {
+      await _secureStorage.write(key: _savedEmailKey, value: email);
+      await _secureStorage.write(key: _savedPasswordKey, value: password);
+      print('StorageService: Login credentials saved for $email');
+    } catch (e) {
+      print('StorageService: Error saving login credentials: $e');
+    }
+  }
+  
+  /// Lädt gespeicherte Login-Daten
+  Future<Map<String, String?>> getSavedLoginCredentials() async {
+    try {
+      final email = await _secureStorage.read(key: _savedEmailKey);
+      final password = await _secureStorage.read(key: _savedPasswordKey);
+      return {
+        'email': email,
+        'password': password,
+      };
+    } catch (e) {
+      print('StorageService: Error reading saved login credentials: $e');
+      return {'email': null, 'password': null};
+    }
+  }
+  
+  /// Prüft ob Login-Daten gespeichert sind
+  Future<bool> hasSavedLoginCredentials() async {
+    try {
+      final email = await _secureStorage.read(key: _savedEmailKey);
+      final password = await _secureStorage.read(key: _savedPasswordKey);
+      return email != null && password != null && email.isNotEmpty && password.isNotEmpty;
+    } catch (e) {
+      print('StorageService: Error checking saved login credentials: $e');
+      return false;
+    }
+  }
+  
+  /// Löscht gespeicherte Login-Daten
+  Future<void> clearSavedLoginCredentials() async {
+    try {
+      await _secureStorage.delete(key: _savedEmailKey);
+      await _secureStorage.delete(key: _savedPasswordKey);
+      print('StorageService: Saved login credentials cleared');
+    } catch (e) {
+      print('StorageService: Error clearing saved login credentials: $e');
+    }
+  }
+
+
 }

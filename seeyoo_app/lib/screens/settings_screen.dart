@@ -243,7 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }),
           
           // FAVORITEN Sektion
-          _buildSectionHeader('FAVORITEN'),
+          _buildSectionHeader('START'),
           _buildSwitchOption(
             'App starten mit TV Favoriten', 
             _startWithFavorites, 

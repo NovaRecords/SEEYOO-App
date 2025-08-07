@@ -208,6 +208,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
   @override
   DateTime? _backgroundTime;
   bool _isResuming = false;
+  bool _isFirstAppStart = true; // Flag für ersten App-Start
 
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
@@ -218,6 +219,13 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
     if (state == AppLifecycleState.resumed) {
       if (_isResuming) {
         print('Resume already in progress, skipping...');
+        return;
+      }
+      
+      // Beim ersten App-Start keine Reconnection durchführen
+      if (_isFirstAppStart) {
+        print('First app start detected - skipping reconnection');
+        _isFirstAppStart = false;
         return;
       }
       

@@ -30,6 +30,9 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   
+  // Remember Me State
+  bool _rememberMe = false;
+  
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
   final OAuthService _oauthService = OAuthService();
@@ -37,8 +40,15 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
+    print('AuthScreen: initState() called');
     // Statusleiste während des Auth-Screens ausblenden
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    
+    // Gespeicherte Login-Daten laden
+    print('AuthScreen: Calling _loadSavedCredentials()...');
+    _loadSavedCredentials();
+    
+    print('AuthScreen: initState() completed');
   }
 
   @override
@@ -109,6 +119,19 @@ class _AuthScreenState extends State<AuthScreen> {
             if (authResponse.userId != null) {
               await _storageService.setBillingUserId(authResponse.userId!);
               print('Auth: Using authenticated user ID: ${authResponse.userId}');
+            }
+            
+            // Remember Me Funktionalität
+            if (_rememberMe) {
+              await _storageService.saveLoginCredentials(
+                _emailController.text.trim(),
+                _passwordController.text,
+              );
+              print('Auth: Login credentials saved for Remember Me');
+            } else {
+              // Remember Me deaktiviert - gespeicherte Daten löschen
+              await _storageService.clearSavedLoginCredentials();
+              print('Auth: Cleared saved login credentials');
             }
             
             // Navigation zum Hauptbildschirm
@@ -286,24 +309,25 @@ class _AuthScreenState extends State<AuthScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     try {
       final result = await _oauthService.signInWithFacebook();
       
       if (result.success) {
-        print('AuthScreen: Facebook OAuth successful');
-        // Navigation zum Hauptbildschirm
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
+        // Navigation zum MainScreen
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        }
       } else {
         setState(() {
-          _errorMessage = result.errorMessage ?? 'Facebook Anmeldung fehlgeschlagen';
+          _errorMessage = result.errorMessage ?? 'Facebook-Anmeldung fehlgeschlagen';
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Facebook Anmeldung fehlgeschlagen: $e';
+        _errorMessage = 'Fehler bei der Facebook-Anmeldung: $e';
       });
     } finally {
       setState(() {
@@ -311,6 +335,38 @@ class _AuthScreenState extends State<AuthScreen> {
       });
     }
   }
+
+  /// Lädt gespeicherte Login-Daten
+  void _loadSavedCredentials() async {
+    print('AuthScreen: _loadSavedCredentials() called');
+    try {
+      final credentials = await _storageService.getSavedLoginCredentials();
+      final hasSaved = await _storageService.hasSavedLoginCredentials();
+      
+      print('AuthScreen: hasSaved=$hasSaved, credentials=$credentials');
+      
+      if (hasSaved && credentials['email'] != null && credentials['password'] != null) {
+        setState(() {
+          _emailController.text = credentials['email']!;
+          _passwordController.text = credentials['password']!;
+          _rememberMe = true;
+        });
+        print('AuthScreen: ✅ Loaded saved credentials for ${credentials['email']}');
+        print('AuthScreen: ✅ Email field set to: ${_emailController.text}');
+        print('AuthScreen: ✅ Password field set to: ${_passwordController.text.isNotEmpty ? '[HIDDEN]' : '[EMPTY]'}');
+        print('AuthScreen: ✅ Remember Me checkbox set to: $_rememberMe');
+      } else {
+        print('AuthScreen: ❌ No saved credentials found or incomplete data');
+        print('AuthScreen: ❌ hasSaved=$hasSaved');
+        print('AuthScreen: ❌ email=${credentials['email']}');
+        print('AuthScreen: ❌ password=${credentials['password'] != null ? '[EXISTS]' : '[NULL]'}');
+      }
+    } catch (e) {
+      print('AuthScreen: ❌ Error loading saved credentials: $e');
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -512,6 +568,37 @@ class _AuthScreenState extends State<AuthScreen> {
                           },
                         ),
                       ],
+                      
+                      // Remember Me Checkbox (nur bei Login)
+                      if (isLogin) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (value) {
+                                setState(() {
+                                  _rememberMe = value ?? false;
+                                });
+                              },
+                              activeColor: const Color(0xFFA1273B),
+                              checkColor: Colors.white,
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Anmeldedaten merken',
+                                style: GoogleFonts.montserrat(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      
+                      // Face ID Button entfernt - automatische Authentifizierung beim App-Start
+                      
                       const SizedBox(height: 32),
                       // Error Message (falls vorhanden)
                       if (_errorMessage != null && _errorMessage!.isNotEmpty)
@@ -527,7 +614,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       // Login/Register Button
                       Center(
                         child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.4, // 40% of screen width
+                          width: MediaQuery.of(context).size.width * 0.7, // 70% of screen width - konsistent mit Face ID Button
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _submit,
                             style: ElevatedButton.styleFrom(
