@@ -26,6 +26,10 @@ class _AuthScreenState extends State<AuthScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   
+  // Passwort-Sichtbarkeits-State
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+  
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
   final OAuthService _oauthService = OAuthService();
@@ -471,6 +475,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         hint: 'Passwort',
                         icon: Icons.lock_outline,
                         obscureText: true,
+                        isPasswordVisible: _isPasswordVisible,
+                        onTogglePasswordVisibility: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Bitte geben Sie ein Passwort ein';
@@ -488,6 +498,12 @@ class _AuthScreenState extends State<AuthScreen> {
                           hint: 'Passwort bestätigen',
                           icon: Icons.lock_outline,
                           obscureText: true,
+                          isPasswordVisible: _isConfirmPasswordVisible,
+                          onTogglePasswordVisibility: () {
+                            setState(() {
+                              _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                            });
+                          },
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Bitte bestätigen Sie Ihr Passwort';
@@ -593,10 +609,12 @@ class _AuthScreenState extends State<AuthScreen> {
     bool obscureText = false,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    bool? isPasswordVisible,
+    VoidCallback? onTogglePasswordVisibility,
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: obscureText,
+      obscureText: obscureText && (isPasswordVisible == null || !isPasswordVisible),
       keyboardType: keyboardType,
       validator: validator,
       style: GoogleFonts.montserrat(
@@ -610,6 +628,15 @@ class _AuthScreenState extends State<AuthScreen> {
           fontSize: 18,
         ),
         prefixIcon: Icon(icon, color: Colors.white54),
+        suffixIcon: obscureText && onTogglePasswordVisibility != null
+            ? IconButton(
+                icon: Icon(
+                  (isPasswordVisible ?? false) ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.white54,
+                ),
+                onPressed: onTogglePasswordVisibility,
+              )
+            : null,
         enabledBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.white54),
         ),
