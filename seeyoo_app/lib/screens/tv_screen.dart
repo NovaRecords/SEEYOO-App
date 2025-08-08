@@ -1242,7 +1242,7 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
           child: Stack(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                 decoration: BoxDecoration(
                   color: isSelected ? const Color(0xFF3B4248) : const Color(0xFF1B1E22),
@@ -1819,8 +1819,8 @@ class _TvScreenState extends State<TvScreen> with TickerProviderStateMixin, Widg
     }
     
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-      padding: const EdgeInsets.only(left: 16, right: 10, top: 10, bottom: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+      padding: const EdgeInsets.only(left: 12, right: 10, top: 10, bottom: 10),
       decoration: BoxDecoration(
         color: const Color(0xFF1B1E22).withOpacity(0.85),
         borderRadius: BorderRadius.circular(12),
