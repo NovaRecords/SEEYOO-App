@@ -58,9 +58,12 @@ class _AuthScreenState extends State<AuthScreen> {
     _confirmPasswordController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
-    // Bei Verlassen des Auth-Screens wird die Systemleiste für den MainScreen wieder aktiviert
-    // MainScreen wird die Systemleiste basierend auf Menü-Status selbst verwalten
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Bei Verlassen des Auth-Screens: Android-optimierte UI-Einstellung
+    // Statusleiste oben anzeigen, Navigationsleiste unten ausblenden
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual, 
+      overlays: [SystemUiOverlay.top]
+    );
     super.dispose();
   }
 
